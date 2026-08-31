@@ -1,3 +1,6 @@
+import TrendingProducts from "@/components/ui/TrendingProducts";
+import GreenOFlare from "@/components/ui/GreenOFlare";
+import CategoryGallery from "@/components/ui/CategoryGallery";
 import Header from "@/components/Header";
 
 export default function HomePage() {
@@ -7,11 +10,13 @@ export default function HomePage() {
 
       <main className="home-page">
 
-        {/* =========================
+                {/* =========================
             HERO
         ========================= */}
 
         <section className="hero-section">
+
+          {/* EXISTING VIDEO — DON'T CHANGE */}
 
           <video
             className="hero-video"
@@ -21,41 +26,34 @@ export default function HomePage() {
             playsInline
             preload="auto"
           >
-            <source src="/hero.mp4" type="video/mp4" />
+            <source
+              src="/hero.mp4"
+              type="video/mp4"
+            />
           </video>
 
-          <div className="hero-overlay" />
+          {/* Subtle dark layer */}
 
-          <div className="hero-content">
+          <div className="hero-dark-overlay" />
 
-            <p className="hero-label">
-              GREENO / 2026
-            </p>
+          {/* Light rendering */}
 
-            <h1>
-              WEAR
-              <br />
-              YOUR
-              <br />
-              ATTITUDE
-            </h1>
+          <GreenOFlare />
 
-            <p className="hero-subtitle">
-              PREMIUM STREETWEAR
-            </p>
+          {/* Brand */}
 
-            <a
-              href="/shop"
-              className="hero-button"
-            >
-              SHOP NOW
-            </a>
+          <div className="greeno-logo-wrapper">
 
-          </div>
+            <div className="greeno-logo">
+              GreenO
+            </div>
 
-          <div className="hero-scroll">
-            <span>SCROLL</span>
-            <span className="hero-arrow">↓</span>
+            {/* Animated cursor */}
+
+            <div className="greeno-cursor">
+              <div className="cursor-arrow" />
+            </div>
+
           </div>
 
         </section>
@@ -298,7 +296,9 @@ export default function HomePage() {
           </div>
 
         </section>
-
+        <CategoryGallery />
+        <TrendingProducts />
+                                                                                                                                                                                                                                                                                                                                                                                                             
       </main>
     </>
   );

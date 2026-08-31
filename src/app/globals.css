@@ -478,12 +478,9 @@ select {
 
 .new-in-section {
   width: 100%;
-  min-height: 100vh;
-
-  padding: 120px 0 140px;
-
+  min-height: auto;
+  padding: 60px 0 0px;
   background: #ffffff;
-
   overflow: hidden;
 }
 
@@ -714,11 +711,11 @@ select {
 ========================================= */
 
 @media (max-width: 700px) {
-
+  
   .new-in-section {
     min-height: auto;
 
-    padding: 90px 0 100px;
+    padding: 60px 0 50px;
   }
 
   .new-in-heading {
@@ -783,4 +780,790 @@ select {
     margin-top: 40px;
   }
 
+}
+
+/* =========================================
+   CATEGORY SECTION
+========================================= */
+
+.category-section {
+  width: 100%;
+  padding: 140px 5vw 160px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.category-heading {
+  margin-bottom: 70px;
+}
+
+.category-heading h2 {
+  margin: 15px 0 0;
+
+  font-size: clamp(60px, 8vw, 125px);
+
+  line-height: 0.85;
+
+  font-weight: 400;
+
+  letter-spacing: -0.055em;
+}
+
+
+/* =========================================
+   CATEGORY GRID
+========================================= */
+
+.category-grid {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns: 1.35fr 0.65fr 0.65fr;
+
+  grid-auto-rows: 300px;
+
+  gap: 18px;
+}
+
+
+/* =========================================
+   CATEGORY CARDS
+========================================= */
+
+.category-card {
+  position: relative;
+
+  overflow: hidden;
+
+  border-radius: 16px;
+
+  background: #eeeeee;
+}
+
+.category-card.large {
+  grid-row: span 2;
+}
+
+.category-card.small {
+  grid-row: span 1;
+}
+
+
+/* =========================================
+   IMAGE
+========================================= */
+
+.category-image-wrapper {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+}
+
+.category-image-wrapper img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+
+/* =========================================
+   DARK OVERLAY
+========================================= */
+
+.category-overlay {
+  position: absolute;
+
+  inset: 0;
+
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.58),
+    rgba(0, 0, 0, 0.05) 55%,
+    transparent
+  );
+
+  pointer-events: none;
+}
+
+
+/* =========================================
+   TEXT
+========================================= */
+
+.category-content {
+  position: absolute;
+
+  left: 24px;
+  right: 24px;
+  bottom: 22px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  color: #ffffff;
+
+  font-size: 13px;
+
+  letter-spacing: 1.8px;
+
+  font-weight: 500;
+}
+
+.category-arrow {
+  font-size: 20px;
+
+  letter-spacing: 0;
+
+  transition:
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.category-card:hover .category-arrow {
+  transform: translateX(7px);
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 900px) {
+  .category-grid {
+    grid-template-columns: 1fr 1fr;
+
+    grid-auto-rows: 260px;
+  }
+
+  .category-card.large {
+    grid-row: span 1;
+  }
+}
+
+
+@media (max-width: 600px) {
+  .category-section {
+    padding: 90px 20px 110px;
+  }
+
+  .category-heading {
+    margin-bottom: 45px;
+  }
+
+  .category-grid {
+    grid-template-columns: 1fr;
+
+    grid-auto-rows: 320px;
+
+    gap: 12px;
+  }
+
+  .category-card.large,
+  .category-card.small {
+    grid-row: span 1;
+  }
+
+  .category-content {
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+  }
+}
+/* =========================================
+   GREENO HERO
+========================================= */
+
+.hero-section {
+  position: relative;
+
+  width: 100%;
+  height: 100vh;
+
+  min-height: 650px;
+
+  overflow: hidden;
+
+  background: #000;
+}
+
+
+/* =========================================
+   EXISTING VIDEO
+========================================= */
+
+.hero-video {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  z-index: 1;
+}
+
+
+/* =========================================
+   DARK OVERLAY
+========================================= */
+
+.hero-dark-overlay {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 2;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.08),
+      rgba(0, 0, 0, 0.15)
+    );
+}
+
+
+/* =========================================
+   LIGHT RENDERING
+========================================= */
+
+/* =========================================
+   GREENO RENDERING
+========================================= */
+
+.greeno-rendering {
+  position: absolute;
+  inset: 0;
+
+  z-index: 3;
+
+  pointer-events: none;
+
+  overflow: hidden;
+}
+
+
+/* Soft white rendering behind logo */
+
+.greeno-soft-glow {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: min(700px, 70vw);
+  height: min(300px, 30vw);
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  background: radial-gradient(
+    ellipse,
+    rgba(255, 255, 255, 0.32) 0%,
+    rgba(255, 255, 255, 0.18) 30%,
+    rgba(255, 255, 255, 0.07) 52%,
+    transparent 75%
+  );
+
+  filter: blur(42px);
+}
+
+
+/* Small concentrated glow */
+
+.greeno-center-flash {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 240px;
+  height: 140px;
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  background: radial-gradient(
+    ellipse,
+    rgba(255, 255, 255, 0.35),
+    rgba(255, 255, 255, 0.08) 45%,
+    transparent 75%
+  );
+
+  filter: blur(25px);
+}
+
+
+/* =========================================
+   LOGO WRAPPER
+========================================= */
+
+.greeno-logo-wrapper {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  z-index: 5;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  pointer-events: none;
+}
+
+
+/* =========================================
+   GREENO LOGO
+========================================= */
+
+.greeno-logo {
+  position: relative;
+
+  color: #050505;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: clamp(
+    75px,
+    12vw,
+    190px
+  );
+
+  font-weight: 600;
+
+  letter-spacing: -0.075em;
+
+  line-height: 0.85;
+
+  white-space: nowrap;
+
+  text-shadow:
+    0 0 1px #ffffff,
+    0 0 5px rgba(255, 255, 255, 0.95),
+    0 0 14px rgba(255, 255, 255, 0.85),
+    0 0 30px rgba(255, 255, 255, 0.55);
+
+  filter:
+    drop-shadow(
+      0 0 7px rgba(255, 255, 255, 0.7)
+    );
+}
+
+
+/* =========================================
+   CURSOR
+========================================= */
+
+.greeno-cursor {
+  position: absolute;
+
+  left: 57%;
+  top: 57%;
+
+  width: 45px;
+  height: 55px;
+
+  z-index: 10;
+
+  animation:
+    greenoCursor 4.5s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    infinite;
+
+  pointer-events: none;
+}
+
+
+.cursor-arrow {
+  position: relative;
+
+  width: 0;
+  height: 0;
+
+  border-top: 30px solid white;
+  border-right: 17px solid transparent;
+
+  filter:
+    drop-shadow(
+      0 0 4px rgba(255, 255, 255, 0.9)
+    );
+}
+
+
+.cursor-arrow::after {
+  content: "";
+
+  position: absolute;
+
+  left: -24px;
+  top: -27px;
+
+  width: 0;
+  height: 0;
+
+  border-top: 24px solid #050505;
+  border-right: 14px solid transparent;
+}
+
+
+@keyframes greenoCursor {
+
+  0% {
+    transform:
+      translate(100px, 70px)
+      rotate(-8deg);
+
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  45% {
+    transform:
+      translate(35px, 25px)
+      rotate(-8deg);
+
+    opacity: 1;
+  }
+
+  60% {
+    transform:
+      translate(0, 0)
+      rotate(-8deg);
+
+    opacity: 1;
+  }
+
+  72% {
+    transform:
+      translate(0, 0)
+      rotate(-8deg);
+
+    opacity: 1;
+  }
+
+  100% {
+    transform:
+      translate(-20px, -10px)
+      rotate(-8deg);
+
+    opacity: 0;
+  }
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+  .hero-section {
+    min-height: 600px;
+  }
+
+  .greeno-logo {
+    font-size: 21vw;
+  }
+
+  .greeno-cursor {
+    transform: scale(0.7);
+  }
+
+}
+/* =========================================
+   TRENDING
+========================================= */
+
+.trending-section {
+  width: 100%;
+  padding: 70px 0;
+  background: #ffffff;
+}
+
+.trending-swiper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.trending-slide {
+  position: relative;
+  width: 100%;
+  height: min(760px, 82vh);
+  min-height: 550px;
+  overflow: hidden;
+}
+
+.trending-slide-image {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  display: block;
+}
+
+.trending-overlay {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.12);
+}
+
+
+/* =========================================
+   CENTER CONTENT
+========================================= */
+
+.trending-content {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  z-index: 5;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  color: #ffffff;
+
+  width: 90%;
+}
+
+.trending-content h2 {
+  margin: 0 0 12px;
+
+  font-size: clamp(28px, 4vw, 52px);
+
+  font-weight: 700;
+
+  letter-spacing: -0.04em;
+
+  line-height: 1;
+}
+
+.trending-content button {
+  border: 0;
+
+  background: transparent;
+
+  color: #ffffff;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.04em;
+
+  cursor: pointer;
+}
+
+
+/* =========================================
+   ARROWS
+========================================= */
+
+.trending-arrow {
+  position: absolute;
+
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  z-index: 10;
+
+  width: 48px;
+  height: 48px;
+
+  border: 1px solid rgba(255, 255, 255, 0.7);
+
+  border-radius: 50%;
+
+  background: rgba(0, 0, 0, 0.15);
+
+  color: #ffffff;
+
+  font-size: 20px;
+
+  cursor: pointer;
+
+  backdrop-filter: blur(6px);
+
+  transition:
+    background 0.25s ease,
+    transform 0.25s ease;
+}
+
+.trending-arrow:hover {
+  background: rgba(255, 255, 255, 0.2);
+
+  transform:
+    translateY(-50%)
+    scale(1.08);
+}
+
+.trending-arrow-left {
+  left: 30px;
+}
+
+.trending-arrow-right {
+  right: 30px;
+}
+
+
+/* =========================================
+   DOTS
+========================================= */
+
+.trending-dots {
+  position: absolute;
+
+  bottom: 28px;
+
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  z-index: 10;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+.trending-dot {
+  width: 10px;
+  height: 10px;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.45);
+
+  cursor: pointer;
+
+  transition:
+    width 0.3s ease,
+    border-radius 0.3s ease,
+    background 0.3s ease;
+}
+
+.trending-dot.active {
+  width: 38px;
+
+  border-radius: 20px;
+
+  background: #ffffff;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+  .trending-section {
+    padding: 40px 0;
+  }
+
+  .trending-slide {
+    height: 70vh;
+    min-height: 480px;
+  }
+
+  .trending-arrow {
+    width: 40px;
+    height: 40px;
+
+    font-size: 16px;
+  }
+
+  .trending-arrow-left {
+    left: 15px;
+  }
+
+  .trending-arrow-right {
+    right: 15px;
+  }
+
+  .trending-dots {
+    bottom: 20px;
+  }
+}
+/* =========================================
+   FIX SECTION SPACING
+========================================= */
+
+
+
+/* Remove extra space around New In heading */
+.new-in-heading {
+  margin-bottom: 40px;
+}
+
+/* CATEGORY */
+.category-section {
+  padding-top: 70px;
+  padding-bottom: 20px;
+  margin: 0;
+}
+
+/* Category heading */
+.category-heading {
+  margin-bottom: 45px;
+}
+
+/* TRENDING */
+.trending-section {
+  padding-top: 0;
+  padding-bottom: 70px;
+  margin: 0;
+}
+
+/* Make sure no default spacing creates gaps */
+.home-page section {
+  margin-top: 0;
 }
