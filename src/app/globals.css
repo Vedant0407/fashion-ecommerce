@@ -85,7 +85,7 @@ select {
 .logo {
   display: block;
 
-  color: #ffffff;
+  color: #f8f7f7;
 
   font-size: 25px;
   font-weight: 600;
@@ -126,7 +126,7 @@ select {
   border: none;
   background: transparent;
 
-  color: #ffffff;
+  color: #fdfbfb;
 
   cursor: pointer;
 
@@ -549,19 +549,15 @@ select {
 /* =========================================
    PRODUCT CARD
 ========================================= */
-
 .new-in-card {
-  flex: 0 0 auto;
-
-  width: 300px;
+  flex: 0 0 360px;
+  width: 360px;
 
   color: #111111;
   text-decoration: none;
-
   background: #ffffff;
 
   border-radius: 14px;
-
   overflow: hidden;
 
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
@@ -569,6 +565,7 @@ select {
   transition:
     transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
+ 
 
 
 /* =========================================
@@ -606,7 +603,7 @@ select {
   position: relative;
 
   width: 100%;
-  height: 390px;
+  height: 470px;
 
   overflow: hidden;
 
@@ -711,66 +708,35 @@ select {
 ========================================= */
 
 @media (max-width: 700px) {
-  
   .new-in-section {
     min-height: auto;
-
     padding: 60px 0 50px;
   }
 
   .new-in-heading {
     padding: 0 20px;
-
     margin-bottom: 50px;
   }
 
   .new-in-heading h2 {
     font-size: 22vw;
-
     letter-spacing: -5px;
   }
 
   .new-in-track {
     gap: 20px;
-
     padding-left: 20px;
-
     animation-duration: 26s;
   }
 
   .new-in-card {
-  flex: 0 0 auto;
-
-  width: 300px;
-
-  color: #111111;
-
-  text-decoration: none;
-
-  background: #ffffff;
-
-  border-radius: 14px;
-
-  overflow: hidden;
-
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-
-  transition:
-    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
+    flex: 0 0 320px;
+    width: 320px;
+  }
 
   .new-in-image {
-  position: relative;
-
-  width: 100%;
-  height: 390px;
-
-  overflow: hidden;
-
-  background: #eeeeee;
-
-  border-radius: 14px 14px 0 0;
-}
+    height: 400px;
+  }
 
   .card-two {
     margin-top: 35px;
@@ -779,7 +745,6 @@ select {
   .card-four {
     margin-top: 40px;
   }
-
 }
 
 /* =========================================
@@ -821,7 +786,7 @@ select {
 
   grid-template-columns: 1.35fr 0.65fr 0.65fr;
 
-  grid-auto-rows: 300px;
+  grid-auto-rows: 360px;
 
   gap: 18px;
 }
@@ -1639,7 +1604,7 @@ select {
   position: relative;
   display: block;
   width: 100%;
-  height: 650px;
+  height: 800px;
   overflow: hidden;
   border-radius: 28px;
   text-decoration: none;
@@ -1964,6 +1929,18 @@ select {
 
 .bag-rotation {
   transform-style: preserve-3d;
+  animation: bagRotate 25s linear infinite;
+  will-change: transform;
+}
+
+@keyframes bagRotate {
+  from {
+    transform: rotateY(0deg);
+  }
+
+  to {
+    transform: rotateY(360deg);
+  }
 }
 
 .shopping-bag {
@@ -2042,4 +2019,71 @@ select {
   }
 }
 
+.greeno-3d {
+  position: absolute;
+  z-index: 5;
+
+  width: 600px;
+  height: 700px;
+
+  left: 50%;
+  top: 52%;
+
+  transform: translate(-50%, -50%);
+
+  background: transparent;
+  pointer-events: none;
+}
+.hero-follow-brand {
+  position: fixed;
+  z-index: 20;
+
+  transform: translate(-50%, -50%);
+
+  color: #000;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+
+  pointer-events: none;
+
+  transition:
+    left 0.15s ease-out,
+    top 0.15s ease-out;
+}
+
+.hero-spotlight {
+  position: absolute;
+
+  width: 450px;
+  height: 450px;
+
+  border-radius: 50%;
+
+  pointer-events: none;
+
+  transform: translate(-50%, -50%);
+
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.65) 0%,
+    rgba(255, 255, 255, 0.4) 15%,
+    rgba(255, 255, 255, 0.2) 35%,
+    rgba(255, 255, 255, 0.08) 55%,
+    rgba(255, 255, 255, 0) 75%
+  );
+
+  filter: blur(18px);
+
+  box-shadow:
+    0 0 40px rgba(255, 255, 255, 0.35),
+    0 0 80px rgba(255, 255, 255, 0.25),
+    0 0 140px rgba(255, 255, 255, 0.15);
+
+  opacity: 0;
+
+  transition: opacity 0.2s ease;
+
+  z-index: 20;
+}
 

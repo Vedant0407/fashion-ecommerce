@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 export default function AboutSection() {
   return (
     <section className="about-section">
@@ -40,20 +38,12 @@ export default function AboutSection() {
       </div>
 
       <div className="about-bag">
-        <motion.div
-          animate={{ rotateY: 360 }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="bag-rotation"
-        >
+        <div className="bag-rotation">
           <div className="shopping-bag">
             <div className="bag-handle" />
             <span>GreenO</span>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       <div className="about-copyright">

@@ -1,9 +1,10 @@
 import TypewriterText from "@/components/ui/TypewriterText";
 import TrendingProducts from "@/components/ui/TrendingProducts";
-import GreenOFlare from "@/components/ui/GreenOFlare";
+import GreenOTshirt3D from "@/components/ui/GreenOTshirt3D";
 import CategoryGallery from "@/components/ui/CategoryGallery";
 import ProductsGrid from "@/components/ui/ProductsGrid";
 import AboutSection from "@/components/ui/AboutSection";
+import SpotlightCursor from "@/components/ui/SpotlightCursor";
 import Header from "@/components/Header";
 
 export default function HomePage() {
@@ -17,49 +18,23 @@ export default function HomePage() {
             HERO
         ========================= */}
 
-        <section className="hero-section">
+              <section className="hero-section">
 
-          {/* EXISTING VIDEO — DON'T CHANGE */}
+  <img
+    src="/hero.jfif"
+    alt="GreenO"
+    className="hero-video"
+  />
 
-          <video
-            className="hero-video"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-          >
-            <source
-              src="/hero.mp4"
-              type="video/mp4"
-            />
-          </video>
+  <GreenOTshirt3D />
 
-          {/* Subtle dark layer */}
+  {/* Subtle dark layer */}
+  <div className="hero-dark-overlay" />
+  <SpotlightCursor />
 
-          <div className="hero-dark-overlay" />
+</section>
 
-          {/* Light rendering */}
 
-          <GreenOFlare />
-
-          {/* Brand */}
-
-          <div className="greeno-logo-wrapper">
-
-            <div className="greeno-logo">
-              GreenO
-            </div>
-
-            {/* Animated cursor */}
-
-            <div className="greeno-cursor">
-              <div className="cursor-arrow" />
-            </div>
-
-          </div>
-
-        </section>
 
 
         {/* =========================
