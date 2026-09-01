@@ -1,6 +1,9 @@
+import TypewriterText from "@/components/ui/TypewriterText";
 import TrendingProducts from "@/components/ui/TrendingProducts";
 import GreenOFlare from "@/components/ui/GreenOFlare";
 import CategoryGallery from "@/components/ui/CategoryGallery";
+import ProductsGrid from "@/components/ui/ProductsGrid";
+import AboutSection from "@/components/ui/AboutSection";
 import Header from "@/components/Header";
 
 export default function HomePage() {
@@ -66,16 +69,10 @@ export default function HomePage() {
         <section className="new-in-section">
 
           <div className="new-in-heading">
-
-            <p>
-              GREENO / NEW IN
-            </p>
-
-            <h2>
-              NEW IN
-            </h2>
-
-          </div>
+  <h2>
+  <TypewriterText text="NEW IN" />
+</h2>
+</div>
 
 
           <div className="new-in-marquee">
@@ -298,6 +295,8 @@ export default function HomePage() {
         </section>
         <CategoryGallery />
         <TrendingProducts />
+        <ProductsGrid />
+        <AboutSection />
                                                                                                                                                                                                                                                                                                                                                                                                              
       </main>
     </>

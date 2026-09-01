@@ -1,11 +1,12 @@
 "use client";
+import TypewriterText from "@/components/ui/TypewriterText";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
 
 const categories = [
   {
-    name: "T-SHIRTS",
+    name: "HOODIES",
     image: "/products/black-tee.jfif",
     link: "/shop?category=T-SHIRTS",
     size: "large",
@@ -29,7 +30,7 @@ const categories = [
     size: "large",
   },
   {
-    name: "HOODIES",
+    name: "T-SHIRTS",
     image: "/products/grey-hoodie.webp",
     link: "/shop?category=HOODIES",
     size: "large",
@@ -47,16 +48,12 @@ export default function CategoryGallery() {
     <section className="category-section">
 
       <div className="category-heading">
-        <p className="section-label">
-          GREENO / EXPLORE
-        </p>
-
-        <h2>
-          EXPLORE
-          <br />
-          CATEGORIES
-        </h2>
-      </div>
+  <h2>
+    <TypewriterText text="EXPLORE" />
+    <br />
+    <TypewriterText text="CATEGORIES" />
+  </h2>
+</div>
 
       <div className="category-grid">
 
