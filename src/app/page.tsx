@@ -43,16 +43,16 @@ export default function HomePage() {
 
         <section className="new-in-section">
 
-          <div className="new-in-heading">
-  <h2>
-  <TypewriterText text="NEW IN" />
-</h2>
-</div>
+  <div className="new-in-wrapper">
 
+    <div className="new-in-heading">
+      <h2>
+        <TypewriterText text="NEW IN" />
+      </h2>
+    </div>
 
-          <div className="new-in-marquee">
-              <div className="new-in-wrapper">
-                <div className="new-in-track">
+    <div className="new-in-marquee">
+      <div className="new-in-track">
 
               {/* CARD 1 */}
 
