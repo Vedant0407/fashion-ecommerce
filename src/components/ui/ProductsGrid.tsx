@@ -108,32 +108,40 @@ export default function ProductsGrid() {
   return (
     <section className="products-section">
 
-      
+  <div className="products-wrapper">
 
-      <div className="products-grid">
+    
 
-        {products.map((product) => (
-          <Link
-            key={product.name}
-            href={product.link}
-            className="product-card"
-          >
-            <div className="product-image">
-              <img
-                src={product.image}
-                alt={product.name}
-              />
-            </div>
+    <div className="products-grid">
 
-            <div className="product-info">
-              <p>{product.name}</p>
-              <span>{product.price}</span>
-            </div>
-          </Link>
-        ))}
+      {products.map((product) => (
 
-      </div>
+        <Link
+          key={product.name}
+          href={product.link}
+          className="product-card"
+        >
 
-    </section>
+          <div className="product-image">
+            <img
+              src={product.image}
+              alt={product.name}
+            />
+          </div>
+
+          <div className="product-info">
+            <p>{product.name}</p>
+            <span>{product.price}</span>
+          </div>
+
+        </Link>
+
+      ))}
+
+    </div>
+
+  </div>
+
+</section>
   );
 }
