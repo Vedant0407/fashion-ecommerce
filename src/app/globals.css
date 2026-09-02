@@ -1581,7 +1581,7 @@ select {
 
 .trending-section {
   width: 100%;
-  padding: 40px 0;
+  padding: 10px 0 40px;
   overflow: hidden;
 }
 
