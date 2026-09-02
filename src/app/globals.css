@@ -1605,7 +1605,7 @@ select {
 
 .trending-slide img {
   width: 100%;
-  height: 700%;
+  height: 100%;
   display: block;
   object-fit: cover;
 }
@@ -1681,7 +1681,7 @@ select {
   }
 
   .trending-slide {
-    height: 500px;
+    height: 850;
     border-radius: 20px;
   }
 
