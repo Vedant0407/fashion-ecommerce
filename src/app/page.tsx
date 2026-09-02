@@ -51,8 +51,8 @@ export default function HomePage() {
 
 
           <div className="new-in-marquee">
-
-            <div className="new-in-track">
+              <div className="new-in-wrapper">
+                <div className="new-in-track">
 
               {/* CARD 1 */}
 
@@ -263,6 +263,7 @@ export default function HomePage() {
 
               </a>
 
+             </div>
             </div>
 
           </div>

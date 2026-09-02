@@ -1,13 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import Link from "next/link";
 
 export default function Header() {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+useEffect(() => {
+  const handleScroll = () => {
+    setIsScrolled(window.scrollY > window.innerHeight - 100);
+  };
+
+  handleScroll();
+
+  window.addEventListener("scroll", handleScroll);
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+  };
+}, []);
   const [accountOpen, setAccountOpen] = useState(false);
 
   return (
-    <header className="site-header hero-header">
+    <header className={`site-header ${isScrolled ? "scrolled" : ""}`}>
       <nav className="navbar">
 
         {/* LEFT SPACE */}
@@ -20,6 +36,21 @@ export default function Header() {
 
         {/* RIGHT */}
         <div className="header-actions">
+          {/* SEARCH */}
+          <button
+  className="header-icon"
+  aria-label="Search"
+>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.3"
+  >
+    <circle cx="10.5" cy="10.5" r="7" />
+    <path d="M16 16l5 5" />
+  </svg>
+</button>
 
           {/* ACCOUNT */}
           <div className="account-wrapper">
