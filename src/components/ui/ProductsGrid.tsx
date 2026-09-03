@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-const products = [
+export const products = [
   {
     name: "OVERSIZED BLACK TEE",
     price: "₹2,499",
@@ -109,6 +109,11 @@ export default function ProductsGrid() {
     <section className="products-section">
 
   <div className="products-wrapper">
+    <div className="products-heading">
+      <a href="/products" className="discover-more">
+  Discover more
+</a>
+    </div>
 
     
 

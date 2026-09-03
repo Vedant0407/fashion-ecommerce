@@ -8,37 +8,37 @@ const categories = [
   {
     name: "HOODIES",
     image: "/products/black-tee.jfif",
-    link: "/shop?category=T-SHIRTS",
+    link: "/category/t-shirts",
     size: "large",
   },
   {
     name: "CAPS",
     image: "/products/black-tee.jfif",
-    link: "/shop?category=CAPS",
+    link: "/category/caps",
     size: "small",
   },
   {
     name: "BAGS",
     image: "/products/black-tee.jfif",
-    link: "/shop?category=BAGS",
+    link: "/category/bags",
     size: "small",
   },
   {
     name: "PANTS",
     image: "/products/cargo-pants.jfif",
-    link: "/shop?category=PANTS",
+    link: "/category/pants",
     size: "large",
   },
   {
     name: "T-SHIRTS",
     image: "/products/grey-hoodie.webp",
-    link: "/shop?category=HOODIES",
+    link: "/category/hoodies",
     size: "large",
   },
   {
     name: "ACCESSORIES",
     image: "/products/black-tee.jfif",
-    link: "/shop?category=ACCESSORIES",
+    link: "/category/accessories",
     size: "small",
   },
 ];

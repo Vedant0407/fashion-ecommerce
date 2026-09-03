@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";import Link from "next/link";
 import Header from "@/components/Header";
 
 const products = {
@@ -41,6 +40,7 @@ const products = {
 
 export default function ProductPage() {
   const params = useParams();
+  const router = useRouter();
 
   const slug = params.slug as string;
 
@@ -71,6 +71,12 @@ export default function ProductPage() {
       <Header />
 
       <main className="product-page">
+        <button
+  className="product-back-button"
+  onClick={() => router.back()}
+>
+  ← BACK
+</button>
 
         <div className="product-detail">
 

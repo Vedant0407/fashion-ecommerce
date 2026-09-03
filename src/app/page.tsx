@@ -46,10 +46,13 @@ export default function HomePage() {
   <div className="new-in-wrapper">
 
     <div className="new-in-heading">
-      <h2>
-        <TypewriterText text="NEW IN" />
-      </h2>
-    </div>
+  <h2>
+    <TypewriterText text="NEW IN" />
+  </h2>
+  <a href="/shop" className="discover-more">
+    Discover more
+  </a>
+</div>
 
     <div className="new-in-marquee">
       <div className="new-in-track">
@@ -160,6 +163,7 @@ export default function HomePage() {
                 </div>
 
               </a>
+              
 
 
               {/* DUPLICATE FOR INFINITE LOOP */}
