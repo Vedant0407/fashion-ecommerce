@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Header from "@/components/Header";
 
 const products = {
   "oversized-black-tee": {
@@ -43,186 +44,206 @@ export default function ProductPage() {
 
   const slug = params.slug as string;
 
-  const product = products[slug as keyof typeof products];
+  const product =
+    products[slug as keyof typeof products];
 
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
 
   if (!product) {
     return (
-      <main className="product-not-found">
-        <h1>PRODUCT NOT FOUND</h1>
+      <>
+        <Header />
 
-        <Link href="/">
-          BACK TO HOME
-        </Link>
-      </main>
+        <main className="product-not-found">
+          <h1>PRODUCT NOT FOUND</h1>
+
+          <Link href="/">
+            BACK TO HOME
+          </Link>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="product-page">
+    <>
+      <Header />
 
-      <div className="product-detail">
+      <main className="product-page">
 
-        {/* LEFT - PRODUCT IMAGE */}
+        <div className="product-detail">
 
-        <div className="product-detail-image">
+          {/* LEFT - PRODUCT IMAGE */}
 
-          <img
-            src={product.image}
-            alt={product.name}
-          />
-
-        </div>
-
-
-        {/* RIGHT - PRODUCT INFORMATION */}
-
-        <div className="product-detail-info">
-
-          <p className="product-detail-label">
-            GREENO / PRODUCT
-          </p>
-
-          <h1>
-            {product.name}
-          </h1>
-
-          <p className="product-detail-price">
-            {product.price}
-          </p>
+          <div className="product-detail-image">
+            <img
+              src={product.image}
+              alt={product.name}
+            />
+          </div>
 
 
-          {/* DESCRIPTION */}
+          {/* RIGHT - PRODUCT INFORMATION */}
 
-          <div className="product-description">
+          <div className="product-detail-info">
 
-            <h3>DESCRIPTION</h3>
-
-            <p>
-              {product.description}
+            <p className="product-detail-label">
+              GREENO / PRODUCT
             </p>
 
-          </div>
+            <h1>
+              {product.name}
+            </h1>
+
+            <p className="product-detail-price">
+              {product.price}
+            </p>
 
 
-          {/* SIZE */}
+            {/* DESCRIPTION */}
 
-          <div className="product-size">
+            <div className="product-description">
 
-            <div className="product-option-title">
-              <span>SIZE</span>
+              <h3>DESCRIPTION</h3>
 
-              <span>SIZE GUIDE</span>
+              <p>
+                {product.description}
+              </p>
+
             </div>
 
-            <div className="size-options">
 
-              {["S", "M", "L", "XL"].map((size) => (
+            {/* SIZE */}
+
+            <div className="product-size">
+
+              <div className="product-option-title">
+                <span>SIZE</span>
+                <span>SIZE GUIDE</span>
+              </div>
+
+              <div className="size-options">
+
+                {["S", "M", "L", "XL"].map(
+                  (size) => (
+
+                    <button
+                      key={size}
+                      className={
+                        selectedSize === size
+                          ? "size-button active"
+                          : "size-button"
+                      }
+                      onClick={() =>
+                        setSelectedSize(size)
+                      }
+                    >
+                      {size}
+                    </button>
+
+                  )
+                )}
+
+              </div>
+
+            </div>
+
+
+            {/* QUANTITY */}
+
+            <div className="product-quantity">
+
+              <span>QUANTITY</span>
+
+              <div className="quantity-selector">
 
                 <button
-                  key={size}
-                  className={
-                    selectedSize === size
-                      ? "size-button active"
-                      : "size-button"
+                  onClick={() =>
+                    setQuantity(
+                      Math.max(1, quantity - 1)
+                    )
                   }
-                  onClick={() => setSelectedSize(size)}
                 >
-                  {size}
+                  −
                 </button>
 
-              ))}
+                <span>
+                  {quantity}
+                </span>
+
+                <button
+                  onClick={() =>
+                    setQuantity(quantity + 1)
+                  }
+                >
+                  +
+                </button>
+
+              </div>
 
             </div>
 
-          </div>
+
+            {/* ADD TO CART */}
+
+            <button className="add-to-cart-button">
+              ADD TO CART
+            </button>
 
 
-          {/* QUANTITY */}
+            {/* DETAILS */}
 
-          <div className="product-quantity">
+            <div className="product-accordions">
 
-            <span>QUANTITY</span>
+              <details>
 
-            <div className="quantity-selector">
+                <summary>
+                  PRODUCT DETAILS
+                </summary>
 
-              <button
-                onClick={() =>
-                  setQuantity(Math.max(1, quantity - 1))
-                }
-              >
-                −
-              </button>
+                <p>
+                  Premium GreenO streetwear designed
+                  with a modern relaxed silhouette.
+                </p>
 
-              <span>
-                {quantity}
-              </span>
+              </details>
 
-              <button
-                onClick={() =>
-                  setQuantity(quantity + 1)
-                }
-              >
-                +
-              </button>
+
+              <details>
+
+                <summary>
+                  DELIVERY & RETURNS
+                </summary>
+
+                <p>
+                  Delivery information and return
+                  policy will be available here.
+                </p>
+
+              </details>
+
+
+              <details>
+
+                <summary>
+                  CARE INSTRUCTIONS
+                </summary>
+
+                <p>
+                  Follow the care instructions provided
+                  with the product.
+                </p>
+
+              </details>
 
             </div>
-
-          </div>
-
-
-          {/* ADD TO CART */}
-
-          <button className="add-to-cart-button">
-            ADD TO CART
-          </button>
-
-
-          {/* DETAILS */}
-
-          <div className="product-accordions">
-
-            <details>
-              <summary>
-                PRODUCT DETAILS
-              </summary>
-
-              <p>
-                Premium GreenO streetwear designed
-                with a modern relaxed silhouette.
-              </p>
-            </details>
-
-            <details>
-              <summary>
-                DELIVERY & RETURNS
-              </summary>
-
-              <p>
-                Delivery information and return
-                policy will be available here.
-              </p>
-            </details>
-
-            <details>
-              <summary>
-                CARE INSTRUCTIONS
-              </summary>
-
-              <p>
-                Follow the care instructions provided
-                with the product.
-              </p>
-            </details>
 
           </div>
 
         </div>
 
-      </div>
-
-    </main>
+      </main>
+    </>
   );
 }
