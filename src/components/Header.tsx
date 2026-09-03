@@ -1,67 +1,73 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
+  const pathname = usePathname();
+
   const [isScrolled, setIsScrolled] = useState(false);
-
-useEffect(() => {
-  const handleScroll = () => {
-    setIsScrolled(window.scrollY > window.innerHeight - 100);
-  };
-
-  handleScroll();
-
-  window.addEventListener("scroll", handleScroll);
-
-  return () => {
-    window.removeEventListener("scroll", handleScroll);
-  };
-}, []);
   const [accountOpen, setAccountOpen] = useState(false);
+
+  const isHomePage = pathname === "/";
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!isHomePage) {
+        setIsScrolled(true);
+        return;
+      }
+
+      setIsScrolled(window.scrollY > window.innerHeight - 100);
+    };
+
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isHomePage]);
 
   return (
     <header className={`site-header ${isScrolled ? "scrolled" : ""}`}>
       <nav className="navbar">
 
-        {/* LEFT SPACE */}
         <div className="header-side" />
 
-        {/* LOGO */}
         <Link href="/" className="logo">
           GreenO
         </Link>
 
-        {/* RIGHT */}
         <div className="header-actions">
+
           {/* SEARCH */}
           <button
-  className="header-icon"
-  aria-label="Search"
->
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.3"
-  >
-    <circle cx="10.5" cy="10.5" r="7" />
-    <path d="M16 16l5 5" />
-  </svg>
-</button>
+            className="header-icon"
+            aria-label="Search"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+            >
+              <circle cx="10.5" cy="10.5" r="7" />
+              <path d="M16 16l5 5" />
+            </svg>
+          </button>
 
           {/* ACCOUNT */}
           <div className="account-wrapper">
+
             <button
               className="header-icon"
               onClick={() => setAccountOpen(!accountOpen)}
               aria-label="Account"
             >
               <svg
-                width="21"
-                height="21"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -74,6 +80,7 @@ useEffect(() => {
 
             {accountOpen && (
               <div className="account-menu">
+
                 <Link href="/account">
                   ACCOUNT DETAILS
                 </Link>
@@ -85,8 +92,10 @@ useEffect(() => {
                 <button>
                   LOGOUT
                 </button>
+
               </div>
             )}
+
           </div>
 
           {/* CART */}
@@ -96,8 +105,6 @@ useEffect(() => {
             aria-label="Shopping bag"
           >
             <svg
-              width="22"
-              height="22"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
