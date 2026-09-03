@@ -1690,17 +1690,19 @@ select {
 ========================= */
 
 .about-section {
+  position: relative;
   width: 100%;
-  min-height: 80vh;
+  min-height: 0;
+  padding: 60px 5vw;
+  background: #3c3c3c;
+  border-radius: 35px 35px 0 0;
 
-  padding: 60px 6vw;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.2fr 0.8fr;
+  gap: 40px;
 
-  background: #111;
-  color: #fff;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .about-top {
@@ -1868,7 +1870,7 @@ select {
 .about-copyright {
   position: absolute;
 
-  bottom: 20px;
+  bottom: 15px;
   right: 5vw;
 
   font-size: 10px;
