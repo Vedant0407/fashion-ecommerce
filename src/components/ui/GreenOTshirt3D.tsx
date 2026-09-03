@@ -12,10 +12,10 @@ function TshirtModel() {
 
   return (
     <primitive
-      object={scene}
-      scale={0.9}
-      position={[-0.3, -1.8, 0]}
-    />
+  object={scene}
+  scale={0.9}
+  position={[0, -1.0, 0]}
+/>
   );
 }
 
