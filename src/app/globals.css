@@ -427,12 +427,9 @@ select {
 
 .new-in-wrapper {
   width: 100%;
-
-  background: #fff;
-  border-radius: 38px;
-
-  padding: 20px 0px 25px;
-
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -468,7 +465,7 @@ select {
   margin: 0;
 
   font-size: 58px;
-  line-height: 1;
+  line-height: 0.95;
   font-weight: 600;
   letter-spacing: -0.05em;
 }
@@ -478,16 +475,15 @@ select {
 .new-in-marquee {
   width: 100%;
   overflow: hidden;
+  padding-bottom: 55px;
 }
 
 /* MOVING TRACK */
 
 .new-in-track {
   width: max-content;
-
   display: flex;
-  align-items: stretch;
-
+  align-items: flex-start;
   gap: 18px;
 
   animation: newInMove 35s linear infinite;
@@ -502,20 +498,32 @@ select {
 /* CARDS */
 
 .new-in-card {
-  flex: 0 0 400px;
-  width: 400px;
+  flex: 0 0 470px;
+  width: 470px;
 
   background: #fff;
-
   border: 1px solid #e8e8e8;
-  border-radius: 20px;
+  border-radius: 24px;
 
   overflow: hidden;
 
   color: #111;
   text-decoration: none;
 
-  box-shadow: none;
+  transition: transform 0.4s ease;
+}
+
+.new-in-track .card-one {
+  transform: translateY(0);
+}
+.new-in-track .card-two {
+  transform: translateY(55px);
+}
+.new-in-track .card-three {
+  transform: translateY(0);
+}
+.new-in-track .card-four {
+  transform: translateY(55px);
 }
 
 /* PRODUCT IMAGE */
