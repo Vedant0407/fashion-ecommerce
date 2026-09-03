@@ -10,7 +10,7 @@ const products = {
   "oversized-black-tee": {
     name: "OVERSIZED BLACK TEE",
     price: "₹2,499",
-    image: "/black-tee.jfif",
+    images: ["/black-tee.jfif", "/black-tee.jfif", "/black-tee.jfif"],
     category: "T-SHIRTS",
     productNo: "GRO-001",
     color: "BLACK",
@@ -24,7 +24,7 @@ const products = {
   "urban-grey-hoodie": {
     name: "URBAN GREY HOODIE",
     price: "₹3,999",
-    image: "/grey-hoodie.webp",
+    images: ["/grey-hoodie.webp", "/grey-hoodie.webp", "/grey-hoodie.webp"],
     category: "HOODIES",
     productNo: "GRO-002",
     color: "GREY",
@@ -38,7 +38,7 @@ const products = {
   "cargo-street-pants": {
     name: "CARGO STREET PANTS",
     price: "₹3,499",
-    image: "/cargo-pants.jfif",
+    images: ["/cargo-pants.jfif", "/cargo-pants.jfif", "/cargo-pants.jfif"],
     category: "PANTS",
     productNo: "GRO-003",
     color: "BLACK",
@@ -52,7 +52,7 @@ const products = {
   "classic-white-tee": {
     name: "CLASSIC WHITE TEE",
     price: "₹1,999",
-    image: "/white-tee.webp",
+    images: ["/white-tee.webp", "/white-tee.webp", "/white-tee.webp"],
     category: "T-SHIRTS",
     productNo: "GRO-004",
     color: "WHITE",
@@ -66,7 +66,7 @@ const products = {
   "black-street-tee": {
     name: "BLACK STREET TEE",
     price: "₹2,299",
-    image: "/black-tee.jfif",
+    images: ["/black-tee.jfif", "/black-tee.jfif", "/black-tee.jfif"],
     category: "T-SHIRTS",
     productNo: "GRO-005",
     color: "BLACK",
@@ -80,7 +80,7 @@ const products = {
   "grey-oversized-hoodie": {
     name: "GREY OVERSIZED HOODIE",
     price: "₹3,799",
-    image: "/grey-hoodie.webp",
+    images: ["/grey-hoodie.webp", "/grey-hoodie.webp", "/grey-hoodie.webp"],
     category: "HOODIES",
     productNo: "GRO-006",
     color: "GREY",
@@ -94,7 +94,7 @@ const products = {
   "utility-cargo": {
     name: "UTILITY CARGO",
     price: "₹3,699",
-    image: "/cargo-pants.jfif",
+    images: ["/cargo-pants.jfif", "/cargo-pants.jfif", "/cargo-pants.jfif"],
     category: "PANTS",
     productNo: "GRO-007",
     color: "BLACK",
@@ -108,7 +108,7 @@ const products = {
   "white-essential-tee": {
     name: "WHITE ESSENTIAL TEE",
     price: "₹2,199",
-    image: "/white-tee.webp",
+    images: ["/white-tee.webp", "/white-tee.webp", "/white-tee.webp"],
     category: "T-SHIRTS",
     productNo: "GRO-008",
     color: "WHITE",
@@ -122,7 +122,7 @@ const products = {
   "signature-black-tee": {
     name: "SIGNATURE BLACK TEE",
     price: "₹2,599",
-    image: "/black-tee.jfif",
+    images: ["/black-tee.jfif", "/black-tee.jfif", "/black-tee.jfif"],
     category: "T-SHIRTS",
     productNo: "GRO-009",
     color: "BLACK",
@@ -136,7 +136,7 @@ const products = {
   "urban-hoodie": {
     name: "URBAN HOODIE",
     price: "₹3,899",
-    image: "/grey-hoodie.webp",
+    images: ["/grey-hoodie.webp", "/grey-hoodie.webp", "/grey-hoodie.webp"],
     category: "HOODIES",
     productNo: "GRO-010",
     color: "GREY",
@@ -150,7 +150,7 @@ const products = {
   "street-cargo": {
     name: "STREET CARGO",
     price: "₹3,599",
-    image: "/cargo-pants.jfif",
+    images: ["/cargo-pants.jfif", "/cargo-pants.jfif", "/cargo-pants.jfif"],
     category: "PANTS",
     productNo: "GRO-011",
     color: "BLACK",
@@ -164,7 +164,7 @@ const products = {
   "minimal-white-tee": {
     name: "MINIMAL WHITE TEE",
     price: "₹2,099",
-    image: "/white-tee.webp",
+    images: ["/white-tee.webp", "/white-tee.webp", "/white-tee.webp"],
     category: "T-SHIRTS",
     productNo: "GRO-012",
     color: "WHITE",
@@ -178,7 +178,7 @@ const products = {
   "core-black-tee": {
     name: "CORE BLACK TEE",
     price: "₹2,399",
-    image: "/black-tee.jfif",
+    images: ["/black-tee.jfif", "/black-tee.jfif", "/black-tee.jfif"],
     category: "T-SHIRTS",
     productNo: "GRO-013",
     color: "BLACK",
@@ -192,7 +192,7 @@ const products = {
   "grey-core-hoodie": {
     name: "GREY CORE HOODIE",
     price: "₹3,999",
-    image: "/grey-hoodie.webp",
+    images: ["/grey-hoodie.webp", "/grey-hoodie.webp", "/grey-hoodie.webp"],
     category: "HOODIES",
     productNo: "GRO-014",
     color: "GREY",
@@ -206,7 +206,7 @@ const products = {
   "relaxed-cargo": {
     name: "RELAXED CARGO",
     price: "₹3,499",
-    image: "/cargo-pants.jfif",
+    images: ["/cargo-pants.jfif", "/cargo-pants.jfif", "/cargo-pants.jfif"],
     category: "PANTS",
     productNo: "GRO-015",
     color: "BLACK",
@@ -220,7 +220,7 @@ const products = {
   "everyday-white-tee": {
     name: "EVERYDAY WHITE TEE",
     price: "₹1,999",
-    image: "/white-tee.webp",
+    images: ["/white-tee.webp", "/white-tee.webp", "/white-tee.webp"],
     category: "T-SHIRTS",
     productNo: "GRO-016",
     color: "WHITE",
@@ -263,12 +263,6 @@ export default function ProductPage() {
     );
   }
 
-  const images = [
-    product.image,
-    product.image,
-    product.image,
-  ];
-
   return (
     <>
       <Header />
@@ -285,74 +279,51 @@ export default function ProductPage() {
 
         <div className="product-detail">
 
-          {/* LEFT - PRODUCT INFORMATION */}
+          {/* LEFT - PRODUCT DETAILS */}
           <div className="product-left">
 
             <p className="product-category">
               {product.category}
             </p>
 
-            <h1>
-              {product.name}
-            </h1>
+            <h1>{product.name}</h1>
 
             <p className="product-price">
               {product.price}
             </p>
 
             <div className="product-left-section">
-
               <h3>DESCRIPTION</h3>
-
-              <p>
-                {product.description}
-              </p>
-
+              <p>{product.description}</p>
             </div>
 
             <div className="product-left-section">
-
               <h3>MATERIAL</h3>
-
-              <p>
-                {product.material}
-              </p>
-
-              <p>
-                {product.fabric}
-              </p>
-
+              <p>{product.material}</p>
+              <p>{product.fabric}</p>
             </div>
 
             <div className="product-left-section">
-
               <h3>FIT</h3>
-
-              <p>
-                {product.fit}
-              </p>
-
+              <p>{product.fit}</p>
             </div>
 
           </div>
 
 
-          {/* CENTER - PRODUCT IMAGE */}
+          {/* CENTER - PRODUCT IMAGES */}
           <div className="product-center">
 
             <div className="product-main-image">
-
               <img
-                src={images[selectedImage]}
+                src={product.images[selectedImage]}
                 alt={product.name}
               />
-
             </div>
 
             <div className="product-thumbnails">
 
-              {images.map((image, index) => (
-
+              {product.images.map((image, index) => (
                 <button
                   key={index}
                   className={
@@ -362,14 +333,11 @@ export default function ProductPage() {
                   }
                   onClick={() => setSelectedImage(index)}
                 >
-
                   <img
                     src={image}
                     alt={`${product.name} ${index + 1}`}
                   />
-
                 </button>
-
               ))}
 
             </div>
@@ -377,7 +345,7 @@ export default function ProductPage() {
           </div>
 
 
-          {/* RIGHT - OPTIONS */}
+          {/* RIGHT - PRODUCT OPTIONS */}
           <div className="product-right">
 
             {/* QUANTITY */}
@@ -397,9 +365,7 @@ export default function ProductPage() {
                   −
                 </button>
 
-                <span>
-                  {quantity}
-                </span>
+                <span>{quantity}</span>
 
                 <button
                   onClick={() =>
@@ -435,9 +401,7 @@ export default function ProductPage() {
 
               <h3>PRODUCT NUMBER</h3>
 
-              <p>
-                {product.productNo}
-              </p>
+              <p>{product.productNo}</p>
 
             </div>
 
@@ -449,25 +413,21 @@ export default function ProductPage() {
 
               <div className="size-options">
 
-                {["S", "M", "L", "XL"].map(
-                  (size) => (
-
-                    <button
-                      key={size}
-                      className={
-                        selectedSize === size
-                          ? "size-button active"
-                          : "size-button"
-                      }
-                      onClick={() =>
-                        setSelectedSize(size)
-                      }
-                    >
-                      {size}
-                    </button>
-
-                  )
-                )}
+                {["S", "M", "L", "XL"].map((size) => (
+                  <button
+                    key={size}
+                    className={
+                      selectedSize === size
+                        ? "size-button active"
+                        : "size-button"
+                    }
+                    onClick={() =>
+                      setSelectedSize(size)
+                    }
+                  >
+                    {size}
+                  </button>
+                ))}
 
               </div>
 
@@ -488,7 +448,7 @@ export default function ProductPage() {
             </div>
 
 
-            {/* ACCORDIONS */}
+            {/* DETAILS */}
             <div className="product-accordions">
 
               <div className="product-accordion">

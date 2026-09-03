@@ -452,8 +452,8 @@ select {
   padding: 8px 24px;
   border-radius: 999px;
 
-  background: #f3f3f3;
-  color: #111;
+  background: #111;
+  color: #f3f3f3;
 
   font-size: 14px;
   font-weight: 400;
@@ -2851,16 +2851,16 @@ select {
   justify-content: center;
   padding: 8px 24px;
   border-radius: 999px;
-  background: #f3f3f3;
-  color: #111;
+  background: #111;
+  color: #f3f3f3;
   font-size: 14px;
   font-weight: 400;
   text-decoration: none;
 }
 
 .discover-more:hover {
-  background: #111;
-  color: #fff;
+  background: #fff;
+  color: #111;
 }
 
 .all-products-page {
