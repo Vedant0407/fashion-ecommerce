@@ -7,37 +7,37 @@ import { motion } from "framer-motion";
 const categories = [
   {
     name: "HOODIES",
-    image: "/products/black-tee.jfif",
+    image: "/black-tee.jfif",
     link: "/category/t-shirts",
     size: "large",
   },
   {
     name: "CAPS",
-    image: "/products/black-tee.jfif",
+    image: "/black-tee.jfif",
     link: "/category/caps",
     size: "small",
   },
   {
     name: "BAGS",
-    image: "/products/black-tee.jfif",
+    image: "/black-tee.jfif",
     link: "/category/bags",
     size: "small",
   },
   {
     name: "PANTS",
-    image: "/products/cargo-pants.jfif",
+    image: "/cargo-pants.jfif",
     link: "/category/pants",
     size: "large",
   },
   {
     name: "T-SHIRTS",
-    image: "/products/grey-hoodie.webp",
+    image: "/grey-hoodie.jfif",
     link: "/category/hoodies",
     size: "large",
   },
   {
     name: "ACCESSORIES",
-    image: "/products/black-tee.jfif",
+    image: "/black-tee.jfif",
     link: "/category/accessories",
     size: "small",
   },

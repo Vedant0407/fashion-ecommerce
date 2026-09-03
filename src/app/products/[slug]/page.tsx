@@ -71,12 +71,7 @@ export default function ProductPage() {
       <Header />
 
       <main className="product-page">
-        <button
-  className="product-back-button"
-  onClick={() => router.back()}
->
-  ← BACK
-</button>
+        
 
         <div className="product-detail">
 

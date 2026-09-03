@@ -7,23 +7,23 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const products = [
   {
     name: "BLUORNG BASICS",
-    image: "/products/black-tee.jfif",
-    link: "/products/oversized-black-tee",
+    image: "/black-tee.jfif",
+    link: "/oversized-black-tee",
   },
   {
     name: "URBAN GREY HOODIE",
-    image: "/products/grey-hoodie.webp",
-    link: "/products/urban-grey-hoodie",
+    image: "/grey-hoodie.jfif",
+    link: "/urban-grey-hoodie",
   },
   {
     name: "CARGO STREET PANTS",
-    image: "/products/cargo-pants.jfif",
-    link: "/products/cargo-street-pants",
+    image: "/cargo-pants.jfif",
+    link: "/cargo-street-pants",
   },
   {
     name: "CLASSIC WHITE TEE",
-    image: "/products/white-tee.webp",
-    link: "/products/classic-white-tee",
+    image: "/white-tee.jfif",
+    link: "/classic-white-tee",
   },
 ];
 
