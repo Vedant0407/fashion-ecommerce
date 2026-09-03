@@ -1935,14 +1935,10 @@ select {
 
 .hero-spotlight {
   position: absolute;
-
-  width: 450px;
-  height: 450px;
-
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
-
   pointer-events: none;
-
   transform: translate(-50%, -50%);
 
   background: radial-gradient(
@@ -1962,9 +1958,7 @@ select {
     0 0 140px rgba(255, 255, 255, 0.15);
 
   opacity: 0;
-
   transition: opacity 0.2s ease;
-
   z-index: 20;
 }
 
