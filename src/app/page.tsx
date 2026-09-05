@@ -10,7 +10,6 @@ import ProductsGrid from "@/components/ui/ProductsGrid";
 import AboutSection from "@/components/ui/AboutSection";
 import SpotlightCursor from "@/components/ui/SpotlightCursor";
 import Header from "@/components/Header";
-import RockReveal from "@/components/ui/RockReveal";
 
 export default function HomePage() {
   return (
