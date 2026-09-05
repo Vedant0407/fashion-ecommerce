@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
+import { useCart } from "@/context/CartContext";
+import AboutSection from "@/components/ui/AboutSection";
 import { ImageSwiper } from "@/components/ui/image-swiper";
 
 const products = {
@@ -233,6 +235,7 @@ const products = {
 };
 
 export default function ProductPage() {
+    const { addToCart } = useCart();
   const params = useParams();
   const router = useRouter();
 
@@ -309,6 +312,9 @@ export default function ProductPage() {
             </div>
 
           </div>
+
+          {/* MORE PRODUCTS */}
+
 
 
           {/* CENTER - PRODUCT IMAGES */}
@@ -416,15 +422,28 @@ export default function ProductPage() {
             {/* ACTIONS */}
             <div className="product-actions">
 
-              <button className="add-to-cart-button">
-                ADD TO SHOPPING BAG
-              </button>
+  <button
+    className="add-to-cart-button"
+    onClick={() => {
+      addToCart(
+        {
+          id: slug,
+          name: product.name,
+          price: Number(product.price.replace(/[₹,]/g, "")),
+          image: product.images[0],
+        },
+        quantity
+      );
+    }}
+  >
+    ADD TO SHOPPING BAG
+  </button>
 
-              <button className="wishlist-button">
-                ♡
-              </button>
+  <button className="wishlist-button">
+    ♡
+  </button>
 
-            </div>
+</div>
 
 
             {/* DETAILS */}
@@ -485,8 +504,40 @@ export default function ProductPage() {
           </div>
 
         </div>
+        <section className="more-products">
+  <div className="more-products-header">
+    <p>GREENO / COLLECTION</p>
+    <h2>YOU MAY ALSO LIKE</h2>
+  </div>
+
+  <div className="more-products-grid">
+    {Object.entries(products)
+      .filter(([productSlug]) => productSlug !== slug)
+      .map(([productSlug, item]) => (
+        <Link
+          href={`/products/${productSlug}`}
+          key={productSlug}
+          className="more-product-card"
+        >
+          <div className="more-product-image">
+                        <img
+  src={item.images[0]}
+  alt={item.name}
+/>
+          </div>
+
+          <div className="more-product-info">
+            <h3>{item.name}</h3>
+            <p>{item.price}</p>
+          </div>
+        </Link>
+      ))}
+  </div>
+</section>
 
       </main>
+
+      <AboutSection />
     </>
   );
 }
