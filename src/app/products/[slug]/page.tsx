@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-
 import Header from "@/components/Header";
+import { ImageSwiper } from "@/components/ui/image-swiper";
 
 const products = {
   "oversized-black-tee": {
@@ -312,37 +312,16 @@ export default function ProductPage() {
 
 
           {/* CENTER - PRODUCT IMAGES */}
-          <div className="product-center">
+          {/* CENTER - PRODUCT IMAGES */}
+<div className="product-center">
 
-            <div className="product-main-image">
-              <img
-                src={product.images[selectedImage]}
-                alt={product.name}
-              />
-            </div>
+  <ImageSwiper
+    images={product.images.join(",")}
+    cardWidth={420}
+    cardHeight={560}
+  />
 
-            <div className="product-thumbnails">
-
-              {product.images.map((image, index) => (
-                <button
-                  key={index}
-                  className={
-                    selectedImage === index
-                      ? "product-thumbnail active"
-                      : "product-thumbnail"
-                  }
-                  onClick={() => setSelectedImage(index)}
-                >
-                  <img
-                    src={image}
-                    alt={`${product.name} ${index + 1}`}
-                  />
-                </button>
-              ))}
-
-            </div>
-
-          </div>
+</div>
 
 
           {/* RIGHT - PRODUCT OPTIONS */}
@@ -459,12 +438,10 @@ export default function ProductPage() {
                 </button>
 
                 <div className="accordion-content">
-
                   <p>
                     Premium GreenO streetwear designed
                     with a modern relaxed silhouette.
                   </p>
-
                 </div>
 
               </div>
@@ -478,12 +455,10 @@ export default function ProductPage() {
                 </button>
 
                 <div className="accordion-content">
-
                   <p>
                     Delivery information and return
                     policy will be available here.
                   </p>
-
                 </div>
 
               </div>
@@ -497,12 +472,10 @@ export default function ProductPage() {
                 </button>
 
                 <div className="accordion-content">
-
                   <p>
                     Follow the care instructions provided
                     with the product.
                   </p>
-
                 </div>
 
               </div>

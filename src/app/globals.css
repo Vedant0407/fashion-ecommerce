@@ -1975,34 +1975,36 @@ select {
    PRODUCT DETAIL PAGE
 ========================================= */
 
+/* =========================================
+   PRODUCT DETAIL PAGE
+========================================= */
+
 .product-page {
-  width: 100%;
   min-height: 100vh;
-  padding: 115px 2vw 60px;
+  padding: 120px 5vw 60px;
   background: #e5e5e5;
-  box-sizing: border-box;
+}
+
+.product-detail {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 0.8fr;
+  gap: 50px;
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
 }
 
 /* BACK BUTTON */
 
 .product-back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
-  margin: 0 0 18px 5px;
-  padding: 0;
-
   border: none;
   background: transparent;
-
+  padding: 0;
+  margin-bottom: 35px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
   color: #111;
-  font-size: 13px;
-  font-weight: 500;
-
   cursor: pointer;
-
-  transition: opacity 0.25s ease;
 }
 
 .product-back-button:hover {
@@ -2010,152 +2012,87 @@ select {
 }
 
 
-/* MAIN WHITE CONTAINER */
-
-.product-detail {
-  width: 100%;
-  min-height: 820px;
-
-  display: grid;
-
-  /*
-    LEFT DESCRIPTION
-    CENTER IMAGE
-    RIGHT OPTIONS
-  */
-
-  grid-template-columns: 0.8fr 1.25fr 0.8fr;
-
-  gap: 45px;
-
-  padding: 35px 40px 45px;
-
-  background: #fff;
-
-  border-radius: 38px;
-
-  box-sizing: border-box;
-}
-
-
 /* =========================================
-   LEFT DESCRIPTION
+   LEFT SIDE
 ========================================= */
 
 .product-left {
-  padding: 25px 5px;
-
-  color: #111;
+  padding-top: 20px;
 }
 
 .product-category {
-  margin-bottom: 25px;
-
-  font-size: 12px;
-  font-weight: 500;
-
+  margin: 0 0 25px;
+  font-size: 11px;
   letter-spacing: 0.08em;
+  color: #777;
 }
 
 .product-left h1 {
-  max-width: 360px;
-
   margin: 0;
-
-  font-size: clamp(38px, 3.4vw, 62px);
-
-  line-height: 0.92;
-
+  max-width: 500px;
+  font-size: clamp(45px, 5vw, 80px);
+  line-height: 0.9;
   font-weight: 500;
-
   letter-spacing: -0.055em;
 }
 
 .product-price {
-  margin-top: 28px;
-
-  font-size: 21px;
-
+  margin: 30px 0 60px;
+  font-size: 20px;
   font-weight: 500;
 }
 
 .product-left-section {
-  padding: 25px 0;
-
-  border-top: 1px solid #ddd;
+  padding: 22px 0;
+  border-top: 1px solid #ccc;
 }
 
-.product-left-section:first-of-type {
-  margin-top: 35px;
+.product-left-section:last-child {
+  border-bottom: 1px solid #ccc;
 }
 
 .product-left-section h3 {
-  margin: 0 0 14px;
-
+  margin: 0 0 12px;
   font-size: 11px;
-
-  font-weight: 600;
-
   letter-spacing: 0.08em;
+  font-weight: 600;
 }
 
 .product-left-section p {
-  max-width: 360px;
-
+  max-width: 450px;
   margin: 0 0 7px;
-
   font-size: 13px;
-
   line-height: 1.6;
-
-  color: #555;
+  color: #666;
 }
 
 
 /* =========================================
-   CENTER PRODUCT IMAGE
+   CENTER - IMAGES
 ========================================= */
 
 .product-center {
-  width: 100%;
-
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
-
-  justify-content: center;
 }
 
 .product-main-image {
   width: 100%;
-
-  height: 680px;
-
+  height: 620px;
+  background: #f5f5f5;
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
-  background: #f3f3f3;
-
-  border-radius: 18px;
-
   overflow: hidden;
 }
 
 .product-main-image img {
   width: 100%;
   height: 100%;
-
-  display: block;
-
   object-fit: contain;
-
-  padding: 25px;
-
+  display: block;
+  padding: 30px;
   box-sizing: border-box;
 }
 
@@ -2164,29 +2101,18 @@ select {
 
 .product-thumbnails {
   display: flex;
-
   gap: 10px;
-
-  margin-top: 14px;
+  margin-top: 15px;
 }
 
 .product-thumbnail {
-  width: 72px;
-  height: 82px;
-
+  width: 70px;
+  height: 80px;
   padding: 0;
-
   border: 1px solid transparent;
-
-  border-radius: 10px;
-
-  background: #f3f3f3;
-
-  overflow: hidden;
-
+  background: #f5f5f5;
   cursor: pointer;
-
-  transition: border 0.2s ease;
+  overflow: hidden;
 }
 
 .product-thumbnail.active {
@@ -2196,69 +2122,60 @@ select {
 .product-thumbnail img {
   width: 100%;
   height: 100%;
-
   object-fit: contain;
 }
 
 
 /* =========================================
-   RIGHT OPTIONS
+   RIGHT SIDE
 ========================================= */
 
 .product-right {
-  padding: 25px 5px;
-
-  color: #111;
+  padding-top: 20px;
 }
 
-.right-option {
-  margin-bottom: 28px;
+.right-option,
+.right-info {
+  padding: 22px 0;
+  border-top: 1px solid #ccc;
 }
 
 .right-option h3,
 .right-info h3 {
-  margin: 0 0 12px;
-
+  margin: 0 0 15px;
   font-size: 11px;
-
-  font-weight: 600;
-
   letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.right-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
 }
 
 
 /* QUANTITY */
 
 .quantity-selector {
-  width: 210px;
-  height: 45px;
-
-  display: grid;
-
-  grid-template-columns: 1fr 1fr 1fr;
-
-  border: 1px solid #bbb;
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid #ccc;
 }
 
 .quantity-selector button {
+  width: 40px;
+  height: 38px;
   border: none;
-
-  background: transparent;
-
-  color: #111;
-
-  font-size: 18px;
-
+  background: #fff;
+  font-size: 17px;
   cursor: pointer;
 }
 
 .quantity-selector span {
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
+  width: 35px;
+  text-align: center;
   font-size: 13px;
 }
 
@@ -2266,56 +2183,21 @@ select {
 /* COLOR */
 
 .color-option {
-  width: 210px;
-  height: 45px;
-
   display: flex;
-
   align-items: center;
-
   gap: 10px;
-
-  padding: 0 12px;
-
-  border: 1px solid #bbb;
-
+  border: 1px solid #ccc;
   background: #fff;
-
-  color: #111;
-
-  font-size: 12px;
-
+  padding: 10px 15px;
+  font-size: 11px;
   cursor: pointer;
 }
 
-.color-option.active {
-  border-color: #111;
-}
-
 .color-dot {
-  width: 18px;
-  height: 18px;
-
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-
-  border: 1px solid #bbb;
-}
-
-
-/* PRODUCT INFO */
-
-.right-info {
-  padding: 17px 0;
-
-  border-top: 1px solid #ddd;
-}
-
-.right-info p {
-  margin: 0;
-
-  font-size: 13px;
-
-  color: #444;
+  background: #111;
 }
 
 
@@ -2323,27 +2205,17 @@ select {
 
 .size-options {
   display: flex;
-
-  gap: 6px;
-
-  flex-wrap: wrap;
+  gap: 7px;
 }
 
 .size-button {
   width: 45px;
-  height: 42px;
-
+  height: 40px;
   border: 1px solid #ccc;
-
   background: #fff;
-
   color: #111;
-
-  font-size: 12px;
-
   cursor: pointer;
-
-  transition: all 0.2s ease;
+  font-size: 11px;
 }
 
 .size-button:hover {
@@ -2352,65 +2224,44 @@ select {
 
 .size-button.active {
   background: #111;
-
-  border-color: #111;
-
   color: #fff;
+  border-color: #111;
 }
 
 
 /* =========================================
-   ADD TO BAG
+   ACTIONS
 ========================================= */
 
 .product-actions {
   display: flex;
-
-  gap: 8px;
-
-  margin-top: 5px;
-
-  margin-bottom: 30px;
+  gap: 10px;
+  margin-top: 25px;
 }
 
 .add-to-cart-button {
   flex: 1;
-
   height: 52px;
-
   border: none;
-
+  border-radius: 999px;
   background: #111;
-
   color: #fff;
-
   font-size: 11px;
-
   font-weight: 500;
-
-  letter-spacing: 0.04em;
-
   cursor: pointer;
-
-  transition: opacity 0.25s ease;
 }
 
 .add-to-cart-button:hover {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .wishlist-button {
   width: 52px;
   height: 52px;
-
-  border: 1px solid #111;
-
+  border: 1px solid #ccc;
+  border-radius: 50%;
   background: #fff;
-
-  color: #111;
-
-  font-size: 25px;
-
+  font-size: 20px;
   cursor: pointer;
 }
 
@@ -2420,74 +2271,37 @@ select {
 ========================================= */
 
 .product-accordions {
-  border-top: 1px solid #ddd;
+  margin-top: 35px;
+  border-top: 1px solid #ccc;
 }
 
 .product-accordion {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #ccc;
 }
 
-.product-accordion > button {
+.product-accordion button {
   width: 100%;
-
-  min-height: 52px;
-
   display: flex;
-
-  align-items: center;
-
   justify-content: space-between;
-
-  padding: 0;
-
+  align-items: center;
+  padding: 20px 0;
   border: none;
-
   background: transparent;
-
-  color: #111;
-
-  font-size: 11px;
-
-  font-weight: 500;
-
   cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.05em;
 }
 
 .accordion-content {
-  padding: 5px 0 18px;
+  display: none;
+  padding-bottom: 18px;
 }
 
 .accordion-content p {
-  margin: 0 0 6px;
-
+  margin: 0;
+  color: #777;
   font-size: 12px;
-
   line-height: 1.6;
-
-  color: #666;
-}
-
-
-/* NOT FOUND */
-
-.product-not-found {
-  min-height: 500px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  background: #fff;
-
-  border-radius: 38px;
-}
-
-.product-not-found h1 {
-  font-size: 40px;
-
-  font-weight: 500;
 }
 
 
@@ -2495,88 +2309,31 @@ select {
    MOBILE
 ========================================= */
 
-@media (max-width: 1000px) {
+@media (max-width: 900px) {
 
-  .product-detail {
-    grid-template-columns: 1fr 1fr;
-
-    gap: 30px;
+  .product-page {
+    padding: 100px 20px 40px;
   }
 
-  .product-center {
-    grid-column: 1 / -1;
-    grid-row: 1;
+  .product-detail {
+    grid-template-columns: 1fr;
+    gap: 40px;
   }
 
   .product-left {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .product-right {
-    grid-column: 2;
-    grid-row: 2;
-  }
-
-  .product-main-image {
-    height: 600px;
-  }
-}
-
-
-@media (max-width: 700px) {
-
-  .product-page {
-    padding: 95px 12px 30px;
-  }
-
-  .product-detail {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 0;
-
-    padding: 20px;
-
-    border-radius: 28px;
-  }
-
-  .product-center {
     order: 1;
   }
 
-  .product-left {
+  .product-center {
     order: 2;
-
-    padding: 35px 0;
   }
 
   .product-right {
     order: 3;
-
-    padding: 0 0 25px;
   }
 
   .product-main-image {
     height: 500px;
-  }
-
-  .product-left h1 {
-    font-size: 42px;
-  }
-
-  .product-left-section {
-    padding: 20px 0;
-  }
-
-  .quantity-selector,
-  .color-option {
-    width: 100%;
-  }
-
-  .size-options {
-    gap: 5px;
   }
 }
 
@@ -2955,3 +2712,12 @@ select {
     gap: 28px 12px;
   }
 }
+
+/* =========================================
+   GREENO ROCK REVEAL
+========================================= */
+
+/* =========================================
+   HERO PRODUCT STAGE
+========================================= */
+

@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import TypewriterText from "@/components/ui/TypewriterText";
 import TrendingProducts from "@/components/ui/TrendingProducts";
 import GreenOTshirt3D from "@/components/ui/GreenOTshirt3D";
@@ -6,6 +10,7 @@ import ProductsGrid from "@/components/ui/ProductsGrid";
 import AboutSection from "@/components/ui/AboutSection";
 import SpotlightCursor from "@/components/ui/SpotlightCursor";
 import Header from "@/components/Header";
+import RockReveal from "@/components/ui/RockReveal";
 
 export default function HomePage() {
   return (
@@ -18,8 +23,7 @@ export default function HomePage() {
             HERO
         ========================= */}
 
-              <section className="hero-section">
-
+             <section className="hero-section">
   <img
     src="/hero.jfif"
     alt="GreenO"
@@ -28,10 +32,9 @@ export default function HomePage() {
 
   <GreenOTshirt3D />
 
-  {/* Subtle dark layer */}
   <div className="hero-dark-overlay" />
-  <SpotlightCursor />
 
+  <SpotlightCursor />
 </section>
 
 
