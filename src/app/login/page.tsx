@@ -12,11 +12,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setMessage("");
 
     if (!email || !password) {
       setError("Please enter email and password.");
@@ -34,7 +37,7 @@ export default function LoginPage() {
       });
 
       if (loginError) {
-        setError(loginError.message);
+        setError("Invalid email or password.");
         return;
       }
 
@@ -48,6 +51,41 @@ export default function LoginPage() {
     }
   }
 
+  async function handleForgotPassword() {
+    setError("");
+    setMessage("");
+
+    if (!email) {
+      setError("Enter your email address first.");
+      return;
+    }
+
+    try {
+      setResetting(true);
+
+      const supabase = createClient();
+
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo: `${window.location.origin}/reset-password`,
+        }
+      );
+
+      if (resetError) {
+        setError(resetError.message);
+        return;
+      }
+
+      setMessage("Password reset link sent. Check your email.");
+    } catch (err) {
+      console.error("PASSWORD RESET ERROR:", err);
+      setError("Something went wrong while sending the reset link.");
+    } finally {
+      setResetting(false);
+    }
+  }
+
   return (
     <main className="auth-page">
       <div className="auth-container">
@@ -55,9 +93,7 @@ export default function LoginPage() {
 
         <h1>LOGIN</h1>
 
-        <p className="auth-subtitle">
-          Welcome back to GreenO.
-        </p>
+        <p className="auth-subtitle">Welcome back to GreenO.</p>
 
         <form onSubmit={handleLogin}>
           <div className="auth-field">
@@ -85,18 +121,26 @@ export default function LoginPage() {
           </div>
 
           {error && <p className="auth-error">{error}</p>}
+          {message && <p className="auth-success">{message}</p>}
 
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? "LOGGING IN..." : "LOGIN"}
           </button>
         </form>
 
+        <button
+          type="button"
+          className="forgot-password-button"
+          onClick={handleForgotPassword}
+          disabled={resetting}
+        >
+          {resetting ? "SENDING..." : "FORGOT PASSWORD?"}
+        </button>
+
         <div className="auth-signup">
           <span>DON'T HAVE AN ACCOUNT?</span>
 
-          <Link href="/signup">
-            SIGN UP
-          </Link>
+          <Link href="/signup">SIGN UP</Link>
         </div>
       </div>
     </main>
