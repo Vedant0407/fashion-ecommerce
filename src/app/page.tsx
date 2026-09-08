@@ -177,7 +177,7 @@ export default function HomePage() {
 
                 <div className="new-in-image">
                   <img
-                    src="/products/black-tee.jfif"
+                    src="/black-tee.jfif"
                     alt="Oversized Black Tee"
                   />
                 </div>
@@ -202,7 +202,7 @@ export default function HomePage() {
 
                 <div className="new-in-image">
                   <img
-                    src="/products/grey-hoodie.webp"
+                    src="/grey-hoodie.webp"
                     alt="Urban Grey Hoodie"
                   />
                 </div>
@@ -227,7 +227,7 @@ export default function HomePage() {
 
                 <div className="new-in-image">
                   <img
-                    src="/products/cargo-pants.jfif"
+                    src="/cargo-pants.jfif"
                     alt="Cargo Street Pants"
                   />
                 </div>
@@ -252,7 +252,7 @@ export default function HomePage() {
 
                 <div className="new-in-image">
                   <img
-                    src="/products/white-tee.webp"
+                    src="/white-tee.webp"
                     alt="Classic White Tee"
                   />
                 </div>
