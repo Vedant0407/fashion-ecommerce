@@ -2,21 +2,46 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/client";
 
 export default function AccountPage() {
   const router = useRouter();
 
-  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    const status = localStorage.getItem("greeno_logged_in");
+    async function loadAccount() {
+      try {
+        const supabase = createClient();
 
-    if (status !== "true") {
-      router.push("/login");
-    } else {
-      setLoggedIn(true);
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (error || !user) {
+          router.push("/login");
+          return;
+        }
+
+        setUserName(
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          "GreenO Customer"
+        );
+        setUserEmail(user.email || "");
+      } catch (err) {
+        console.error("ACCOUNT ERROR:", err);
+        router.push("/login");
+      } finally {
+        setLoading(false);
+      }
     }
+
+    loadAccount();
   }, [router]);
 
   async function handleLogout() {
@@ -24,34 +49,36 @@ export default function AccountPage() {
 
     await supabase.auth.signOut();
 
-    localStorage.removeItem("greeno_logged_in");
-
     router.push("/login");
     router.refresh();
   }
 
-  if (loggedIn === null) {
-    return null;
+  if (loading) {
+    return (
+      <main className="account-page">
+        <div className="account-container">
+          <p>LOADING ACCOUNT...</p>
+        </div>
+      </main>
+    );
   }
 
   return (
     <main className="account-page">
       <div className="account-container">
-        <p className="account-label">
-          GREENO / ACCOUNT
-        </p>
+        <p className="account-label">GREENO / ACCOUNT</p>
 
         <h1>ACCOUNT DETAILS</h1>
 
         <div className="account-details">
           <div className="account-row">
             <span>NAME</span>
-            <strong>GreenO Customer</strong>
+            <strong>{userName}</strong>
           </div>
 
           <div className="account-row">
             <span>EMAIL</span>
-            <strong>customer@greeno.com</strong>
+            <strong>{userEmail}</strong>
           </div>
         </div>
 
