@@ -2,48 +2,68 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+
 import { useCart } from "@/context/CartContext";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { cartCount } = useCart();
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
 
   const isHomePage = pathname === "/";
 
   useEffect(() => {
-    
     const handleScroll = () => {
-      if (!isHomePage) {
-        setIsScrolled(true);
-        return;
-      }
-
-      setIsScrolled(window.scrollY > window.innerHeight - 100);
+      setIsScrolled(
+        !isHomePage || window.scrollY > window.innerHeight - 100
+      );
     };
 
     handleScroll();
-
     window.addEventListener("scroll", handleScroll);
 
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [isHomePage]);
 
-    useEffect(() => {
-    const loggedIn = localStorage.getItem("greeno_logged_in");
-    setIsLoggedIn(loggedIn === "true");
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function loadSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      setIsLoggedIn(!!session);
+    }
+
+    loadSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setAccountOpen(false);
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <header className={`site-header ${isScrolled ? "scrolled" : ""}`}>
       <nav className="navbar">
-
         <div className="header-side" />
 
         <Link href="/" className="logo">
@@ -51,12 +71,7 @@ export default function Header() {
         </Link>
 
         <div className="header-actions">
-
-          {/* SEARCH */}
-          <button
-            className="header-icon"
-            aria-label="Search"
-          >
+          <button className="header-icon" aria-label="Search">
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -68,13 +83,12 @@ export default function Header() {
             </svg>
           </button>
 
-          {/* ACCOUNT */}
           <div className="account-wrapper">
-
             <button
               className="header-icon"
-              onClick={() => setAccountOpen(!accountOpen)}
+              onClick={() => setAccountOpen((open) => !open)}
               aria-label="Account"
+              aria-expanded={accountOpen}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -89,49 +103,43 @@ export default function Header() {
 
             {accountOpen && (
               <div className="account-menu">
-
-                <Link href="/account">
-                  ACCOUNT DETAILS
-                </Link>
-
-                <Link href="/orders">
-                  LAST ORDERS
-                </Link>
-
-                <button>
-                  LOGOUT
-                </button>
-
+                {isLoggedIn ? (
+                  <>
+                    <Link href="/account">ACCOUNT DETAILS</Link>
+                    <Link href="/account/orders">MY ORDERS</Link>
+                    <Link href="/cart">SHOPPING BAG</Link>
+                    <button onClick={handleLogout}>LOG OUT</button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login">LOG IN</Link>
+                    <Link href="/signup">CREATE ACCOUNT</Link>
+                  </>
+                )}
               </div>
             )}
-
           </div>
 
-          {/* CART */}
           <Link
-  href="/cart"
-  className="header-icon cart-icon"
-  aria-label="Shopping bag"
->
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-  >
-    <path d="M5 8h14l-1 13H6L5 8Z" />
-    <path d="M9 8V6a3 3 0 0 1 6 0v2" />
-  </svg>
+            href="/cart"
+            className="header-icon cart-icon"
+            aria-label="Shopping bag"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path d="M5 8h14l-1 13H6L5 8Z" />
+              <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+            </svg>
 
-  {cartCount > 0 && (
-    <span className="cart-count">
-      {cartCount}
-    </span>
-  )}
-</Link>
-
+            {cartCount > 0 && (
+              <span className="cart-count">{cartCount}</span>
+            )}
+          </Link>
         </div>
-
       </nav>
     </header>
   );
