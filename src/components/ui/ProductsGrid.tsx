@@ -1,152 +1,90 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
-export const products = [
-  {
-    name: "OVERSIZED BLACK TEE",
-    price: "₹2,499",
-    image: "/black-tee.jfif",
-    link: "/products/oversized-black-tee",
-  },
-  {
-    name: "URBAN GREY HOODIE",
-    price: "₹3,999",
-    image: "/black-tee.jfif",
-    link: "/products/urban-grey-hoodie",
-  },
-  {
-    name: "CARGO STREET PANTS",
-    price: "₹3,499",
-    image: "/black-tee.jfif",
-    link: "/products/cargo-street-pants",
-  },
-  {
-    name: "CLASSIC WHITE TEE",
-    price: "₹1,999",
-    image: "/black-tee.jfif",
-    link: "/products/classic-white-tee",
-  },
-
-  {
-    name: "BLACK STREET TEE",
-    price: "₹2,299",
-    image: "/black-tee.jfif",
-    link: "/products/black-street-tee",
-  },
-  {
-    name: "GREY OVERSIZED HOODIE",
-    price: "₹3,799",
-    image: "/black-tee.jfif",
-    link: "/products/grey-oversized-hoodie",
-  },
-  {
-    name: "UTILITY CARGO",
-    price: "₹3,699",
-    image: "/black-tee.jfif",
-    link: "/products/utility-cargo",
-  },
-  {
-    name: "WHITE ESSENTIAL TEE",
-    price: "₹2,199",
-    image: "/black-tee.jfif",
-    link: "/products/white-essential-tee",
-  },
-
-  {
-    name: "SIGNATURE BLACK TEE",
-    price: "₹2,599",
-    image: "/black-tee.jfif",
-    link: "/products/signature-black-tee",
-  },
-  {
-    name: "URBAN HOODIE",
-    price: "₹3,899",
-    image: "/black-tee.jfif",
-    link: "/products/urban-hoodie",
-  },
-  {
-    name: "STREET CARGO",
-    price: "₹3,599",
-    image: "/black-tee.jfif",
-    link: "/products/street-cargo",
-  },
-  {
-    name: "MINIMAL WHITE TEE",
-    price: "₹2,099",
-    image: "/black-tee.jfif",
-    link: "/products/minimal-white-tee",
-  },
-
-  {
-    name: "CORE BLACK TEE",
-    price: "₹2,399",
-    image: "/black-tee.jfif",
-    link: "/products/core-black-tee",
-  },
-  {
-    name: "GREY CORE HOODIE",
-    price: "₹3,999",
-    image: "/black-tee.jfif",
-    link: "/products/grey-core-hoodie",
-  },
-  {
-    name: "RELAXED CARGO",
-    price: "₹3,499",
-    image: "/black-tee.jfif",
-    link: "/products/relaxed-cargo",
-  },
-  {
-    name: "EVERYDAY WHITE TEE",
-    price: "₹1,999",
-    image: "/black-tee.jfif",
-    link: "/products/everyday-white-tee",
-  },
-];
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+};
 
 export default function ProductsGrid() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProducts() {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, price, image")
+        .order("name");
+
+      if (error) {
+        console.error("Error loading products:", error);
+        setLoading(false);
+        return;
+      }
+
+      console.log("SUPABASE PRODUCTS:", data);
+
+      setProducts(data || []);
+      setLoading(false);
+    }
+
+    loadProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="products-section">
+        <div className="products-wrapper">
+          <div className="products-grid">
+            <p>Loading products...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="products-section">
+      <div className="products-wrapper">
+        <div className="products-heading">
+          <Link href="/products" className="discover-more">
+            Discover more
+          </Link>
+        </div>
 
-  <div className="products-wrapper">
-    <div className="products-heading">
-      <a href="/products" className="discover-more">
-  Discover more
-</a>
-    </div>
+        <div className="products-grid">
+          {products.map((product) => (
+            <Link
+              key={product.id}
+              href={`/products/${product.id}`}
+              className="product-card"
+            >
+              <div className="product-image">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                />
+              </div>
 
-    
+              <div className="product-info">
+                <p>{product.name}</p>
 
-    <div className="products-grid">
-
-      {products.map((product) => (
-
-        <Link
-          key={product.name}
-          href={product.link}
-          className="product-card"
-        >
-
-          <div className="product-image">
-            <img
-              src={product.image}
-              alt={product.name}
-            />
-          </div>
-
-          <div className="product-info">
-            <p>{product.name}</p>
-            <span>{product.price}</span>
-          </div>
-
-        </Link>
-
-      ))}
-
-    </div>
-
-  </div>
-
-</section>
+                <span>
+                  ₹{Number(product.price).toLocaleString("en-IN")}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

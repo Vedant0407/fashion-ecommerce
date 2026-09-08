@@ -1,252 +1,100 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+
 import Header from "@/components/Header";
 import { useCart } from "@/context/CartContext";
 import AboutSection from "@/components/ui/AboutSection";
 import { ImageSwiper } from "@/components/ui/image-swiper";
+import { createClient } from "@/lib/supabase/client";
 
-const products = {
-  "oversized-black-tee": {
-    name: "OVERSIZED BLACK TEE",
-    price: "₹2,499",
-    images: ["/black-tee.jfif", "/black-tee.jfif", "/black-tee.jfif"],
-    category: "T-SHIRTS",
-    productNo: "GRO-001",
-    color: "BLACK",
-    description:
-      "A premium oversized tee designed for a relaxed streetwear fit. Made for everyday comfort with a clean GreenO aesthetic.",
-    material: "100% Premium Cotton",
-    fabric: "240 GSM Fabric",
-    fit: "Oversized Fit with dropped shoulders",
-  },
-
-  "urban-grey-hoodie": {
-    name: "URBAN GREY HOODIE",
-    price: "₹3,999",
-    images: ["/grey-hoodie.webp", "/grey-hoodie.webp", "/grey-hoodie.webp"],
-    category: "HOODIES",
-    productNo: "GRO-002",
-    color: "GREY",
-    description:
-      "A relaxed-fit grey hoodie with a minimal streetwear design and premium everyday comfort.",
-    material: "100% Premium Cotton",
-    fabric: "350 GSM Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "cargo-street-pants": {
-    name: "CARGO STREET PANTS",
-    price: "₹3,499",
-    images: ["/cargo-pants.jfif", "/cargo-pants.jfif", "/cargo-pants.jfif"],
-    category: "PANTS",
-    productNo: "GRO-003",
-    color: "BLACK",
-    description:
-      "Utility-inspired cargo pants with a relaxed streetwear silhouette and functional pocket detailing.",
-    material: "Cotton Blend",
-    fabric: "Heavyweight Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "classic-white-tee": {
-    name: "CLASSIC WHITE TEE",
-    price: "₹1,999",
-    images: ["/white-tee.webp", "/white-tee.webp", "/white-tee.webp"],
-    category: "T-SHIRTS",
-    productNo: "GRO-004",
-    color: "WHITE",
-    description:
-      "A clean classic white tee designed with a timeless silhouette and everyday versatility.",
-    material: "100% Premium Cotton",
-    fabric: "240 GSM Fabric",
-    fit: "Regular Fit",
-  },
-
-  "black-street-tee": {
-    name: "BLACK STREET TEE",
-    price: "₹2,299",
-    images: ["/black-tee.jfif", "/black-tee.jfif", "/black-tee.jfif"],
-    category: "T-SHIRTS",
-    productNo: "GRO-005",
-    color: "BLACK",
-    description:
-      "A modern black streetwear tee with a relaxed silhouette.",
-    material: "100% Premium Cotton",
-    fabric: "240 GSM Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "grey-oversized-hoodie": {
-    name: "GREY OVERSIZED HOODIE",
-    price: "₹3,799",
-    images: ["/grey-hoodie.webp", "/grey-hoodie.webp", "/grey-hoodie.webp"],
-    category: "HOODIES",
-    productNo: "GRO-006",
-    color: "GREY",
-    description:
-      "An oversized hoodie designed for a comfortable streetwear look.",
-    material: "100% Premium Cotton",
-    fabric: "350 GSM Fabric",
-    fit: "Oversized Fit",
-  },
-
-  "utility-cargo": {
-    name: "UTILITY CARGO",
-    price: "₹3,699",
-    images: ["/cargo-pants.jfif", "/cargo-pants.jfif", "/cargo-pants.jfif"],
-    category: "PANTS",
-    productNo: "GRO-007",
-    color: "BLACK",
-    description:
-      "Utility cargo pants with functional detailing and a modern silhouette.",
-    material: "Cotton Blend",
-    fabric: "Heavyweight Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "white-essential-tee": {
-    name: "WHITE ESSENTIAL TEE",
-    price: "₹2,199",
-    images: ["/white-tee.webp", "/white-tee.webp", "/white-tee.webp"],
-    category: "T-SHIRTS",
-    productNo: "GRO-008",
-    color: "WHITE",
-    description:
-      "A clean essential tee made for everyday styling.",
-    material: "100% Premium Cotton",
-    fabric: "240 GSM Fabric",
-    fit: "Regular Fit",
-  },
-
-  "signature-black-tee": {
-    name: "SIGNATURE BLACK TEE",
-    price: "₹2,599",
-    images: ["/black-tee.jfif", "/black-tee.jfif", "/black-tee.jfif"],
-    category: "T-SHIRTS",
-    productNo: "GRO-009",
-    color: "BLACK",
-    description:
-      "A signature GreenO black tee with a refined streetwear aesthetic.",
-    material: "100% Premium Cotton",
-    fabric: "240 GSM Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "urban-hoodie": {
-    name: "URBAN HOODIE",
-    price: "₹3,899",
-    images: ["/grey-hoodie.webp", "/grey-hoodie.webp", "/grey-hoodie.webp"],
-    category: "HOODIES",
-    productNo: "GRO-010",
-    color: "GREY",
-    description:
-      "A premium urban hoodie with a minimal everyday design.",
-    material: "100% Premium Cotton",
-    fabric: "350 GSM Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "street-cargo": {
-    name: "STREET CARGO",
-    price: "₹3,599",
-    images: ["/cargo-pants.jfif", "/cargo-pants.jfif", "/cargo-pants.jfif"],
-    category: "PANTS",
-    productNo: "GRO-011",
-    color: "BLACK",
-    description:
-      "Streetwear cargo pants designed for comfort and utility.",
-    material: "Cotton Blend",
-    fabric: "Heavyweight Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "minimal-white-tee": {
-    name: "MINIMAL WHITE TEE",
-    price: "₹2,099",
-    images: ["/white-tee.webp", "/white-tee.webp", "/white-tee.webp"],
-    category: "T-SHIRTS",
-    productNo: "GRO-012",
-    color: "WHITE",
-    description:
-      "A minimal white tee with a clean and versatile design.",
-    material: "100% Premium Cotton",
-    fabric: "240 GSM Fabric",
-    fit: "Regular Fit",
-  },
-
-  "core-black-tee": {
-    name: "CORE BLACK TEE",
-    price: "₹2,399",
-    images: ["/black-tee.jfif", "/black-tee.jfif", "/black-tee.jfif"],
-    category: "T-SHIRTS",
-    productNo: "GRO-013",
-    color: "BLACK",
-    description:
-      "A core GreenO essential designed for everyday streetwear.",
-    material: "100% Premium Cotton",
-    fabric: "240 GSM Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "grey-core-hoodie": {
-    name: "GREY CORE HOODIE",
-    price: "₹3,999",
-    images: ["/grey-hoodie.webp", "/grey-hoodie.webp", "/grey-hoodie.webp"],
-    category: "HOODIES",
-    productNo: "GRO-014",
-    color: "GREY",
-    description:
-      "A premium grey hoodie with a clean core streetwear aesthetic.",
-    material: "100% Premium Cotton",
-    fabric: "350 GSM Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "relaxed-cargo": {
-    name: "RELAXED CARGO",
-    price: "₹3,499",
-    images: ["/cargo-pants.jfif", "/cargo-pants.jfif", "/cargo-pants.jfif"],
-    category: "PANTS",
-    productNo: "GRO-015",
-    color: "BLACK",
-    description:
-      "Relaxed cargo pants designed for everyday streetwear styling.",
-    material: "Cotton Blend",
-    fabric: "Heavyweight Fabric",
-    fit: "Relaxed Fit",
-  },
-
-  "everyday-white-tee": {
-    name: "EVERYDAY WHITE TEE",
-    price: "₹1,999",
-    images: ["/white-tee.webp", "/white-tee.webp", "/white-tee.webp"],
-    category: "T-SHIRTS",
-    productNo: "GRO-016",
-    color: "WHITE",
-    description:
-      "An everyday white tee designed for simple and versatile styling.",
-    material: "100% Premium Cotton",
-    fabric: "240 GSM Fabric",
-    fit: "Regular Fit",
-  },
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  description?: string | null;
+  category_id?: string | null;
+  color?: string | null;
+  stock?: number | null;
+  is_featured?: boolean;
+  is_new?: boolean;
+  is_trending?: boolean;
 };
 
 export default function ProductPage() {
-    const { addToCart } = useCart();
+  const { addToCart } = useCart();
   const params = useParams();
   const router = useRouter();
 
-  const slug = params.slug as string;
+  const slug = String(params.slug);
 
-  const product =
-    products[slug as keyof typeof products];
+  const [product, setProduct] = useState<Product | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
-  const [selectedImage, setSelectedImage] = useState(0);
+
+  useEffect(() => {
+  async function loadProduct() {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("id", slug)
+      .single();
+
+    if (error) {
+      console.error("Error loading product:", error);
+      setProduct(null);
+      setLoading(false);
+      return;
+    }
+
+    setProduct(data);
+    setLoading(false);
+  }
+
+  loadProduct();
+}, [slug]);
+
+  useEffect(() => {
+    async function loadOtherProducts() {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("name");
+
+      if (error) {
+        console.error("Error loading products:", error);
+        return;
+      }
+
+      setAllProducts(data || []);
+    }
+
+    loadOtherProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+
+        <main className="product-page">
+          <div className="product-not-found">
+            <h1>LOADING PRODUCT...</h1>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   if (!product) {
     return (
@@ -257,14 +105,40 @@ export default function ProductPage() {
           <div className="product-not-found">
             <h1>PRODUCT NOT FOUND</h1>
 
-            <Link href="/">
-              BACK TO HOME
+            <Link href="/products">
+              BACK TO PRODUCTS
             </Link>
           </div>
         </main>
       </>
     );
   }
+
+  const image = product.image || "/black-tee.jfif";
+
+  const productImages = [
+    image,
+    image,
+    image,
+  ];
+
+  const handleAddToCart = () => {
+  addToCart(
+    {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      image: image,
+      size: selectedSize,
+      color: product.color || "BLACK",
+    },
+    quantity
+  );
+};
+
+  const otherProducts = allProducts.filter(
+    (item) => item.id !== product.id
+  );
 
   return (
     <>
@@ -286,49 +160,49 @@ export default function ProductPage() {
           <div className="product-left">
 
             <p className="product-category">
-              {product.category}
+              GREENO COLLECTION
             </p>
 
             <h1>{product.name}</h1>
 
             <p className="product-price">
-              {product.price}
+              ₹{Number(product.price).toLocaleString("en-IN")}
             </p>
 
             <div className="product-left-section">
               <h3>DESCRIPTION</h3>
-              <p>{product.description}</p>
+
+              <p>
+                {product.description ||
+                  "A premium GreenO product designed for everyday comfort and modern streetwear styling."}
+              </p>
             </div>
 
             <div className="product-left-section">
-              <h3>MATERIAL</h3>
-              <p>{product.material}</p>
-              <p>{product.fabric}</p>
-            </div>
+  <h3>MATERIAL</h3>
+  <p>Premium quality material</p>
+</div>
 
             <div className="product-left-section">
               <h3>FIT</h3>
-              <p>{product.fit}</p>
+
+              <p>
+                Relaxed Fit
+              </p>
             </div>
 
           </div>
 
-          {/* MORE PRODUCTS */}
-
-
-
           {/* CENTER - PRODUCT IMAGES */}
-          {/* CENTER - PRODUCT IMAGES */}
-<div className="product-center">
+          <div className="product-center">
 
-  <ImageSwiper
-    images={product.images.join(",")}
-    cardWidth={420}
-    cardHeight={560}
-  />
+            <ImageSwiper
+              images={productImages.join(",")}
+              cardWidth={420}
+              cardHeight={560}
+            />
 
-</div>
-
+          </div>
 
           {/* RIGHT - PRODUCT OPTIONS */}
           <div className="product-right">
@@ -364,7 +238,6 @@ export default function ProductPage() {
 
             </div>
 
-
             {/* COLOR */}
             <div className="right-option">
 
@@ -374,22 +247,22 @@ export default function ProductPage() {
 
                 <span className="color-dot" />
 
-                {product.color}
+                {product.color || "BLACK"}
 
               </button>
 
             </div>
-
 
             {/* PRODUCT NUMBER */}
             <div className="right-info">
 
               <h3>PRODUCT NUMBER</h3>
 
-              <p>{product.productNo}</p>
+              <p>
+                {product.id}
+              </p>
 
             </div>
-
 
             {/* SIZE */}
             <div className="right-option">
@@ -418,33 +291,21 @@ export default function ProductPage() {
 
             </div>
 
-
             {/* ACTIONS */}
             <div className="product-actions">
 
-  <button
-    className="add-to-cart-button"
-    onClick={() => {
-      addToCart(
-        {
-          id: slug,
-          name: product.name,
-          price: Number(product.price.replace(/[₹,]/g, "")),
-          image: product.images[0],
-        },
-        quantity
-      );
-    }}
-  >
-    ADD TO SHOPPING BAG
-  </button>
+              <button
+                className="add-to-cart-button"
+                onClick={handleAddToCart}
+              >
+                ADD TO SHOPPING BAG
+              </button>
 
-  <button className="wishlist-button">
-    ♡
-  </button>
+              <button className="wishlist-button">
+                ♡
+              </button>
 
-</div>
-
+            </div>
 
             {/* DETAILS */}
             <div className="product-accordions">
@@ -465,7 +326,6 @@ export default function ProductPage() {
 
               </div>
 
-
               <div className="product-accordion">
 
                 <button>
@@ -481,7 +341,6 @@ export default function ProductPage() {
                 </div>
 
               </div>
-
 
               <div className="product-accordion">
 
@@ -504,36 +363,49 @@ export default function ProductPage() {
           </div>
 
         </div>
+
+        {/* YOU MAY ALSO LIKE */}
         <section className="more-products">
-  <div className="more-products-header">
-    <p>GREENO / COLLECTION</p>
-    <h2>YOU MAY ALSO LIKE</h2>
-  </div>
 
-  <div className="more-products-grid">
-    {Object.entries(products)
-      .filter(([productSlug]) => productSlug !== slug)
-      .map(([productSlug, item]) => (
-        <Link
-          href={`/products/${productSlug}`}
-          key={productSlug}
-          className="more-product-card"
-        >
-          <div className="more-product-image">
-                        <img
-  src={item.images[0]}
-  alt={item.name}
-/>
+          <div className="more-products-header">
+            <p>GREENO / COLLECTION</p>
+            <h2>YOU MAY ALSO LIKE</h2>
           </div>
 
-          <div className="more-product-info">
-            <h3>{item.name}</h3>
-            <p>{item.price}</p>
+          <div className="more-products-grid">
+
+            {otherProducts.map((item) => (
+              <Link
+                href={`/products/${item.id}`}
+                key={item.id}
+                className="more-product-card"
+              >
+
+                <div className="more-product-image">
+
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                  />
+
+                </div>
+
+                <div className="more-product-info">
+
+                  <h3>{item.name}</h3>
+
+                  <p>
+                    ₹{Number(item.price).toLocaleString("en-IN")}
+                  </p>
+
+                </div>
+
+              </Link>
+            ))}
+
           </div>
-        </Link>
-      ))}
-  </div>
-</section>
+
+        </section>
 
       </main>
 

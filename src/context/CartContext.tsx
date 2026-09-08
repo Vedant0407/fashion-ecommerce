@@ -14,22 +14,32 @@ export type CartProduct = {
   price: number;
   image: string;
   quantity: number;
+  size?: string;
+  color?: string;
 };
 
 type CartContextType = {
   cart: CartProduct[];
+
   addToCart: (
     product: Omit<CartProduct, "quantity">,
     quantity?: number
   ) => void;
+
   removeFromCart: (id: string) => void;
+
   updateQuantity: (id: string, quantity: number) => void;
+
   cartCount: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [cart, setCart] = useState<CartProduct[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -61,12 +71,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   ) => {
     setCart((currentCart) => {
       const existingProduct = currentCart.find(
-        (item) => item.id === product.id
+        (item) =>
+          item.id === product.id &&
+          item.size === product.size &&
+          item.color === product.color
       );
 
       if (existingProduct) {
         return currentCart.map((item) =>
-          item.id === product.id
+          item.id === product.id &&
+          item.size === product.size &&
+          item.color === product.color
             ? {
                 ...item,
                 quantity: item.quantity + quantity,
@@ -91,7 +106,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (
+    id: string,
+    quantity: number
+  ) => {
     if (quantity <= 0) {
       removeFromCart(id);
       return;
@@ -130,7 +148,9 @@ export function useCart() {
   const context = useContext(CartContext);
 
   if (!context) {
-    throw new Error("useCart must be used inside CartProvider");
+    throw new Error(
+      "useCart must be used inside CartProvider"
+    );
   }
 
   return context;

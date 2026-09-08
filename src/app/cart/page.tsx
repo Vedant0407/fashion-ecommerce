@@ -83,9 +83,9 @@ export default function CartPage() {
                 </strong>
               </div>
 
-              <button className="checkout-button">
+              <Link href="/checkout" className="checkout-button">
                 CHECKOUT
-              </button>
+              </Link>
             </div>
           </>
         )}

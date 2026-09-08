@@ -1,9 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+
 import Header from "@/components/Header";
-import { products } from "@/components/ui/ProductsGrid";
+import { createClient } from "@/lib/supabase/client";
+
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  category: string | null;
+};
 
 const categoryNames: Record<string, string> = {
   "t-shirts": "T-SHIRTS",
@@ -14,22 +24,42 @@ const categoryNames: Record<string, string> = {
   accessories: "ACCESSORIES",
 };
 
-const categoryProducts: Record<string, string> = {
-  "t-shirts": "TEE",
-  caps: "CAP",
-  bags: "BAG",
-  pants: "CARGO",
-  hoodies: "HOODIE",
-  accessories: "ACCESSORY",
-};
-
 export default function CategoryPage() {
   const params = useParams();
   const router = useRouter();
 
   const category = String(params.category).toLowerCase();
-
   const categoryName = categoryNames[category];
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!categoryName) {
+      setLoading(false);
+      return;
+    }
+
+    async function loadProducts() {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, price, image, category")
+        .ilike("category", categoryName);
+
+      if (error) {
+        console.error("Error loading category products:", error);
+        setLoading(false);
+        return;
+      }
+
+      setProducts(data || []);
+      setLoading(false);
+    }
+
+    loadProducts();
+  }, [categoryName]);
 
   if (!categoryName) {
     return (
@@ -52,18 +82,11 @@ export default function CategoryPage() {
     );
   }
 
-  const keyword = categoryProducts[category];
-
-  const filteredProducts = products.filter((product) =>
-    product.name.includes(keyword)
-  );
-
   return (
     <>
       <Header />
 
       <main className="category-page">
-
         <button
           className="category-back-button"
           onClick={() => router.back()}
@@ -73,15 +96,16 @@ export default function CategoryPage() {
 
         <div className="category-wrapper">
 
-        
-
-          {filteredProducts.length > 0 ? (
+          {loading ? (
+            <div className="category-empty">
+              <p>LOADING PRODUCTS...</p>
+            </div>
+          ) : products.length > 0 ? (
             <div className="category-product-grid">
-
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <Link
-                  key={product.name}
-                  href={product.link}
+                  key={product.id}
+                  href={`/products/${product.id}`}
                   className="category-product-card"
                 >
                   <div className="category-product-image">
@@ -93,11 +117,13 @@ export default function CategoryPage() {
 
                   <div className="category-product-info">
                     <p>{product.name}</p>
-                    <span>{product.price}</span>
+
+                    <span>
+                      ₹{product.price.toLocaleString("en-IN")}
+                    </span>
                   </div>
                 </Link>
               ))}
-
             </div>
           ) : (
             <div className="category-empty">
