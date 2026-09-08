@@ -8,7 +8,7 @@ const categories = [
   {
     name: "HOODIES",
     image: "/black-tee.jfif",
-    link: "/category/t-shirts",
+    link: "/category/hoodies",
     size: "large",
   },
   {
@@ -32,7 +32,7 @@ const categories = [
   {
     name: "T-SHIRTS",
     image: "/grey-hoodie.jfif",
-    link: "/category/hoodies",
+    link: "/category/t-shirts",
     size: "large",
   },
   {
