@@ -4,30 +4,53 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+import { createClient } from "@/lib/supabase/client";
+
 export default function LoginPage() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
 
     if (!email || !password) {
-      alert("Please enter email and password.");
+      setError("Please enter email and password.");
       return;
     }
 
-    localStorage.setItem("greeno_logged_in", "true");
+    try {
+      setLoading(true);
 
-    router.push("/account");
-  };
+      const supabase = createClient();
+
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (loginError) {
+        setError(loginError.message);
+        return;
+      }
+
+      router.push("/account");
+      router.refresh();
+    } catch (err) {
+      console.error("LOGIN ERROR:", err);
+      setError("Something went wrong while logging in.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <main className="auth-page">
-
       <div className="auth-container">
-
         <p className="auth-label">GREENO / ACCOUNT</p>
 
         <h1>LOGIN</h1>
@@ -37,7 +60,6 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleLogin}>
-
           <div className="auth-field">
             <label>EMAIL</label>
 
@@ -46,6 +68,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
+              autoComplete="email"
             />
           </div>
 
@@ -57,13 +80,15 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
+              autoComplete="current-password"
             />
           </div>
 
-          <button type="submit" className="auth-button">
-            LOGIN
-          </button>
+          {error && <p className="auth-error">{error}</p>}
 
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? "LOGGING IN..." : "LOGIN"}
+          </button>
         </form>
 
         <div className="auth-signup">
@@ -73,9 +98,7 @@ export default function LoginPage() {
             SIGN UP
           </Link>
         </div>
-
       </div>
-
     </main>
   );
 }
