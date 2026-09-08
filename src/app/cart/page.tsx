@@ -51,17 +51,15 @@ export default function CartPage() {
 
               {cart.map((item) => (
                 <article className="cart-product" key={item.id}>
-                  <Link href={`/products/${item.id}`} className="cart-product-image">
+                  <div className="cart-product-image">
                     <img src={item.image} alt={item.name} />
-                  </Link>
+                  </div>
 
                   <div className="cart-product-info">
                     <div className="cart-product-main">
                       <div>
                         <p className="cart-product-category">GREЕNO COLLECTION</p>
-                        <Link href={`/products/${item.id}`} className="cart-product-name">
-                          {item.name}
-                        </Link>
+                        <h2 className="cart-product-name">{item.name}</h2>
                         <p className="cart-product-price mobile-price">
                           ₹{Number(item.price).toLocaleString("en-IN")}
                         </p>
