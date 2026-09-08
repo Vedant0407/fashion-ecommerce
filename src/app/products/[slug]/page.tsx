@@ -42,13 +42,26 @@ export default function ProductPage() {
   async function loadProduct() {
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("products")
       .select("*")
       .eq("id", slug)
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    // Homepage cards use readable slugs, while Supabase uses UUIDs.
+    if (!data && !error) {
+      const readableName = slug.replace(/-/g, " ");
+      const result = await supabase
+        .from("products")
+        .select("*")
+        .ilike("name", readableName)
+        .maybeSingle();
+
+      data = result.data;
+      error = result.error;
+    }
+
+    if (error || !data) {
       console.error("Error loading product:", error);
       setProduct(null);
       setLoading(false);
