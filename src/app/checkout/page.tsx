@@ -6,15 +6,18 @@ import { useRouter } from "next/navigation";
 
 import { useCart } from "@/context/CartContext";
 import { createClient } from "@/lib/supabase/client";
+import OtpInput from "@/components/ui/OtpInput";
+import GatewayNotification from "@/components/ui/GatewayNotification";
 import styles from "./checkout.module.css";
 
 export default function CheckoutPage() {
-  const { cart, removeFromCart } = useCart();
+  const { cart, clearCart, subtotal, shipping, discount, total, appliedCoupon } = useCart();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,31 +28,164 @@ export default function CheckoutPage() {
   const [pincode, setPincode] = useState("");
   const [delivery, setDelivery] = useState("standard");
 
-  const shipping = 0;
-  const total = cart.reduce(
-    (sum, item) => sum + Number(item.price) * item.quantity,
-    0
-  );
+  // Phone Verification States
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [toastSmsOtp, setToastSmsOtp] = useState<string | null>(null);
+  const [realSmsDispatched, setRealSmsDispatched] = useState<boolean>(false);
+  const [smsTimer, setSmsTimer] = useState<number>(60);
+  const [canResendSms, setCanResendSms] = useState<boolean>(false);
+
+  useEffect(() => {
+    let interval: any;
+    if (isOtpModalOpen && smsTimer > 0) {
+      interval = setInterval(() => {
+        setSmsTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (smsTimer === 0) {
+      setCanResendSms(true);
+    }
+    return () => clearInterval(interval);
+  }, [isOtpModalOpen, smsTimer]);
 
   useEffect(() => {
     async function loadUser() {
+      // Check for locally saved user name first
+      const savedName = localStorage.getItem("greeno_user_name");
+      if (savedName) {
+        setFullName(savedName);
+      }
+
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (user) {
+        setIsLoggedIn(true);
         setEmail(user.email || "");
-        setFullName(
-          user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
-          ""
-        );
+        if (!savedName) {
+          setFullName(
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            ""
+          );
+        }
       }
     }
 
     loadUser();
   }, []);
+
+  // Handle phone input change
+  function handlePhoneChange(val: string) {
+    setPhone(val);
+    if (isPhoneVerified && val.replace(/\D/g, "") !== verifiedPhone.replace(/\D/g, "")) {
+      setIsPhoneVerified(false);
+      setVerifiedPhone("");
+    }
+  }
+
+  // Send SMS OTP
+  async function handleSendPhoneOtp() {
+    setError("");
+    setOtpError("");
+
+    const cleanDigits = phone.replace(/\D/g, "");
+    if (cleanDigits.length < 10) {
+      setError("Please enter a valid 10-digit mobile number before requesting OTP.");
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: cleanDigits.slice(-10),
+          type: "phone",
+          name: fullName || "Valued Customer",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to send SMS verification code.");
+      }
+
+      if (data.realSmsSent) {
+        setRealSmsDispatched(true);
+        setToastSmsOtp(null); // Do not show on-screen passcode toast if delivered to physical phone
+      } else {
+        setRealSmsDispatched(false);
+        setToastSmsOtp(data.code || null);
+      }
+
+      setSmsTimer(60);
+      setCanResendSms(false);
+      setPhoneOtp("");
+      setIsOtpModalOpen(true);
+    } catch (err: any) {
+      console.error("SMS OTP SEND ERROR:", err);
+      setError(err.message || "Unable to send verification code.");
+    } finally {
+      setOtpLoading(false);
+    }
+  }
+
+  // Verify SMS OTP
+  async function handleVerifyPhoneOtp(e?: React.FormEvent, codeToVerify?: string) {
+    if (e) e.preventDefault();
+    setOtpError("");
+
+    const finalCode = (codeToVerify || phoneOtp).trim();
+
+    if (!finalCode || finalCode.length !== 6) {
+      setOtpError("Please enter the 6-digit SMS verification code.");
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+
+      const cleanDigits = phone.replace(/\D/g, "").slice(-10);
+
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: cleanDigits,
+          code: finalCode,
+          type: "phone",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Invalid or expired SMS verification code.");
+      }
+
+      setIsPhoneVerified(true);
+      setVerifiedPhone(phone);
+      setIsOtpModalOpen(false);
+      setToastSmsOtp(null);
+      setPhoneOtp("");
+      setError("");
+    } catch (err: any) {
+      console.error("SMS OTP VERIFY ERROR:", err);
+      setOtpError(err.message || "Verification failed. Please try again.");
+    } finally {
+      setOtpLoading(false);
+    }
+  }
 
   async function placeOrder() {
     setError("");
@@ -67,8 +203,16 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!/^[0-9]{10}$/.test(phone.replace(/\D/g, ""))) {
+    const cleanDigits = phone.replace(/\D/g, "");
+    if (cleanDigits.length < 10) {
       setError("Please enter a valid 10-digit phone number.");
+      return;
+    }
+
+    // Check phone verification
+    if (!isPhoneVerified || cleanDigits.slice(-10) !== verifiedPhone.replace(/\D/g, "").slice(-10)) {
+      setError("Please verify your phone number with the SMS OTP code before placing order.");
+      handleSendPhoneOtp();
       return;
     }
 
@@ -80,82 +224,40 @@ export default function CheckoutPage() {
     try {
       setLoading(true);
 
-      const supabase = createClient();
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        setError("Please log in before placing an order.");
-        return;
-      }
-
-      const { data: addressData, error: addressError } = await supabase
-        .from("addresses")
-        .insert({
-          user_id: user.id,
-          full_name: fullName.trim(),
-          phone: phone.trim(),
-          address_line1: address.trim(),
-          city: city.trim(),
-          state: state.trim(),
-          postal_code: pincode.trim(),
-          country: "India",
-          is_default: false,
-        })
-        .select("id")
-        .single();
-
-      if (addressError) {
-        console.error("Address error:", addressError);
-        throw new Error(addressError.message);
-      }
-
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          address_id: addressData.id,
-          status: "pending",
-          subtotal: total,
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          email,
+          phone,
+          address,
+          city,
+          state,
+          pincode,
+          items: cart,
+          subtotal,
           shipping,
-          total: total + shipping,
-          payment_status: "pending",
-          payment_method: "COD",
-        })
-        .select("id")
-        .single();
+          discount,
+          paymentMethod: "COD",
+        }),
+      });
 
-      if (orderError) {
-        console.error("Order error:", orderError);
-        throw new Error(orderError.message);
-      }
+      const data = await res.json();
 
-      const orderItems = cart.map((item) => ({
-        order_id: orderData.id,
-        product_id: item.id,
-        product_name: item.name,
-        product_price: Number(item.price),
-        quantity: item.quantity,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) {
-        console.error("Order items error:", itemsError);
-        throw new Error(itemsError.message);
+      if (!data.success) {
+        throw new Error(data.message || "Failed to place order");
       }
 
       setOrderPlaced(true);
 
-      cart.forEach((item) => removeFromCart(item.id));
+      // Save order snapshot locally for order-success presentation
+      localStorage.setItem("greeno_last_order", JSON.stringify(data.order));
 
-      router.push(`/order-success?orderId=${orderData.id}`);
-    } catch (err) {
+      clearCart();
+
+      router.push(`/order-success?orderId=${data.orderId}`);
+    } catch (err: any) {
       console.error("PLACE ORDER ERROR:", err);
       setError(
         err instanceof Error
@@ -196,6 +298,228 @@ export default function CheckoutPage() {
 
   return (
     <main className={styles.page}>
+      {/* Realistic SMS Gateway Push Notification */}
+      {toastSmsOtp && (
+        <GatewayNotification
+          type="phone"
+          target={phone}
+          code={toastSmsOtp}
+          onAutoFill={(code) => {
+            setPhoneOtp(code);
+            handleVerifyPhoneOtp(undefined, code);
+          }}
+          onDismiss={() => setToastSmsOtp(null)}
+        />
+      )}
+
+      {/* Professional Phone OTP Verification Modal */}
+      {isOtpModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.88)",
+            backdropFilter: "blur(6px)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: "#0a0a0a",
+              border: "1px solid #333333",
+              color: "#ffffff",
+              width: "100%",
+              maxWidth: "460px",
+              padding: "40px 32px",
+              boxShadow: "0 24px 48px rgba(0,0,0,0.9)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  background: "#ffffff",
+                  color: "#000000",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 900,
+                  fontSize: "14px",
+                }}
+              >
+                ✆
+              </div>
+              <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", color: "#888888", textTransform: "uppercase" }}>
+                GREENO CARRIER VERIFICATION
+              </span>
+            </div>
+
+            <h2 style={{ fontSize: "22px", fontWeight: 800, letterSpacing: "0.06em", margin: "0 0 10px", textTransform: "uppercase" }}>
+              CONFIRM MOBILE NUMBER
+            </h2>
+            <p style={{ fontSize: "12px", color: "#aaaaaa", lineHeight: "1.5", margin: "0 0 14px" }}>
+              A 6-digit SMS verification code was dispatched to <strong>+91 {phone.replace(/\D/g, "").slice(-10)}</strong>. Enter the digits below to confirm your delivery contact.
+            </p>
+
+            {realSmsDispatched ? (
+              <div
+                style={{
+                  background: "#0c1d12",
+                  border: "1px solid #165e31",
+                  padding: "12px 14px",
+                  fontSize: "11px",
+                  color: "#86efac",
+                  lineHeight: "1.5",
+                  marginBottom: "20px",
+                }}
+              >
+                <strong style={{ display: "block", color: "#4ade80", marginBottom: "3px", letterSpacing: "0.08em" }}>
+                  ✓ REAL SMS TRANSMITTED TO YOUR PHONE
+                </strong>
+                A live SMS text message was sent across cellular networks to <strong>+91 {phone.replace(/\D/g, "").slice(-10)}</strong>. Please open your phone&apos;s Messages app to view your 6-digit code.
+              </div>
+            ) : (
+              <div
+                style={{
+                  background: "#18181b",
+                  border: "1px solid #3f3f46",
+                  padding: "12px 14px",
+                  fontSize: "11px",
+                  color: "#d4d4d8",
+                  lineHeight: "1.5",
+                  marginBottom: "20px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                  <strong style={{ color: "#f59e0b", letterSpacing: "0.06em" }}>⚠️ CARRIER GATEWAY NOT CONFIGURED</strong>
+                  <Link
+                    href="/admin"
+                    target="_blank"
+                    style={{ color: "#ffffff", fontSize: "10px", textDecoration: "underline", letterSpacing: "0.06em" }}
+                  >
+                    CONFIG SMS →
+                  </Link>
+                </div>
+                <p style={{ margin: "0 0 6px", color: "#a1a1aa", fontSize: "11px" }}>
+                  To deliver real SMS texts to physical phones in India, enter your free Fast2SMS API key in the Admin Console.
+                </p>
+                {toastSmsOtp && (
+                  <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px dashed #333333", fontSize: "11px" }}>
+                    Development Passcode: <strong style={{ color: "#ffffff", letterSpacing: "0.2em" }}>{toastSmsOtp}</strong>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <form onSubmit={(e) => handleVerifyPhoneOtp(e)}>
+              <div style={{ textAlign: "center", marginBottom: "8px" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#666666", textTransform: "uppercase" }}>
+                  ENTER 6-DIGIT PASSCODE
+                </span>
+
+                <OtpInput
+                  value={phoneOtp}
+                  onChange={(newCode) => {
+                    setPhoneOtp(newCode);
+                    if (newCode.length === 6) {
+                      handleVerifyPhoneOtp(undefined, newCode);
+                    }
+                  }}
+                  error={Boolean(otpError)}
+                  darkMode={true}
+                />
+              </div>
+
+              {otpError && (
+                <div style={{ color: "#ff4444", fontSize: "11px", marginBottom: "16px", textAlign: "center" }}>
+                  {otpError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={otpLoading || phoneOtp.length !== 6}
+                style={{
+                  width: "100%",
+                  background: "#ffffff",
+                  color: "#000000",
+                  border: "none",
+                  padding: "15px",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  cursor: phoneOtp.length === 6 ? "pointer" : "not-allowed",
+                  opacity: phoneOtp.length === 6 ? 1 : 0.6,
+                  transition: "opacity 0.2s ease",
+                }}
+              >
+                {otpLoading ? "VERIFYING PASSCODE..." : "CONFIRM & VERIFY NUMBER"}
+              </button>
+            </form>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: "24px",
+                paddingTop: "16px",
+                borderTop: "1px solid #1f1f1f",
+              }}
+            >
+              {canResendSms ? (
+                <button
+                  type="button"
+                  onClick={handleSendPhoneOtp}
+                  disabled={otpLoading}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#ffffff",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    cursor: "pointer",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  RESEND SMS
+                </button>
+              ) : (
+                <span style={{ fontSize: "11px", color: "#777777", letterSpacing: "0.08em" }}>
+                  RESEND SMS IN {String(Math.floor(smsTimer / 60)).padStart(2, "0")}:{String(smsTimer % 60).padStart(2, "0")}
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOtpModalOpen(false);
+                  setOtpError("");
+                  setPhoneOtp("");
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#888888",
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  letterSpacing: "0.06em",
+                }}
+              >
+                CANCEL / CHANGE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={styles.container}>
         <Link href="/cart" className={styles.back}>
           ← BACK TO SHOPPING BAG
@@ -203,6 +527,43 @@ export default function CheckoutPage() {
 
         <p className={styles.crumb}>GREENO / CHECKOUT</p>
         <h1 className={styles.title}>CHECKOUT</h1>
+
+        {!isLoggedIn && (
+          <div
+            style={{
+              padding: "16px 20px",
+              background: "#fff",
+              border: "1px solid #cfcfcb",
+              marginBottom: "35px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            <div>
+              <strong style={{ fontSize: "11px", letterSpacing: "0.14em" }}>
+                ORDERING AS GUEST
+              </strong>
+              <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#666" }}>
+                Already have a GreenO account? Log in to save to your order history.
+              </p>
+            </div>
+            <Link
+              href="/login?redirect=/checkout"
+              style={{
+                fontSize: "10px",
+                letterSpacing: "0.16em",
+                fontWeight: 600,
+                color: "#111",
+                textDecoration: "underline",
+              }}
+            >
+              LOG IN NOW →
+            </Link>
+          </div>
+        )}
 
         <div className={styles.layout}>
           <section className={styles.formSection}>
@@ -235,15 +596,91 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className={styles.field}>
-                  <label className={styles.label}>PHONE NUMBER</label>
-                  <input
-                    className={styles.input}
-                    type="tel"
-                    placeholder="10-digit mobile number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    autoComplete="tel"
-                  />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "9px" }}>
+                    <label className={styles.label} style={{ margin: 0 }}>PHONE NUMBER</label>
+                    {isPhoneVerified ? (
+                      <span
+                        style={{
+                          fontSize: "9px",
+                          fontWeight: 700,
+                          letterSpacing: "0.1em",
+                          background: "#000000",
+                          color: "#ffffff",
+                          padding: "2px 8px",
+                          border: "1px solid #000000",
+                        }}
+                      >
+                        ✓ VERIFIED
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: "10px", color: "#888888", letterSpacing: "0.06em" }}>
+                        SMS OTP REQUIRED
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                    <input
+                      className={styles.input}
+                      type="tel"
+                      placeholder="10-digit mobile number"
+                      value={phone}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      autoComplete="tel"
+                      style={{ paddingRight: isPhoneVerified ? "110px" : "120px" }}
+                    />
+                    {isPhoneVerified ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPhoneVerified(false);
+                          setVerifiedPhone("");
+                        }}
+                        style={{
+                          position: "absolute",
+                          right: 0,
+                          bottom: "10px",
+                          background: "transparent",
+                          border: "none",
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          color: "#666666",
+                          textDecoration: "underline",
+                          cursor: "pointer",
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        CHANGE
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSendPhoneOtp}
+                        disabled={otpLoading || phone.replace(/\D/g, "").length < 10}
+                        style={{
+                          position: "absolute",
+                          right: 0,
+                          bottom: "8px",
+                          background: phone.replace(/\D/g, "").length >= 10 ? "#000000" : "#e0e0e0",
+                          color: phone.replace(/\D/g, "").length >= 10 ? "#ffffff" : "#888888",
+                          border: "none",
+                          padding: "6px 14px",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          letterSpacing: "0.1em",
+                          cursor: phone.replace(/\D/g, "").length >= 10 ? "pointer" : "not-allowed",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        {otpLoading ? "SENDING..." : "VERIFY OTP"}
+                      </button>
+                    )}
+                  </div>
+                  {!isPhoneVerified && (
+                    <div style={{ fontSize: "10px", color: "#888888", marginTop: "6px" }}>
+                      We will send a 6-digit confirmation code via SMS to verify this number.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -293,9 +730,7 @@ export default function CheckoutPage() {
                   <input
                     className={styles.input}
                     type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="000000"
+                    placeholder="6-digit pincode"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
                     autoComplete="postal-code"
@@ -305,79 +740,53 @@ export default function CheckoutPage() {
             </div>
 
             <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>DELIVERY</h2>
-
-              <div className={styles.deliveryOptions}>
-                <label
-                  className={`${styles.option} ${delivery === "standard" ? styles.optionActive : ""}`}
-                >
-                  <span className={styles.optionLeft}>
-                    <input
-                      className={styles.radio}
-                      type="radio"
-                      name="delivery"
-                      value="standard"
-                      checked={delivery === "standard"}
-                      onChange={(e) => setDelivery(e.target.value)}
-                    />
-                    <span>
-                      <span className={styles.optionName}>STANDARD DELIVERY</span>
-                      <span className={styles.optionDescription}>
-                        Reliable delivery across India
-                      </span>
-                    </span>
-                  </span>
-                  <span className={styles.optionPrice}>FREE</span>
-                </label>
-              </div>
-            </div>
-
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>PAYMENT</h2>
+              <h2 className={styles.sectionTitle}>PAYMENT METHOD</h2>
 
               <div className={styles.paymentBox}>
-                <p className={styles.paymentTitle}>CASH ON DELIVERY</p>
+                <div className={styles.paymentTitle}>CASH ON DELIVERY (COD)</div>
                 <p className={styles.paymentText}>
-                  Pay securely when your GreenO order arrives. Online payment
-                  can be added later without changing your order flow.
+                  Pay conveniently in cash or via UPI at your doorstep upon delivery. Verified orders are dispatched with priority tracking.
                 </p>
               </div>
             </div>
 
-            <div className={styles.actions}>
-              {error && <p className={styles.error}>{error}</p>}
+            {error && <div className={styles.error}>{error}</div>}
 
+            <div className={styles.actions}>
               <button
                 className={styles.placeButton}
-                onClick={placeOrder}
                 disabled={loading}
+                onClick={placeOrder}
               >
-                {loading ? "PLACING ORDER..." : "PAY NOW / PLACE ORDER"}
+                {loading ? "PROCESSING ORDER..." : "PLACE ORDER (CASH ON DELIVERY)"}
               </button>
             </div>
           </section>
 
           <aside className={styles.summary}>
             <div className={styles.summaryHeader}>
-              <h2 className={styles.summaryTitle}>SHOPPING BAG</h2>
-              <span className={styles.itemCount}>{cart.length} ITEM TYPES</span>
+              <h2 className={styles.summaryTitle}>ORDER SUMMARY</h2>
+              <span className={styles.itemCount}>
+                {cart.reduce((s, i) => s + i.quantity, 0)} {cart.reduce((s, i) => s + i.quantity, 0) === 1 ? "ITEM" : "ITEMS"}
+              </span>
             </div>
 
             <div className={styles.items}>
               {cart.map((item) => (
-                <div className={styles.item} key={item.id}>
+                <div key={`${item.id}-${item.size}`} className={styles.item}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    className={styles.image}
-                    src={item.image}
+                    src={item.image || "/black-tee.jfif"}
                     alt={item.name}
+                    className={styles.image}
                   />
 
                   <div className={styles.itemInfo}>
-                    <p className={styles.itemName}>{item.name}</p>
+                    <h3 className={styles.itemName}>{item.name}</h3>
                     <p className={styles.meta}>
-                      Quantity: {item.quantity}
+                      Qty: {item.quantity}
                       {item.size ? ` · Size: ${item.size}` : ""}
-                      {item.color ? ` · ${item.color}` : ""}
+                      {item.color ? ` · Color: ${item.color}` : ""}
                     </p>
                   </div>
 
@@ -391,18 +800,27 @@ export default function CheckoutPage() {
             <div className={styles.totals}>
               <div className={styles.totalRow}>
                 <span className={styles.totalLabel}>SUBTOTAL</span>
-                <span>₹{total.toLocaleString("en-IN")}</span>
+                <span>₹{subtotal.toLocaleString("en-IN")}</span>
               </div>
 
               <div className={styles.totalRow}>
                 <span className={styles.totalLabel}>DELIVERY</span>
-                <span>FREE</span>
+                <span>{shipping === 0 ? "FREE" : `₹${shipping.toLocaleString("en-IN")}`}</span>
               </div>
 
+              {discount > 0 && (
+                <div className={styles.totalRow} style={{ color: "#16a34a" }}>
+                  <span className={styles.totalLabel}>
+                    PROMO ({appliedCoupon?.code})
+                  </span>
+                  <span>-₹{discount.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+
               <div className={`${styles.totalRow} ${styles.grandTotal}`}>
-                <span>TOTAL</span>
+                <span style={{ color: "#000000", fontWeight: 700 }}>TOTAL</span>
                 <strong>
-                  ₹{(total + shipping).toLocaleString("en-IN")}
+                  ₹{total.toLocaleString("en-IN")}
                 </strong>
               </div>
             </div>

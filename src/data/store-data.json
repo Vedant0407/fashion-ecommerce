@@ -1,0 +1,355 @@
+{
+  "products": [
+    {
+      "id": "pant",
+      "name": "pant",
+      "price": 10,
+      "description": "brand new",
+      "category_id": "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
+      "category_name": "PANTS",
+      "category_slug": "pants",
+      "image": "/black-tee.jfif",
+      "images": [
+        "/black-tee.jfif"
+      ],
+      "stock": 10,
+      "is_featured": true,
+      "is_new": false,
+      "is_trending": false,
+      "color": "BLACK",
+      "product_no": "GO-3607",
+      "material": "100% Cotton",
+      "fabric": "Heavyweight Jersey",
+      "fit": "Oversized Fit"
+    },
+    {
+      "id": "oversized-black-tee",
+      "name": "Oversized Black Tee",
+      "price": 2499,
+      "description": "A relaxed oversized tee crafted from 240 GSM combed cotton with subtle dropped shoulders.",
+      "category_id": "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
+      "category_slug": "t-shirts",
+      "category_name": "T-SHIRTS",
+      "image": "/black-tee.jfif",
+      "stock": 50,
+      "is_featured": true,
+      "is_new": false,
+      "is_trending": true,
+      "color": "BLACK",
+      "product_no": "BT-001",
+      "material": "100% Combed Cotton",
+      "fabric": "Heavyweight Jersey",
+      "fit": "Oversized Fit"
+    },
+    {
+      "id": "urban-grey-hoodie",
+      "name": "Urban Grey Hoodie",
+      "price": 3999,
+      "description": "A clean heavyweight hoodie built from 420 GSM brushback fleece with hidden pouch pockets.",
+      "category_id": "8f4e5a32-9172-466f-b752-2f8e1c6586a0",
+      "category_slug": "hoodies",
+      "category_name": "HOODIES",
+      "image": "/grey-hoodie.jfif",
+      "stock": 45,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "GREY",
+      "product_no": "GH-001",
+      "material": "Cotton Fleece",
+      "fabric": "420 GSM Fleece",
+      "fit": "Boxy Oversized Fit"
+    },
+    {
+      "id": "cargo-street-pants",
+      "name": "Cargo Street Pants",
+      "price": 3499,
+      "description": "Modern streetwear cargo pants with articulated knees, deep utility pockets and cinchable cuffs.",
+      "category_id": "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
+      "category_slug": "pants",
+      "category_name": "PANTS",
+      "image": "/cargo-pants.jfif",
+      "stock": 35,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "OLIVE",
+      "product_no": "GP-001",
+      "material": "Cotton Twill",
+      "fabric": "Ripstop Twill",
+      "fit": "Relaxed Straight Fit"
+    },
+    {
+      "id": "classic-white-tee",
+      "name": "Classic White Tee",
+      "price": 1999,
+      "description": "A clean, minimal white tee for daily layering, tailored with reinforced rib collar.",
+      "category_id": "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
+      "category_slug": "t-shirts",
+      "category_name": "T-SHIRTS",
+      "image": "/white-tee.jfif",
+      "stock": 60,
+      "is_featured": false,
+      "is_new": true,
+      "is_trending": false,
+      "color": "WHITE",
+      "product_no": "WT-001",
+      "material": "100% Organic Cotton",
+      "fabric": "Single Jersey",
+      "fit": "Regular Fit"
+    },
+    {
+      "id": "greeno-dad-cap",
+      "name": "GreenO Signature Dad Cap",
+      "price": 1499,
+      "description": "Unstructured 6-panel cap with vintage washed cotton finish and antique brass closure.",
+      "category_id": "be67b7ca-c601-4daf-9d7d-4ee083f8bdc2",
+      "category_slug": "caps",
+      "category_name": "CAPS",
+      "image": "/hero.jfif",
+      "stock": 25,
+      "is_featured": false,
+      "is_new": true,
+      "is_trending": true,
+      "color": "BLACK",
+      "product_no": "CP-001",
+      "material": "100% Washed Cotton",
+      "fabric": "Chino Cotton",
+      "fit": "Adjustable"
+    },
+    {
+      "id": "tactical-crossbody-bag",
+      "name": "Tactical Crossbody Bag",
+      "price": 2799,
+      "description": "Water-resistant Cordura nylon body with Fidlock magnetic buckle and modular strap.",
+      "category_id": "0e60c6fa-3368-4d27-b827-57c2ae2cbcff",
+      "category_slug": "bags",
+      "category_name": "BAGS",
+      "image": "/cargo-pants.jfif",
+      "stock": 30,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "BLACK",
+      "product_no": "BG-001",
+      "material": "Cordura Nylon",
+      "fabric": "Weatherproof 500D",
+      "fit": "One Size"
+    },
+    {
+      "id": "silver-link-chain",
+      "name": "Industrial Link Chain",
+      "price": 1899,
+      "description": "Solid 316L stainless steel chain with custom GreenO laser engraved clasp.",
+      "category_id": "21fcf8a3-cdc3-4b43-888e-45a72ef053f2",
+      "category_slug": "accessories",
+      "category_name": "ACCESSORIES",
+      "image": "/white-tee.jfif",
+      "stock": 40,
+      "is_featured": false,
+      "is_new": false,
+      "is_trending": false,
+      "color": "SILVER",
+      "product_no": "AC-001",
+      "material": "Stainless Steel",
+      "fabric": "316L Grade",
+      "fit": "55cm Length"
+    }
+  ],
+  "categories": [
+    {
+      "id": "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
+      "name": "T-SHIRTS",
+      "slug": "t-shirts",
+      "image": "/black-tee.jfif",
+      "description": "Signature oversized and regular fit tees designed for timeless streetwear aesthetics."
+    },
+    {
+      "id": "8f4e5a32-9172-466f-b752-2f8e1c6586a0",
+      "name": "HOODIES",
+      "slug": "hoodies",
+      "image": "/grey-hoodie.jfif",
+      "description": "Heavyweight fleece hoodies with drop shoulders and structured drape."
+    },
+    {
+      "id": "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
+      "name": "PANTS",
+      "slug": "pants",
+      "image": "/cargo-pants.jfif",
+      "description": "Utility cargo pants and streetwear trousers with tailored proportions."
+    },
+    {
+      "id": "be67b7ca-c601-4daf-9d7d-4ee083f8bdc2",
+      "name": "CAPS",
+      "slug": "caps",
+      "image": "/hero.jfif",
+      "description": "Low-profile structured 6-panel caps and vintage dad hats."
+    },
+    {
+      "id": "0e60c6fa-3368-4d27-b827-57c2ae2cbcff",
+      "name": "BAGS",
+      "slug": "bags",
+      "image": "/cargo-pants.jfif",
+      "description": "Technical crossbodies, modular tote bags and utility carriers."
+    },
+    {
+      "id": "21fcf8a3-cdc3-4b43-888e-45a72ef053f2",
+      "name": "ACCESSORIES",
+      "slug": "accessories",
+      "image": "/white-tee.jfif",
+      "description": "Everyday essentials, keychains, stainless jewelry, and socks."
+    }
+  ],
+  "orders": [
+    {
+      "id": "GO-9482-A1",
+      "created_at": "2026-09-09T02:53:22.599Z",
+      "customer": {
+        "fullName": "Arjun Sharma",
+        "email": "arjun.sharma@example.com",
+        "phone": "+91 98201 12345",
+        "address": "Flat 402, Signature Heights, Bandra West",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400050"
+      },
+      "items": [
+        {
+          "product_id": "oversized-black-tee",
+          "name": "Oversized Black Tee",
+          "price": 2499,
+          "quantity": 1,
+          "image": "/black-tee.jfif",
+          "size": "L",
+          "color": "BLACK"
+        },
+        {
+          "product_id": "urban-grey-hoodie",
+          "name": "Urban Grey Hoodie",
+          "price": 3999,
+          "quantity": 1,
+          "image": "/grey-hoodie.jfif",
+          "size": "XL",
+          "color": "GREY"
+        }
+      ],
+      "subtotal": 6498,
+      "shipping": 0,
+      "discount": 650,
+      "total": 5848,
+      "status": "processing",
+      "payment_method": "Prepaid / UPI",
+      "payment_status": "paid"
+    },
+    {
+      "id": "GO-8231-K9",
+      "created_at": "2026-09-08T06:53:22.599Z",
+      "customer": {
+        "fullName": "Priya Nair",
+        "email": "priya.nair@example.com",
+        "phone": "+91 94471 98765",
+        "address": "12/4 Lotus Villa, Indiranagar",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "pincode": "560038"
+      },
+      "items": [
+        {
+          "product_id": "cargo-street-pants",
+          "name": "Cargo Street Pants",
+          "price": 3499,
+          "quantity": 1,
+          "image": "/cargo-pants.jfif",
+          "size": "32",
+          "color": "OLIVE"
+        }
+      ],
+      "subtotal": 3499,
+      "shipping": 199,
+      "discount": 0,
+      "total": 3698,
+      "status": "shipped",
+      "payment_method": "COD",
+      "payment_status": "pending"
+    },
+    {
+      "id": "GO-7104-M3",
+      "created_at": "2026-09-07T06:53:22.599Z",
+      "customer": {
+        "fullName": "Kabir Mehta",
+        "email": "kabir.mehta@example.com",
+        "phone": "+91 99100 55432",
+        "address": "House 88, Sector 15",
+        "city": "Gurugram",
+        "state": "Haryana",
+        "pincode": "122001"
+      },
+      "items": [
+        {
+          "product_id": "classic-white-tee",
+          "name": "Classic White Tee",
+          "price": 1999,
+          "quantity": 2,
+          "image": "/white-tee.jfif",
+          "size": "M",
+          "color": "WHITE"
+        }
+      ],
+      "subtotal": 3998,
+      "shipping": 199,
+      "discount": 500,
+      "total": 3697,
+      "status": "delivered",
+      "payment_method": "Credit Card",
+      "payment_status": "paid"
+    }
+  ],
+  "coupons": [
+    {
+      "code": "GREENO10",
+      "type": "percentage",
+      "value": 10,
+      "minOrder": 1000,
+      "description": "10% off on your entire streetwear order",
+      "active": true,
+      "usage_count": 14
+    },
+    {
+      "code": "WELCOME15",
+      "type": "percentage",
+      "value": 15,
+      "minOrder": 1500,
+      "description": "15% off welcome discount for first-time buyers",
+      "active": true,
+      "usage_count": 28
+    },
+    {
+      "code": "STREET500",
+      "type": "fixed",
+      "value": 500,
+      "minOrder": 2500,
+      "description": "₹500 flat off on orders above ₹2,500",
+      "active": true,
+      "usage_count": 9
+    },
+    {
+      "code": "FREESHIP",
+      "type": "free_shipping",
+      "value": 199,
+      "minOrder": 0,
+      "description": "Free express shipping across India",
+      "active": true,
+      "usage_count": 42
+    }
+  ],
+  "settings": {
+    "announcementText": "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE",
+    "storeNotice": "All orders placed today are dispatched within 24 hours.",
+    "supportPhone": "+91 98765 43210",
+    "supportEmail": "concierge@greeno.in",
+    "adminPasskey": "aman2026",
+    "currency": "INR",
+    "smsApiKey": "",
+    "smsProvider": "2factor"
+  }
+}

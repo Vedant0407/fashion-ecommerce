@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -14,12 +14,36 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // If already logged in, redirect away from signup page
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          router.push("/account");
+          return;
+        }
+      } catch (err) {
+        // No session
+      } finally {
+        setCheckingSession(false);
+      }
+    }
+
+    checkSession();
+  }, [router]);
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
-    if (!name || !email || !password) {
+    if (!name.trim() || !email.trim() || !password) {
       setError("Please fill all fields.");
       return;
     }
@@ -35,24 +59,46 @@ export default function SignupPage() {
       const supabase = createClient();
 
       const { data, error: signupError } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: {
           data: {
-            full_name: name,
+            full_name: name.trim(),
+            name: name.trim(),
           },
         },
       });
 
       if (signupError) {
-        setError(signupError.message);
+        const msg = signupError.message.toLowerCase();
+        if (
+          msg.includes("already registered") ||
+          msg.includes("already exists") ||
+          msg.includes("already in use") ||
+          msg.includes("identity already exists")
+        ) {
+          setError(
+            "An account with this email already exists. You cannot sign up again with the same email. Please log in instead."
+          );
+        } else {
+          setError(signupError.message);
+        }
         return;
       }
 
-      if (!data.session) {
+      // In Supabase, if the user already exists and email confirmations are active,
+      // identities will be an empty array []
+      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
         setError(
-          "Account created. Please verify your email, then log in."
+          "An account with this email already exists. You cannot sign up again with the same email. Please log in instead."
         );
+        return;
+      }
+
+      localStorage.setItem("greeno_user_name", name.trim());
+
+      if (!data.session) {
+        setError("Account created. Please check your email inbox to verify, or proceed to log in.");
         return;
       }
 
@@ -64,6 +110,10 @@ export default function SignupPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checkingSession) {
+    return null;
   }
 
   return (
@@ -87,6 +137,7 @@ export default function SignupPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
               autoComplete="name"
+              required
             />
           </div>
 
@@ -99,6 +150,7 @@ export default function SignupPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Your email"
               autoComplete="email"
+              required
             />
           </div>
 
@@ -111,10 +163,31 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Create a password"
               autoComplete="new-password"
+              required
             />
           </div>
 
-          {error && <p className="auth-error">{error}</p>}
+          {error && (
+            <div style={{ margin: "16px 0" }}>
+              <p className="auth-error">{error}</p>
+              {error.includes("already exists") && (
+                <div style={{ marginTop: "8px" }}>
+                  <Link
+                    href="/login"
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      textDecoration: "underline",
+                      color: "#ffffff",
+                    }}
+                  >
+                    GO TO LOGIN PAGE &rarr;
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
 
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}

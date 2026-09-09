@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { WishlistProvider } from "@/context/WishlistContext";
+import Header from "@/components/Header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GreenO",
-  description: "GreenO Streetwear",
+  title: "GreenO | Luxury Streetwear",
+  description: "Modern minimalist streetwear, heavyweight oversized apparel, and accessories.",
 };
 
 export default function RootLayout({
@@ -30,7 +32,10 @@ export default function RootLayout({
     >
       <body>
         <CartProvider>
-          {children}
+          <WishlistProvider>
+            <Header />
+            {children}
+          </WishlistProvider>
         </CartProvider>
       </body>
     </html>

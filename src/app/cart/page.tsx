@@ -1,18 +1,46 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity } = useCart();
+  const {
+    cart,
+    removeFromCart,
+    updateQuantity,
+    subtotal,
+    shipping,
+    discount,
+    total,
+    appliedCoupon,
+    applyCoupon,
+    removeCoupon,
+  } = useCart();
 
-  const subtotal = cart.reduce(
-    (sum, item) => sum + Number(item.price) * item.quantity,
-    0
-  );
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponFeedback, setCouponFeedback] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
-  const shipping = subtotal > 5000 || subtotal === 0 ? 0 : 199;
-  const total = subtotal + shipping;
+  const handleApplyPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCode.trim()) return;
+
+    setCouponLoading(true);
+    setCouponFeedback(null);
+
+    const result = await applyCoupon(couponCode.trim());
+    if (result.success) {
+      setCouponFeedback({ type: "success", text: result.message });
+      setCouponCode("");
+    } else {
+      setCouponFeedback({ type: "error", text: result.message });
+    }
+    setCouponLoading(false);
+  };
 
   return (
     <main className="cart-page">
@@ -150,14 +178,81 @@ export default function CartPage() {
                   <span>SHIPPING</span>
                   <strong>{shipping === 0 ? "FREE" : `₹${shipping.toLocaleString("en-IN")}`}</strong>
                 </div>
+                {discount > 0 && (
+                  <div style={{ color: "#16a34a" }}>
+                    <span>
+                      DISCOUNT ({appliedCoupon?.code})
+                    </span>
+                    <strong>-₹{discount.toLocaleString("en-IN")}</strong>
+                  </div>
+                )}
               </div>
 
               <div className="cart-promo">
-                <label htmlFor="promo">PROMO CODE</label>
-                <div>
-                  <input id="promo" type="text" placeholder="ENTER CODE" />
-                  <button type="button">APPLY</button>
-                </div>
+                {appliedCoupon ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px",
+                      background: "#f0fdf4",
+                      border: "1px solid #bbf7d0",
+                      fontSize: "10px",
+                    }}
+                  >
+                    <div>
+                      <strong style={{ color: "#16a34a", display: "block" }}>
+                        PROMO APPLIED: {appliedCoupon.code}
+                      </strong>
+                      <span style={{ color: "#666", fontSize: "9px" }}>
+                        {appliedCoupon.description}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#ef4444",
+                        cursor: "pointer",
+                        fontSize: "9px",
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      REMOVE
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleApplyPromo}>
+                    <label htmlFor="promo">PROMO CODE</label>
+                    <div>
+                      <input
+                        id="promo"
+                        type="text"
+                        placeholder="TRY 'GREENO10' OR 'FREESHIP'"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      />
+                      <button type="submit" disabled={couponLoading}>
+                        {couponLoading ? "..." : "APPLY"}
+                      </button>
+                    </div>
+                    {couponFeedback && (
+                      <p
+                        style={{
+                          margin: "8px 0 0",
+                          fontSize: "9px",
+                          letterSpacing: "0.08em",
+                          color: couponFeedback.type === "success" ? "#16a34a" : "#dc2626",
+                        }}
+                      >
+                        {couponFeedback.text}
+                      </p>
+                    )}
+                  </form>
+                )}
               </div>
 
               <div className="cart-summary-total">

@@ -1,55 +1,95 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
+
 export default function AboutSection() {
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.trim()) {
+      setSubscribed(true);
+      setEmail("");
+    }
+  };
+
   return (
-    <section className="about-section">
+    <footer className="about-section">
+      <div className="about-top">
+        <div className="about-column">
+          <h3>CUSTOMER CARE</h3>
+          <Link href="/account/orders">Track Your Order</Link>
+          <Link href="/account/orders">Returns & Exchange</Link>
+          <Link href="/shop">Shipping & Delivery</Link>
+          <Link href="/shop">Payment & COD Info</Link>
+          <Link href="/shop">FAQ & Help Desk</Link>
+        </div>
 
-      <div className="about-column">
-        <h3>Connect with us</h3>
-        <p>Call</p>
-        <p>Text (WhatsApp)</p>
-        <p>Instagram</p>
-        <p>YouTube</p>
-        <p>LinkedIn</p>
-      </div>
+        <div className="about-column">
+          <h3>COLLECTIONS</h3>
+          <Link href="/category/t-shirts">Oversized T-Shirts</Link>
+          <Link href="/category/hoodies">Fleece Hoodies</Link>
+          <Link href="/category/pants">Cargo & Street Pants</Link>
+          <Link href="/category/caps">Caps & Headwear</Link>
+          <Link href="/category/bags">Utility Bags</Link>
+          <Link href="/category/accessories">Chains & Accessories</Link>
+        </div>
 
-      <div className="about-column">
-        <h3>Order Support</h3>
-        <p>Make a return/Exchange</p>
-        <p>Refund/Exchange policy</p>
-        <p>Track your order</p>
-        <p>Shipping policy</p>
-        <p>FAQ's</p>
-        <p>Terms</p>
-      </div>
+        <div className="about-column">
+          <h3>ABOUT GREENO</h3>
+          <p>The Brand Philosophy</p>
+          <p>Heavyweight Craft</p>
+          <p>Flagship Experiences</p>
+          <p>Collaborations</p>
+          <p>Sustainability Vision</p>
+        </div>
 
-      <div className="about-column">
-        <h3>We are GreenO</h3>
-        <p>Our story</p>
-        <p>Walk-in Stores</p>
-        <p>Collaborations</p>
-        <p>Careers</p>
-        <p>Media</p>
-        <p>Blogs</p>
-      </div>
+        <div className="about-column about-newsletter">
+          <h3>NEWSLETTER</h3>
+          <p className="newsletter-desc">
+            Subscribe to unlock private drops, archive releases, and editorial lookbooks before the public.
+          </p>
 
-      <div className="about-brand">
-        <h2>GreenO</h2>
-      </div>
+          {subscribed ? (
+            <p className="newsletter-success">✓ YOU ARE NOW ON THE DROP LIST.</p>
+          ) : (
+            <form onSubmit={handleSubscribe} className="newsletter-form">
+              <input
+                type="email"
+                placeholder="ENTER YOUR EMAIL"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                aria-label="Email address"
+              />
+              <button type="submit">JOIN</button>
+            </form>
+          )}
 
-      <div className="about-bag">
-        <div className="bag-rotation">
-          <div className="shopping-bag">
-            <div className="bag-handle" />
-            <span>GreenO</span>
+          <div className="about-socials">
+            <span>INSTAGRAM</span>
+            <span>YOUTUBE</span>
+            <span>TWITTER / X</span>
           </div>
         </div>
       </div>
 
-      <div className="about-copyright">
-        © 2026 GREENO, ALL RIGHTS RESERVED
+      <div className="about-watermark">
+        <h2>GREENO</h2>
       </div>
 
-    </section>
+      <div className="about-bottom">
+        <div className="about-copyright">
+          © 2026 GREENO LUXURY STREETWEAR. ALL RIGHTS RESERVED.
+        </div>
+        <div className="about-legal-links">
+          <span>PRIVACY POLICY</span>
+          <span>TERMS OF SERVICE</span>
+          <span>REFUND POLICY</span>
+        </div>
+      </div>
+    </footer>
   );
 }

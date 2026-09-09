@@ -4,28 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
-import Header from "@/components/Header";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import AboutSection from "@/components/ui/AboutSection";
 import { ImageSwiper } from "@/components/ui/image-swiper";
-import { createClient } from "@/lib/supabase/client";
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  description?: string | null;
-  category_id?: string | null;
-  color?: string | null;
-  stock?: number | null;
-  is_featured?: boolean;
-  is_new?: boolean;
-  is_trending?: boolean;
-};
+import { Product, getProductByIdOrSlug, getAllProducts } from "@/lib/catalog";
 
 export default function ProductPage() {
   const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const params = useParams();
   const router = useRouter();
 
@@ -34,62 +21,36 @@ export default function ProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [added, setAdded] = useState(false);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
 
   useEffect(() => {
-  async function loadProduct() {
-    const supabase = createClient();
-
-    let { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("id", slug)
-      .maybeSingle();
-
-    // Homepage cards use readable slugs, while Supabase uses UUIDs.
-    if (!data && !error) {
-      const readableName = slug.replace(/-/g, " ");
-      const result = await supabase
-        .from("products")
-        .select("*")
-        .ilike("name", readableName)
-        .maybeSingle();
-
-      data = result.data;
-      error = result.error;
+    async function loadProduct() {
+      setLoading(true);
+      try {
+        const found = await getProductByIdOrSlug(slug);
+        setProduct(found);
+      } catch (err) {
+        console.error("Error loading product:", err);
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    if (error || !data) {
-      console.error("Error loading product:", error);
-      setProduct(null);
-      setLoading(false);
-      return;
-    }
-
-    setProduct(data);
-    setLoading(false);
-  }
-
-  loadProduct();
-}, [slug]);
+    loadProduct();
+  }, [slug]);
 
   useEffect(() => {
     async function loadOtherProducts() {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .order("name");
-
-      if (error) {
-        console.error("Error loading products:", error);
-        return;
+      try {
+        const list = await getAllProducts();
+        setAllProducts(list);
+      } catch (err) {
+        console.error("Error loading products:", err);
       }
-
-      setAllProducts(data || []);
     }
 
     loadOtherProducts();
@@ -97,57 +58,50 @@ export default function ProductPage() {
 
   if (loading) {
     return (
-      <>
-        <Header />
-
-        <main className="product-page">
-          <div className="product-not-found">
-            <h1>LOADING PRODUCT...</h1>
-          </div>
-        </main>
-      </>
+      <main className="product-page">
+        <div className="product-not-found">
+          <h1>LOADING PRODUCT...</h1>
+        </div>
+      </main>
     );
   }
 
   if (!product) {
     return (
-      <>
-        <Header />
+      <main className="product-page">
+        <div className="product-not-found">
+          <h1>PRODUCT NOT FOUND</h1>
 
-        <main className="product-page">
-          <div className="product-not-found">
-            <h1>PRODUCT NOT FOUND</h1>
-
-            <Link href="/products">
-              BACK TO PRODUCTS
-            </Link>
-          </div>
-        </main>
-      </>
+          <Link href="/products">
+            BACK TO PRODUCTS
+          </Link>
+        </div>
+      </main>
     );
   }
 
   const image = product.image || "/black-tee.jfif";
 
-  const productImages = [
-    image,
-    image,
-    image,
-  ];
+  const productImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : [image];
 
   const handleAddToCart = () => {
-  addToCart(
-    {
-      id: product.id,
-      name: product.name,
-      price: Number(product.price),
-      image: image,
-      size: selectedSize,
-      color: product.color || "BLACK",
-    },
-    quantity
-  );
-};
+    addToCart(
+      {
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        image: image,
+        size: selectedSize,
+        color: product.color || "BLACK",
+      },
+      quantity
+    );
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  };
 
   const otherProducts = allProducts.filter(
     (item) => item.id !== product.id
@@ -155,8 +109,6 @@ export default function ProductPage() {
 
   return (
     <>
-      <Header />
-
       <main className="product-page">
 
         {/* BACK BUTTON */}
@@ -310,12 +262,32 @@ export default function ProductPage() {
               <button
                 className="add-to-cart-button"
                 onClick={handleAddToCart}
+                style={{
+                  background: added ? "#16a34a" : "#111",
+                  color: "#fff",
+                  transition: "background 0.2s ease",
+                }}
               >
-                ADD TO SHOPPING BAG
+                {added ? "ADDED TO BAG ✓" : "ADD TO SHOPPING BAG"}
               </button>
 
-              <button className="wishlist-button">
-                ♡
+              <button
+                className="wishlist-button"
+                onClick={() =>
+                  toggleWishlist({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: image,
+                    category: product.category_name,
+                  })
+                }
+                style={{
+                  color: isInWishlist(product.id) ? "#e53e3e" : "inherit",
+                }}
+                aria-label="Toggle wishlist"
+              >
+                {isInWishlist(product.id) ? "♥" : "♡"}
               </button>
 
             </div>

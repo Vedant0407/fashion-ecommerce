@@ -6,52 +6,52 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const products = [
   {
-    name: "BLUORNG BASICS",
+    name: "OVERSIZED BLACK TEE",
+    category: "SIGNATURE TEES",
     image: "/black-tee.jfif",
-    link: "/oversized-black-tee",
+    link: "/products/oversized-black-tee",
   },
   {
     name: "URBAN GREY HOODIE",
+    category: "HEAVY FLEECE",
     image: "/grey-hoodie.jfif",
-    link: "/urban-grey-hoodie",
+    link: "/products/urban-grey-hoodie",
   },
   {
     name: "CARGO STREET PANTS",
+    category: "UTILITY TAILORING",
     image: "/cargo-pants.jfif",
-    link: "/cargo-street-pants",
+    link: "/products/cargo-street-pants",
   },
   {
     name: "CLASSIC WHITE TEE",
+    category: "ESSENTIAL SERIES",
     image: "/white-tee.jfif",
-    link: "/classic-white-tee",
+    link: "/products/classic-white-tee",
   },
 ];
 
 export default function TrendingProducts() {
   const [current, setCurrent] = useState(0);
 
-  // AUTO CHANGE EVERY 4 SECONDS
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % products.length);
-    }, 4000);
+    }, 4500);
 
     return () => clearInterval(timer);
   }, []);
 
-  // MANUAL PREVIOUS
   const previousSlide = () => {
     setCurrent((prev) =>
       prev === 0 ? products.length - 1 : prev - 1
     );
   };
 
-  // MANUAL NEXT
   const nextSlide = () => {
     setCurrent((prev) => (prev + 1) % products.length);
   };
 
-  // MANUAL DOT CLICK
   const goToSlide = (index: number) => {
     setCurrent(index);
   };
@@ -59,7 +59,6 @@ export default function TrendingProducts() {
   return (
     <section className="trending-section">
       <div className="trending-container">
-
         <AnimatePresence mode="wait">
           <motion.a
             key={current}
@@ -68,7 +67,7 @@ export default function TrendingProducts() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.6 }}
           >
             <img
               src={products[current].image}
@@ -76,8 +75,9 @@ export default function TrendingProducts() {
             />
 
             <div className="trending-overlay">
+              <span className="trending-kicker">{products[current].category}</span>
               <h2>{products[current].name}</h2>
-              <span>SHOP NOW</span>
+              <span className="trending-cta">SHOP NOW &rarr;</span>
             </div>
           </motion.a>
         </AnimatePresence>
@@ -88,7 +88,7 @@ export default function TrendingProducts() {
           onClick={previousSlide}
           aria-label="Previous product"
         >
-          <ChevronLeft />
+          <ChevronLeft size={20} />
         </button>
 
         {/* RIGHT ARROW */}
@@ -97,7 +97,7 @@ export default function TrendingProducts() {
           onClick={nextSlide}
           aria-label="Next product"
         >
-          <ChevronRight />
+          <ChevronRight size={20} />
         </button>
 
         {/* DOTS */}
@@ -107,11 +107,10 @@ export default function TrendingProducts() {
               key={index}
               onClick={() => goToSlide(index)}
               className={current === index ? "active" : ""}
-              aria-label={`Go to product ${index + 1}`}
+              aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
-
       </div>
     </section>
   );

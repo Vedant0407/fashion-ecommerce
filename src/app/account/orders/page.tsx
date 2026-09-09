@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import styles from "./orders.module.css";
 
 type Order = {
   id: string;
@@ -24,8 +25,6 @@ export default function OrdersPage() {
     async function fetchOrders() {
       try {
         const supabase = createClient();
-
-        // Get logged-in user
         const {
           data: { user },
           error: userError,
@@ -37,7 +36,6 @@ export default function OrdersPage() {
           return;
         }
 
-        // Get user's orders
         const { data, error: ordersError } = await supabase
           .from("orders")
           .select(
@@ -65,83 +63,113 @@ export default function OrdersPage() {
     fetchOrders();
   }, []);
 
-  return (
-    <main className="account-page">
-      <div className="account-container">
-        <p className="account-label">GREENO / ORDERS</p>
+  const getStatusBadgeClass = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "confirmed":
+        return styles.statusConfirmed;
+      case "shipped":
+        return styles.statusShipped;
+      case "delivered":
+        return styles.statusDelivered;
+      default:
+        return styles.statusPending;
+    }
+  };
 
-        <h1>YOUR ORDERS</h1>
+  return (
+    <main className={styles.page}>
+      <div className={styles.container}>
+        <Link href="/account" className={styles.back}>
+          ← BACK TO ACCOUNT
+        </Link>
+
+        <p className={styles.crumb}>GREENO / ACCOUNT</p>
+        <h1 className={styles.title}>YOUR ORDERS</h1>
 
         {loading && (
-          <p className="orders-message">LOADING ORDERS...</p>
+          <div className={styles.emptyState}>
+            <p>LOADING ORDERS...</p>
+          </div>
         )}
 
         {error && (
-          <p className="orders-error">{error}</p>
+          <div className={styles.emptyState}>
+            <p style={{ color: "#e11d48", marginBottom: "20px" }}>{error}</p>
+            <Link href="/login" className={styles.primaryButton}>
+              LOG IN NOW
+            </Link>
+          </div>
         )}
 
         {!loading && !error && orders.length === 0 && (
-          <div className="empty-orders">
-            <p>You haven't placed any orders yet.</p>
-
-            <Link href="/shop" className="continue-shopping">
+          <div className={styles.emptyState}>
+            <h2>NO ORDERS YET</h2>
+            <p>You haven&apos;t placed any orders yet. Discover our latest collection.</p>
+            <Link href="/shop" className={styles.primaryButton}>
               START SHOPPING
             </Link>
           </div>
         )}
 
         {!loading && !error && orders.length > 0 && (
-          <div className="orders-list">
+          <div>
             {orders.map((order) => (
               <Link
-  href={`/account/orders/${order.id}`}
-  className="order-card"
-  key={order.id}
->
-                <div className="order-card-header">
-                  <div>
-                    <span>ORDER ID</span>
-                    <strong>{order.id}</strong>
+                href={`/account/orders/${order.id}`}
+                className={styles.card}
+                key={order.id}
+              >
+                <div className={styles.cardHeader}>
+                  <div className={styles.cardMeta}>
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>ORDER ID</span>
+                      <strong className={styles.metaValue}>{order.id}</strong>
+                    </div>
+
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>ORDER DATE</span>
+                      <strong className={styles.metaValue}>
+                        {new Date(order.created_at).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </strong>
+                    </div>
+
+                    <div className={styles.metaItem}>
+                      <span className={styles.metaLabel}>PAYMENT</span>
+                      <strong className={styles.metaValue}>
+                        {order.payment_method}
+                      </strong>
+                    </div>
                   </div>
 
-                  <div>
-                    <span>DATE</span>
-                    <strong>
-                      {new Date(order.created_at).toLocaleDateString(
-                        "en-IN"
-                      )}
-                    </strong>
-                  </div>
+                  <span
+                    className={`${styles.statusBadge} ${getStatusBadgeClass(
+                      order.status
+                    )}`}
+                  >
+                    {order.status}
+                  </span>
                 </div>
 
-                <div className="order-card-details">
+                <div className={styles.cardBody}>
                   <div>
-                    <span>STATUS</span>
-                    <strong>{order.status.toUpperCase()}</strong>
-                  </div>
-
-                  <div>
-                    <span>PAYMENT</span>
-                    <strong>
-                      {order.payment_method}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>TOTAL</span>
-                    <strong>
+                    <span className={styles.metaLabel}>TOTAL AMOUNT</span>
+                    <div className={styles.cardTotal}>
                       ₹{Number(order.total).toLocaleString("en-IN")}
-                    </strong>
+                    </div>
                   </div>
+
+                  <span className={styles.viewLink}>
+                    VIEW ORDER DETAILS →
+                  </span>
                 </div>
               </Link>
             ))}
           </div>
         )}
-
-        <Link href="/account" className="back-link">
-          ← BACK TO ACCOUNT
-        </Link>
       </div>
     </main>
   );
