@@ -2,16 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { useWishlist } from "@/context/WishlistContext";
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  category?: string;
-};
+import { Product, getAllProducts } from "@/lib/catalog";
 
 export default function ProductsGrid() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -20,21 +12,16 @@ export default function ProductsGrid() {
 
   useEffect(() => {
     async function loadProducts() {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, name, price, image")
-        .order("name");
-
-      if (error) {
+      try {
+        const all = await getAllProducts();
+        const featured = all.filter((p) => p.is_featured);
+        // Show featured products if selected, otherwise all catalog products
+        setProducts(featured.length > 0 ? featured : all);
+      } catch (error) {
         console.error("Error loading products:", error);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setProducts(data || []);
-      setLoading(false);
     }
 
     loadProducts();

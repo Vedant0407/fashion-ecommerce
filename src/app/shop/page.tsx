@@ -32,17 +32,43 @@ export default function ShopPage() {
     loadProducts();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const search = new URLSearchParams(window.location.search);
+      const cat = search.get("category");
+      const section = search.get("section") || search.get("filter");
+      if (section === "newin" || section === "new") {
+        setSelectedCategory("NEW IN");
+      } else if (section === "trending") {
+        setSelectedCategory("TRENDING");
+      } else if (cat) {
+        const match = FALLBACK_CATEGORIES.find(
+          (c) =>
+            c.slug.toLowerCase() === cat.toLowerCase() ||
+            c.name.toLowerCase() === cat.toLowerCase()
+        );
+        if (match) {
+          setSelectedCategory(match.name);
+        }
+      }
+    }
+  }, []);
+
   const filteredProducts = useMemo(() => {
     let list = [...products];
 
-    if (selectedCategory !== "ALL") {
+    if (selectedCategory === "NEW IN") {
+      list = list.filter((p) => p.is_new);
+    } else if (selectedCategory === "TRENDING") {
+      list = list.filter((p) => p.is_trending);
+    } else if (selectedCategory !== "ALL") {
       const catSlug = selectedCategory.toLowerCase();
       list = list.filter((p) => {
         if (p.category_slug?.toLowerCase() === catSlug) return true;
         if (p.category_name?.toUpperCase() === selectedCategory) return true;
         if (catSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee"))) return true;
         if (catSlug === "hoodies" && (p.id.includes("hoodie") || p.name.toLowerCase().includes("hoodie"))) return true;
-        if (catSlug === "pants" && (p.id.includes("pants") || p.name.toLowerCase().includes("pants"))) return true;
+        if (catSlug === "pants" && (p.id.includes("pants") || p.name.toLowerCase().includes("pants") || p.id.includes("cargo"))) return true;
         if (catSlug === "caps" && (p.id.includes("cap") || p.name.toLowerCase().includes("cap"))) return true;
         if (catSlug === "bags" && (p.id.includes("bag") || p.name.toLowerCase().includes("bag"))) return true;
         if (catSlug === "accessories" && (p.id.includes("chain") || p.name.toLowerCase().includes("chain"))) return true;
@@ -61,7 +87,7 @@ export default function ShopPage() {
     return list;
   }, [products, selectedCategory, sortBy]);
 
-  const categories = ["ALL", ...FALLBACK_CATEGORIES.map((c) => c.name)];
+  const categories = ["ALL", "NEW IN", "TRENDING", ...FALLBACK_CATEGORIES.map((c) => c.name)];
 
   return (
     <main

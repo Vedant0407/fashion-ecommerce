@@ -584,6 +584,9 @@ export default function AdminPage() {
 
       const matchesCat =
         productCategoryFilter === "ALL" ||
+        (productCategoryFilter === "NEW_IN" && Boolean(p.is_new)) ||
+        (productCategoryFilter === "TRENDING" && Boolean(p.is_trending)) ||
+        (productCategoryFilter === "FEATURED" && Boolean(p.is_featured)) ||
         p.category_slug === productCategoryFilter ||
         p.category_name?.toUpperCase() === productCategoryFilter.toUpperCase();
 
@@ -935,18 +938,23 @@ export default function AdminPage() {
                   />
 
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    <span style={{ fontSize: "11px", color: "#888888" }}>COLLECTION:</span>
+                    <span style={{ fontSize: "11px", color: "#888888" }}>FILTER SECTION:</span>
                     <select
                       className={styles.filterSelect}
                       value={productCategoryFilter}
                       onChange={(e) => setProductCategoryFilter(e.target.value)}
                     >
-                      <option value="ALL">ALL COLLECTIONS</option>
-                      {categories.map((c) => (
-                        <option key={c.slug} value={c.slug}>
-                          {c.name}
-                        </option>
-                      ))}
+                      <option value="ALL">ALL PRODUCTS ({products.length})</option>
+                      <option value="NEW_IN">✦ NEW IN SECTION ({products.filter((p) => p.is_new).length})</option>
+                      <option value="TRENDING">★ TRENDING SECTION ({products.filter((p) => p.is_trending).length})</option>
+                      <option value="FEATURED">◆ CURATED CATALOGUE ({products.filter((p) => p.is_featured).length})</option>
+                      <optgroup label="BY CATEGORY">
+                        {categories.map((c) => (
+                          <option key={c.slug} value={c.slug}>
+                            {c.name} ({products.filter((p) => p.category_slug === c.slug).length})
+                          </option>
+                        ))}
+                      </optgroup>
                     </select>
                   </div>
                 </div>
@@ -2139,40 +2147,123 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className={styles.fullSpan}>
-                    <div style={{ display: "flex", gap: "24px", flexWrap: "wrap", paddingTop: "8px" }}>
-                      <label className={styles.checkboxRow}>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(editingProduct.is_featured)}
-                          onChange={(e) =>
-                            setEditingProduct({ ...editingProduct, is_featured: e.target.checked })
-                          }
-                        />
-                        <span style={{ fontSize: "11px", fontWeight: 600 }}>FEATURED ON HOMEPAGE</span>
-                      </label>
+                  <div className={styles.fullSpan} style={{ marginTop: "12px" }}>
+                    <div style={{
+                      background: "#111111",
+                      border: "1px solid #282828",
+                      padding: "16px 18px",
+                      borderRadius: "0px"
+                    }}>
+                      <div style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        letterSpacing: "0.15em",
+                        color: "#ffffff",
+                        marginBottom: "6px",
+                        textTransform: "uppercase"
+                      }}>
+                        STOREFRONT SECTION VISIBILITY & CUSTOMIZATION
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#888888", marginBottom: "16px" }}>
+                        Configure exactly where this product appears across your store:
+                      </div>
 
-                      <label className={styles.checkboxRow}>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(editingProduct.is_new)}
-                          onChange={(e) =>
-                            setEditingProduct({ ...editingProduct, is_new: e.target.checked })
-                          }
-                        />
-                        <span style={{ fontSize: "11px", fontWeight: 600 }}>NEW ARRIVAL TAG</span>
-                      </label>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
+                        {/* 1. NEW IN SECTION */}
+                        <label style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: "10px",
+                          background: editingProduct.is_new ? "#181818" : "#0d0d0d",
+                          border: `1px solid ${editingProduct.is_new ? "#ffffff" : "#222222"}`,
+                          padding: "12px",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(editingProduct.is_new)}
+                            onChange={(e) =>
+                              setEditingProduct({ ...editingProduct, is_new: e.target.checked })
+                            }
+                            style={{ marginTop: "2px", accentColor: "#ffffff" }}
+                          />
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#ffffff", letterSpacing: "0.08em" }}>
+                              NEW IN SECTION
+                            </div>
+                            <div style={{ fontSize: "10px", color: "#777777", marginTop: "2px", lineHeight: "1.3" }}>
+                              Shows product in homepage &ldquo;NEW ARRIVALS&rdquo; marquee and &ldquo;NEW IN&rdquo; catalogue filters.
+                            </div>
+                          </div>
+                        </label>
 
-                      <label className={styles.checkboxRow}>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(editingProduct.is_trending)}
-                          onChange={(e) =>
-                            setEditingProduct({ ...editingProduct, is_trending: e.target.checked })
-                          }
-                        />
-                        <span style={{ fontSize: "11px", fontWeight: 600 }}>TRENDING SLIDER</span>
-                      </label>
+                        {/* 2. TRENDING SECTION */}
+                        <label style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: "10px",
+                          background: editingProduct.is_trending ? "#181818" : "#0d0d0d",
+                          border: `1px solid ${editingProduct.is_trending ? "#ffffff" : "#222222"}`,
+                          padding: "12px",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(editingProduct.is_trending)}
+                            onChange={(e) =>
+                              setEditingProduct({ ...editingProduct, is_trending: e.target.checked })
+                            }
+                            style={{ marginTop: "2px", accentColor: "#ffffff" }}
+                          />
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#ffffff", letterSpacing: "0.08em" }}>
+                              TRENDING SECTION
+                            </div>
+                            <div style={{ fontSize: "10px", color: "#777777", marginTop: "2px", lineHeight: "1.3" }}>
+                              Shows product in homepage &ldquo;TRENDING&rdquo; featured spotlight slider and trending filters.
+                            </div>
+                          </div>
+                        </label>
+
+                        {/* 3. CURATED PRODUCTS */}
+                        <label style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: "10px",
+                          background: editingProduct.is_featured ? "#181818" : "#0d0d0d",
+                          border: `1px solid ${editingProduct.is_featured ? "#ffffff" : "#222222"}`,
+                          padding: "12px",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(editingProduct.is_featured)}
+                            onChange={(e) =>
+                              setEditingProduct({ ...editingProduct, is_featured: e.target.checked })
+                            }
+                            style={{ marginTop: "2px", accentColor: "#ffffff" }}
+                          />
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#ffffff", letterSpacing: "0.08em" }}>
+                              CURATED PRODUCTS
+                            </div>
+                            <div style={{ fontSize: "10px", color: "#777777", marginTop: "2px", lineHeight: "1.3" }}>
+                              Featured prominently in homepage &ldquo;CURATED CATALOGUE&rdquo; grid.
+                            </div>
+                          </div>
+                        </label>
+                      </div>
+
+                      {/* Category Live Indicator */}
+                      <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #222222", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", fontSize: "11px" }}>
+                        <span style={{ color: "#777777" }}>Assigned Category Section:</span>
+                        <strong style={{ color: "#ffffff", letterSpacing: "0.08em" }}>
+                          {editingProduct.category_name ? `${editingProduct.category_name} (/category/${editingProduct.category_slug})` : "SELECT A CATEGORY ABOVE"}
+                        </strong>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get("sort");
     const featured = searchParams.get("featured");
     const trending = searchParams.get("trending");
+    const newin = searchParams.get("newin") || searchParams.get("new") || searchParams.get("is_new");
 
     let products = await getStoreProducts();
 
@@ -36,6 +37,10 @@ export async function GET(request: NextRequest) {
           (p.category_name && p.category_name.toLowerCase().includes(q)) ||
           (p.color && p.color.toLowerCase().includes(q))
       );
+    }
+
+    if (newin === "true") {
+      products = products.filter((p) => p.is_new);
     }
 
     if (featured === "true") {

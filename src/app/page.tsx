@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import TypewriterText from "@/components/ui/TypewriterText";
 import TrendingProducts from "@/components/ui/TrendingProducts";
@@ -8,8 +9,30 @@ import CategoryGallery from "@/components/ui/CategoryGallery";
 import ProductsGrid from "@/components/ui/ProductsGrid";
 import AboutSection from "@/components/ui/AboutSection";
 import SpotlightCursor from "@/components/ui/SpotlightCursor";
+import { Product, getAllProducts } from "@/lib/catalog";
 
 export default function HomePage() {
+  const [newInProducts, setNewInProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    async function loadNewIn() {
+      try {
+        const all = await getAllProducts();
+        const filtered = all.filter((p) => p.is_new);
+        setNewInProducts(filtered.length > 0 ? filtered : all.slice(0, 6));
+      } catch (err) {
+        console.error("Error loading new-in products:", err);
+      }
+    }
+    loadNewIn();
+  }, []);
+
+  // Duplicate list to ensure seamless infinite looping marquee
+  const marqueeItems =
+    newInProducts.length > 0
+      ? [...newInProducts, ...newInProducts, ...newInProducts]
+      : [];
+
   return (
     <>
       <main className="home-page">
@@ -56,146 +79,30 @@ export default function HomePage() {
 
             <div className="new-in-marquee">
               <div className="new-in-track">
-                {/* CARD 1 */}
-                <Link
-                  href="/products/oversized-black-tee"
-                  className="new-in-card card-one"
-                >
-                  <div className="new-in-image">
-                    <img
-                      src="/black-tee.jfif"
-                      alt="Oversized Black Tee"
-                    />
-                  </div>
+                {marqueeItems.map((prod, idx) => {
+                  const cardClass = idx % 2 === 0 ? "card-one" : "card-two";
+                  return (
+                    <Link
+                      key={`${prod.id}-${idx}`}
+                      href={`/products/${prod.id}`}
+                      className={`new-in-card ${cardClass}`}
+                    >
+                      <div className="new-in-image">
+                        <img
+                          src={prod.image || "/black-tee.jfif"}
+                          alt={prod.name}
+                        />
+                      </div>
 
-                  <div className="new-in-info">
-                    <p className="new-in-name">OVERSIZED BLACK TEE</p>
-                    <span className="new-in-price">₹2,499</span>
-                  </div>
-                </Link>
-
-                {/* CARD 2 */}
-                <Link
-                  href="/products/urban-grey-hoodie"
-                  className="new-in-card card-two"
-                >
-                  <div className="new-in-image">
-                    <img
-                      src="/grey-hoodie.jfif"
-                      alt="Urban Grey Hoodie"
-                    />
-                  </div>
-
-                  <div className="new-in-info">
-                    <p className="new-in-name">URBAN GREY HOODIE</p>
-                    <span className="new-in-price">₹3,999</span>
-                  </div>
-                </Link>
-
-                {/* CARD 3 */}
-                <Link
-                  href="/products/cargo-street-pants"
-                  className="new-in-card card-three"
-                >
-                  <div className="new-in-image">
-                    <img
-                      src="/cargo-pants.jfif"
-                      alt="Cargo Street Pants"
-                    />
-                  </div>
-
-                  <div className="new-in-info">
-                    <p className="new-in-name">CARGO STREET PANTS</p>
-                    <span className="new-in-price">₹3,499</span>
-                  </div>
-                </Link>
-
-                {/* CARD 4 */}
-                <Link
-                  href="/products/classic-white-tee"
-                  className="new-in-card card-four"
-                >
-                  <div className="new-in-image">
-                    <img
-                      src="/white-tee.jfif"
-                      alt="Classic White Tee"
-                    />
-                  </div>
-
-                  <div className="new-in-info">
-                    <p className="new-in-name">CLASSIC WHITE TEE</p>
-                    <span className="new-in-price">₹1,999</span>
-                  </div>
-                </Link>
-
-                {/* DUPLICATE FOR INFINITE LOOP */}
-                <Link
-                  href="/products/oversized-black-tee"
-                  className="new-in-card card-one"
-                >
-                  <div className="new-in-image">
-                    <img
-                      src="/black-tee.jfif"
-                      alt="Oversized Black Tee"
-                    />
-                  </div>
-
-                  <div className="new-in-info">
-                    <p className="new-in-name">OVERSIZED BLACK TEE</p>
-                    <span className="new-in-price">₹2,499</span>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/products/urban-grey-hoodie"
-                  className="new-in-card card-two"
-                >
-                  <div className="new-in-image">
-                    <img
-                      src="/grey-hoodie.jfif"
-                      alt="Urban Grey Hoodie"
-                    />
-                  </div>
-
-                  <div className="new-in-info">
-                    <p className="new-in-name">URBAN GREY HOODIE</p>
-                    <span className="new-in-price">₹3,999</span>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/products/cargo-street-pants"
-                  className="new-in-card card-three"
-                >
-                  <div className="new-in-image">
-                    <img
-                      src="/cargo-pants.jfif"
-                      alt="Cargo Street Pants"
-                    />
-                  </div>
-
-                  <div className="new-in-info">
-                    <p className="new-in-name">CARGO STREET PANTS</p>
-                    <span className="new-in-price">₹3,499</span>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/products/classic-white-tee"
-                  className="new-in-card card-four"
-                >
-                  <div className="new-in-image">
-                    <img
-                      src="/white-tee.jfif"
-                      alt="Classic White Tee"
-                    />
-                  </div>
-
-                  <div className="new-in-info">
-                    <p className="new-in-name">CLASSIC WHITE TEE</p>
-                    <span className="new-in-price">₹1,999</span>
-                  </div>
-                </Link>
+                      <div className="new-in-info">
+                        <p className="new-in-name">{prod.name}</p>
+                        <span className="new-in-price">
+                          ₹{Number(prod.price).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>
