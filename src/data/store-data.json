@@ -350,6 +350,15 @@
     "adminPasskey": "aman2026",
     "currency": "INR",
     "smsApiKey": "",
-    "smsProvider": "2factor"
+    "smsProvider": "2factor",
+    "emailProvider": "gmail",
+    "smtpHost": "smtp.gmail.com",
+    "smtpPort": 465,
+    "smtpSecure": true,
+    "smtpUser": "",
+    "smtpPass": "",
+    "smtpFrom": "GreenO Security <concierge@greeno.in>",
+    "brevoApiKey": "",
+    "resendApiKey": ""
   }
 }

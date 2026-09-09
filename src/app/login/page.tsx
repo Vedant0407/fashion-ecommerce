@@ -137,7 +137,11 @@ function LoginFormContent() {
       setTimer(60);
       setCanResend(false);
       setOtpCode("");
-      setMessage(`A 6-digit verification code has been dispatched to ${email.trim()}.`);
+      setMessage(
+        data.realEmailSent
+          ? `Security code dispatched to ${email.trim()}! Please check your Gmail / inbox (and Spam folder).`
+          : `A 6-digit verification code has been generated for ${email.trim()}.`
+      );
       setStep("verify");
     } catch (err: any) {
       console.error("OTP REQUEST ERROR:", err);
@@ -237,7 +241,11 @@ function LoginFormContent() {
       }
       setTimer(60);
       setCanResend(false);
-      setMessage(`New verification code sent to ${email.trim()}.`);
+      setMessage(
+        data.realEmailSent
+          ? `New verification code dispatched to ${email.trim()}! Check inbox & Spam.`
+          : `New verification code ready for ${email.trim()}.`
+      );
     } catch (err) {
       setError("Failed to resend code.");
     } finally {
@@ -394,14 +402,54 @@ function LoginFormContent() {
               style={{
                 background: "#f0f0ee",
                 border: "1px solid #dcdcd8",
-                padding: "10px 14px",
+                padding: "12px 14px",
                 fontSize: "11px",
-                color: "#555555",
+                color: "#444444",
                 lineHeight: "1.5",
-                marginBottom: "28px",
+                marginBottom: "24px",
               }}
             >
-              ✉ <strong>Check your email inbox and Spam/Promotions folder.</strong> For instant testing, your code is also shown on the notification card above.
+              <div>
+                ✉ <strong>Check your email inbox and Spam/Promotions folder.</strong> We dispatched a 6-digit passcode to your address.
+              </div>
+              {activeCode && (
+                <div
+                  style={{
+                    marginTop: "10px",
+                    paddingTop: "10px",
+                    borderTop: "1px dashed #cccccc",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                  }}
+                >
+                  <span style={{ fontSize: "10px", color: "#666666" }}>
+                    Provider delayed? Emergency passkey: <strong>{activeCode}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpCode(activeCode);
+                      handleVerifyOtp(undefined, activeCode);
+                    }}
+                    style={{
+                      background: "#000000",
+                      color: "#ffffff",
+                      border: "none",
+                      padding: "4px 8px",
+                      fontSize: "9px",
+                      fontWeight: 800,
+                      letterSpacing: "0.1em",
+                      cursor: "pointer",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Auto-Fill Code ({activeCode})
+                  </button>
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleVerifyOtp}>

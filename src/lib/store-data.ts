@@ -58,6 +58,16 @@ export type StoreSettings = {
   twilioSid?: string;
   twilioToken?: string;
   twilioFrom?: string;
+  // Email Gateway Settings
+  emailProvider?: "gmail" | "smtp" | "brevo" | "resend" | "supabase";
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpSecure?: boolean;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpFrom?: string;
+  brevoApiKey?: string;
+  resendApiKey?: string;
 };
 
 export type StoreData = {

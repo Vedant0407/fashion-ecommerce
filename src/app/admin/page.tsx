@@ -14,7 +14,7 @@ export default function AdminPage() {
 
   // Navigation
   const [activeTab, setActiveTab] = useState<
-    "overview" | "products" | "categories" | "orders" | "coupons" | "settings" | "sms"
+    "overview" | "products" | "categories" | "orders" | "coupons" | "settings" | "sms" | "email"
   >("overview");
 
   // SMS Testing State
@@ -26,6 +26,19 @@ export default function AdminPage() {
     provider?: string;
     message: string;
     details?: any;
+  } | null>(null);
+
+  // Email Testing State
+  const [testEmail, setTestEmail] = useState<string>("");
+  const [testEmailLoading, setTestEmailLoading] = useState<boolean>(false);
+  const [testEmailResult, setTestEmailResult] = useState<{
+    success: boolean;
+    sent?: boolean;
+    provider?: string;
+    message: string;
+    error?: string;
+    details?: any;
+    duration?: string;
   } | null>(null);
 
   // Data States
@@ -582,6 +595,60 @@ export default function AdminPage() {
     }
   }
 
+  // ----------------- Live Email Test -----------------
+  async function handleTestEmail(e: React.FormEvent) {
+    e.preventDefault();
+    const clean = testEmail.trim().toLowerCase();
+    if (!clean || !clean.includes("@")) {
+      alert("Please enter a valid email address to test.");
+      return;
+    }
+    setTestEmailLoading(true);
+    setTestEmailResult(null);
+
+    try {
+      const res = await fetch("/api/admin/test-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: clean,
+          provider: settings.emailProvider || "gmail",
+          smtpHost: settings.smtpHost,
+          smtpPort: settings.smtpPort,
+          smtpSecure: settings.smtpSecure,
+          smtpUser: settings.smtpUser,
+          smtpPass: settings.smtpPass,
+          smtpFrom: settings.smtpFrom,
+          brevoApiKey: settings.brevoApiKey,
+          resendApiKey: settings.resendApiKey,
+        }),
+      });
+
+      const data = await res.json();
+      setTestEmailResult({
+        success: data.success,
+        sent: data.sent,
+        provider: data.provider,
+        message: data.message,
+        error: data.error,
+        details: data.details,
+        duration: data.duration,
+      });
+
+      if (data.success) {
+        triggerToast("Real verification email delivered to your inbox!");
+      }
+    } catch (err: any) {
+      setTestEmailResult({
+        success: false,
+        sent: false,
+        message: err.message || "Failed to communicate with Email test endpoint.",
+      });
+    } finally {
+      setTestEmailLoading(false);
+    }
+  }
+
   // ----------------- Filtered Data -----------------
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
@@ -760,6 +827,39 @@ export default function AdminPage() {
           >
             SMS GATEWAY (REAL SMS)
             {settings.smsApiKey ? (
+              <span
+                style={{
+                  background: "#22c55e",
+                  color: "#000000",
+                  padding: "1px 6px",
+                  fontSize: "9px",
+                  fontWeight: 800,
+                  marginLeft: "6px",
+                }}
+              >
+                ACTIVE
+              </span>
+            ) : (
+              <span
+                style={{
+                  background: "#f59e0b",
+                  color: "#000000",
+                  padding: "1px 6px",
+                  fontSize: "9px",
+                  fontWeight: 800,
+                  marginLeft: "6px",
+                }}
+              >
+                SETUP
+              </span>
+            )}
+          </button>
+          <button
+            className={`${styles.tabBtn} ${activeTab === "email" ? styles.activeTab : ""}`}
+            onClick={() => setActiveTab("email")}
+          >
+            EMAIL GATEWAY (OTP DISPATCH)
+            {settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? (
               <span
                 style={{
                   background: "#22c55e",
@@ -1754,6 +1854,348 @@ export default function AdminPage() {
                           >
                             {JSON.stringify(testSmsResult.details, null, 2)}
                           </pre>
+                        )}
+                      </div>
+                    )}
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- EMAIL GATEWAY TAB -------------------- */}
+            {activeTab === "email" && (
+              <div style={{ maxWidth: "800px" }}>
+                <div className={styles.sectionHeader}>
+                  <div>
+                    <div className={styles.sectionTitle}>REAL-TIME EMAIL GATEWAY (PASSCODE DISPATCH)</div>
+                    <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>
+                      Configure email SMTP or API service to transmit real 6-digit verification passcodes directly to customer inboxes (Gmail, Yahoo, Outlook, Apple Mail).
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Indicator */}
+                <div
+                  style={{
+                    background: settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "#0a2912" : "#2a1c06",
+                    border: settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "1px solid #166534" : "1px solid #78350f",
+                    padding: "16px 20px",
+                    marginBottom: "28px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "12px",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 800,
+                        letterSpacing: "0.12em",
+                        color: settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "#4ade80" : "#f59e0b",
+                        textTransform: "uppercase",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {settings.smtpUser || settings.brevoApiKey || settings.resendApiKey
+                        ? `● GATEWAY ACTIVE: ${(settings.emailProvider || "GMAIL").toUpperCase()}`
+                        : "● GATEWAY AWAITING SETUP (PASSCODES INSTANTLY AVAILABLE ON SCREEN)"}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#cccccc", lineHeight: "1.4" }}>
+                      {settings.smtpUser || settings.brevoApiKey || settings.resendApiKey
+                        ? "Real branded emails with 6-digit security passcodes are dispatched to users during login and verification."
+                        : "Enter your Gmail App Password or Brevo key below to transmit real emails directly to personal inboxes."}
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      background: settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "#22c55e" : "#f59e0b",
+                      color: "#000000",
+                      padding: "4px 10px",
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      letterSpacing: "0.1em",
+                    }}
+                  >
+                    {settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "LIVE INBOX DISPATCH" : "ACTION REQUIRED"}
+                  </span>
+                </div>
+
+                {/* Configuration Form */}
+                <form onSubmit={handleSaveSettings} className={styles.formGrid}>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Email Provider / Dispatch Protocol</label>
+                    <select
+                      className={styles.fieldSelect}
+                      value={settings.emailProvider || "gmail"}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          emailProvider: e.target.value as any,
+                          smtpHost: e.target.value === "gmail" ? "smtp.gmail.com" : settings.smtpHost,
+                          smtpPort: e.target.value === "gmail" ? 465 : settings.smtpPort || 587,
+                          smtpSecure: e.target.value === "gmail" ? true : settings.smtpSecure,
+                        })
+                      }
+                    >
+                      <option value="gmail">Gmail SMTP (Recommended — Fast, Free via Google App Password)</option>
+                      <option value="brevo">Brevo / Sendinblue (Free 300 emails/day, no DNS setup needed)</option>
+                      <option value="resend">Resend API (Developer Email Delivery)</option>
+                      <option value="smtp">Custom SMTP Server (Any host, port, credentials)</option>
+                    </select>
+                  </div>
+
+                  {/* Gmail or Custom SMTP settings */}
+                  {(settings.emailProvider === "gmail" || settings.emailProvider === "smtp" || !settings.emailProvider) && (
+                    <>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>SMTP Host *</label>
+                        <input
+                          type="text"
+                          className={styles.fieldInput}
+                          value={settings.smtpHost || (settings.emailProvider === "gmail" ? "smtp.gmail.com" : "")}
+                          onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+                          placeholder="smtp.gmail.com"
+                          required
+                        />
+                      </div>
+
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>SMTP Port *</label>
+                        <input
+                          type="number"
+                          className={styles.fieldInput}
+                          value={settings.smtpPort || (settings.emailProvider === "gmail" ? 465 : 587)}
+                          onChange={(e) => setSettings({ ...settings, smtpPort: Number(e.target.value) })}
+                          placeholder="465 or 587"
+                          required
+                        />
+                      </div>
+
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>SMTP Username / Gmail Address *</label>
+                        <input
+                          type="email"
+                          className={styles.fieldInput}
+                          value={settings.smtpUser || ""}
+                          onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+                          placeholder="yourname@gmail.com"
+                          required
+                        />
+                        <span style={{ fontSize: "10px", color: "#888888" }}>
+                          The email address used to send out security passcodes.
+                        </span>
+                      </div>
+
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>
+                          {settings.emailProvider === "gmail" ? "Google 16-Character App Password *" : "SMTP Password *"}
+                        </label>
+                        <input
+                          type="password"
+                          className={styles.fieldInput}
+                          value={settings.smtpPass || ""}
+                          onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value })}
+                          placeholder={settings.emailProvider === "gmail" ? "xxxx xxxx xxxx xxxx" : "Your SMTP password"}
+                          required
+                        />
+                        <span style={{ fontSize: "10px", color: "#888888" }}>
+                          {settings.emailProvider === "gmail"
+                            ? "Created under your Google Account Security settings."
+                            : "Your mail server secret."}
+                        </span>
+                      </div>
+
+                      <div className={styles.fullSpan}>
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.fieldLabel}>From Display Header</label>
+                          <input
+                            type="text"
+                            className={styles.fieldInput}
+                            value={settings.smtpFrom || ""}
+                            onChange={(e) => setSettings({ ...settings, smtpFrom: e.target.value })}
+                            placeholder="GreenO Security <concierge@greeno.in>"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Gmail Step-by-Step Guide Box */}
+                      {settings.emailProvider === "gmail" && (
+                        <div className={styles.fullSpan}>
+                          <div
+                            style={{
+                              background: "#111111",
+                              border: "1px solid #222222",
+                              padding: "16px 20px",
+                              fontSize: "12px",
+                              lineHeight: "1.6",
+                              color: "#aaaaaa",
+                            }}
+                          >
+                            <div style={{ fontWeight: 800, color: "#ffffff", letterSpacing: "0.1em", marginBottom: "8px", fontSize: "11px" }}>
+                              👉 HOW TO GET A FREE GMAIL APP PASSWORD (TAKES 30 SECONDS):
+                            </div>
+                            <ol style={{ margin: "0 0 10px", paddingLeft: "18px" }}>
+                              <li style={{ marginBottom: "4px" }}>
+                                Open your Google Account at{" "}
+                                <a
+                                  href="https://myaccount.google.com/security"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{ color: "#ffffff", fontWeight: 700, textDecoration: "underline" }}
+                                >
+                                  myaccount.google.com/security &#8599;
+                                </a>
+                              </li>
+                              <li style={{ marginBottom: "4px" }}>
+                                Ensure <strong>2-Step Verification</strong> is enabled on your Google account.
+                              </li>
+                              <li style={{ marginBottom: "4px" }}>
+                                In the search bar at the top of your Google Account, search for <strong>App Passwords</strong> (or visit <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>myaccount.google.com/apppasswords</a>).
+                              </li>
+                              <li style={{ marginBottom: "4px" }}>
+                                Enter App Name: <strong>GreenO</strong>, then click <strong>Create</strong>.
+                              </li>
+                              <li>
+                                Copy the 16-character password (e.g. <code>abcd efgh ijkl mnop</code>), paste it into the field above, and click <strong>SAVE EMAIL CONFIGURATION</strong>.
+                              </li>
+                            </ol>
+                            <div style={{ fontSize: "11px", color: "#888888" }}>
+                              <em>Note: Real emails will immediately start landing in your customers' primary Gmail inboxes without landing in spam!</em>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Brevo Settings */}
+                  {settings.emailProvider === "brevo" && (
+                    <div className={styles.fullSpan}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Brevo (Sendinblue) API Key *</label>
+                        <input
+                          type="text"
+                          className={styles.fieldInput}
+                          value={settings.brevoApiKey || ""}
+                          onChange={(e) => setSettings({ ...settings, brevoApiKey: e.target.value })}
+                          placeholder="xkeysib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                          required
+                        />
+                        <span style={{ fontSize: "10px", color: "#888888" }}>
+                          Get a free key from <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>brevo.com</a> (300 free emails/day).
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Resend Settings */}
+                  {settings.emailProvider === "resend" && (
+                    <div className={styles.fullSpan}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Resend API Key *</label>
+                        <input
+                          type="text"
+                          className={styles.fieldInput}
+                          value={settings.resendApiKey || ""}
+                          onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
+                          placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
+                          required
+                        />
+                        <span style={{ fontSize: "10px", color: "#888888" }}>
+                          Get an API key from <a href="https://resend.com/api-keys" target="_blank" rel="noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>resend.com</a>.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={styles.fullSpan} style={{ marginTop: "12px" }}>
+                    <button type="submit" className={styles.primaryButton}>
+                      SAVE EMAIL CONFIGURATION
+                    </button>
+                  </div>
+                </form>
+
+                {/* -------------------- LIVE TEST EMAIL DISPATCHER -------------------- */}
+                <div
+                  style={{
+                    marginTop: "48px",
+                    paddingTop: "32px",
+                    borderTop: "1px solid #222222",
+                  }}
+                >
+                  <div className={styles.sectionHeader}>
+                    <div>
+                      <div className={styles.sectionTitle}>LIVE EMAIL TEST DISPATCHER</div>
+                      <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>
+                        Send a live test verification passcode to your personal email to verify inbox delivery.
+                      </div>
+                    </div>
+                  </div>
+
+                  <form
+                    onSubmit={handleTestEmail}
+                    style={{
+                      background: "#0c0c0c",
+                      border: "1px solid #262626",
+                      padding: "24px 20px",
+                    }}
+                  >
+                    <div className={styles.fieldGroup} style={{ marginBottom: "16px" }}>
+                      <label className={styles.fieldLabel}>Recipient Email Address</label>
+                      <input
+                        type="email"
+                        className={styles.fieldInput}
+                        placeholder="e.g. yourname@gmail.com"
+                        value={testEmail}
+                        onChange={(e) => setTestEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={testEmailLoading || !testEmail.includes("@")}
+                      className={styles.primaryButton}
+                      style={{
+                        background: testEmail.includes("@") ? "#ffffff" : "#333333",
+                        color: testEmail.includes("@") ? "#000000" : "#888888",
+                        cursor: testEmail.includes("@") ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      {testEmailLoading ? "DISPATCHING REAL EMAIL..." : "SEND REAL TEST EMAIL NOW"}
+                    </button>
+
+                    {testEmailResult && (
+                      <div
+                        style={{
+                          marginTop: "20px",
+                          padding: "16px",
+                          background: testEmailResult.sent ? "#0a2912" : "#2a1212",
+                          border: testEmailResult.sent ? "1px solid #166534" : "1px solid #7f1d1d",
+                          color: testEmailResult.sent ? "#4ade80" : "#fca5a5",
+                          fontSize: "12px",
+                          lineHeight: "1.5",
+                        }}
+                      >
+                        <div style={{ fontWeight: 800, marginBottom: "4px" }}>
+                          {testEmailResult.sent
+                            ? `✓ TEST EMAIL DELIVERED VIA ${(testEmailResult.provider || "EMAIL").toUpperCase()}`
+                            : "⚠️ EMAIL DISPATCH NOTICE"}
+                        </div>
+                        <div>{testEmailResult.message}</div>
+                        {testEmailResult.duration && (
+                          <div style={{ fontSize: "10px", color: "#888888", marginTop: "4px" }}>
+                            Delivery speed: {testEmailResult.duration}
+                          </div>
+                        )}
+                        {testEmailResult.error && (
+                          <div style={{ fontSize: "11px", color: "#f87171", marginTop: "6px" }}>
+                            <strong>Diagnostic:</strong> {testEmailResult.error}
+                          </div>
                         )}
                       </div>
                     )}

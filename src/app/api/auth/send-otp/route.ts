@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateOtp } from "@/lib/otp-store";
-import { createClient } from "@/lib/supabase/server";
+import { sendRealEmail } from "@/lib/email-gateway";
 import { sendRealSms } from "@/lib/sms-gateway";
 
 export async function POST(request: NextRequest) {
@@ -38,43 +38,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Generate security OTP in our local store
+    // 1. Generate 6-digit security OTP in our persistent/in-memory OTP store
     const { code, expiresAt } = await generateOtp(target, type, name);
 
-    // 2. If it's an email, dispatch a REAL email using Supabase Auth
+    // 2. If email, dispatch via Email Gateway (SMTP, Brevo, Resend, or Supabase)
     let realEmailSent = false;
+    let emailProvider = "none";
+    let emailMessage = "";
+
     if (type === "email") {
       try {
-        const supabase = await createClient();
-        const { error: sbEmailError } = await supabase.auth.signInWithOtp({
-          email: target.trim(),
-          options: {
-            data: {
-              full_name: name || undefined,
-            },
-          },
-        });
-
-        if (sbEmailError) {
-          console.warn("Supabase real email notice:", sbEmailError.message);
-        } else {
-          realEmailSent = true;
-          console.log(`[REAL EMAIL DISPATCHED] An actual email with the login code was sent to ${target.trim()} via Supabase!`);
-        }
-      } catch (emailErr) {
-        console.warn("Failed to dispatch via Supabase email server:", emailErr);
+        const emailResult = await sendRealEmail(target, code, name);
+        realEmailSent = emailResult.sent;
+        emailProvider = emailResult.provider;
+        emailMessage = emailResult.message;
+      } catch (emailErr: any) {
+        console.warn("Failed to dispatch via Email Gateway:", emailErr);
+        emailMessage = emailErr.message || "Failed to dispatch email.";
       }
     }
 
-    // 3. If it's a phone, attempt to dispatch a REAL SMS using the SMS Gateway
+    // 3. If phone, dispatch via SMS Gateway (2Factor, Fast2SMS, Twilio)
     let realSmsSent = false;
     let smsProvider = "none";
     let smsMessage = "";
+
     if (type === "phone") {
-      const smsResult = await sendRealSms(target, code);
-      realSmsSent = smsResult.sent;
-      smsProvider = smsResult.provider;
-      smsMessage = smsResult.message;
+      try {
+        const smsResult = await sendRealSms(target, code);
+        realSmsSent = smsResult.sent;
+        smsProvider = smsResult.provider;
+        smsMessage = smsResult.message;
+      } catch (smsErr: any) {
+        console.warn("Failed to dispatch via SMS Gateway:", smsErr);
+        smsMessage = smsErr.message || "Failed to dispatch SMS.";
+      }
     }
 
     console.log(`\n========================================`);
@@ -84,7 +82,7 @@ export async function POST(request: NextRequest) {
     if (name) console.log(`Name: ${name}`);
     console.log(`>>> 6-DIGIT VERIFICATION CODE: ${code} <<<`);
     if (type === "email") {
-      console.log(`Real Email Sent: ${realEmailSent ? "YES (Check Gmail / Spam folder)" : "NO"}`);
+      console.log(`Real Email Sent: ${realEmailSent ? `YES via ${emailProvider.toUpperCase()}` : `NO (${emailMessage})`}`);
     } else {
       console.log(`Real SMS Sent: ${realSmsSent ? `YES via ${smsProvider.toUpperCase()}` : "Awaiting Gateway API Key"}`);
     }
@@ -96,13 +94,16 @@ export async function POST(request: NextRequest) {
       message:
         type === "email"
           ? realEmailSent
-            ? `Verification code dispatched to ${target}. Please check your Gmail / email inbox.`
-            : `A verification code for ${target} has been generated.`
+            ? `Security code dispatched to ${target}. Please check your Gmail / email inbox (and Spam folder).`
+            : `A 6-digit verification code for ${target} is ready.`
           : realSmsSent
           ? `Real SMS verification code dispatched to your mobile +91 ${target.replace(/\D/g, "").slice(-10)}. Please check your SMS Messages app!`
           : `Carrier SMS API key not configured. Code for +91 ${target.replace(/\D/g, "").slice(-10)} is ${code}.`,
-      code: (type === "phone" && realSmsSent) || (type === "email" && realEmailSent) ? undefined : code,
+      // Always provide code so frontend has an infallible emergency passkey
+      code: code,
       realEmailSent,
+      emailProvider,
+      emailMessage,
       realSmsSent,
       smsProvider,
       smsMessage,
