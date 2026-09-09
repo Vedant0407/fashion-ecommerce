@@ -13,8 +13,8 @@
         "/black-tee.jfif"
       ],
       "stock": 10,
-      "is_featured": true,
-      "is_new": false,
+      "is_featured": false,
+      "is_new": true,
       "is_trending": false,
       "color": "BLACK",
       "product_no": "GO-3607",

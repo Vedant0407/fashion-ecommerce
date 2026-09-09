@@ -6,14 +6,6 @@ import styles from "./admin.module.css";
 import { Product, Category } from "@/lib/catalog";
 import { StoreOrder, StoreCoupon, StoreSettings } from "@/lib/store-data";
 
-const PRESET_IMAGES = [
-  { label: "Black Oversized Tee", url: "/black-tee.jfif" },
-  { label: "Urban Grey Hoodie", url: "/grey-hoodie.jfif" },
-  { label: "Cargo Street Pants", url: "/cargo-pants.jfif" },
-  { label: "Classic White Tee", url: "/white-tee.jfif" },
-  { label: "Editorial Cap / Hero", url: "/hero.jfif" },
-];
-
 export default function AdminPage() {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -58,11 +50,12 @@ export default function AdminPage() {
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [uploadingImages, setUploadingImages] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string>("");
-  const [manualImageUrl, setManualImageUrl] = useState<string>("");
 
   // Category Modals
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
+  const [uploadingCategoryCover, setUploadingCategoryCover] = useState<boolean>(false);
+  const [categoryUploadError, setCategoryUploadError] = useState<string>("");
 
   // Coupon Modals
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
@@ -284,21 +277,36 @@ export default function AdminPage() {
     triggerToast("Photo removed.");
   }
 
-  function handleAddManualImage() {
-    if (!manualImageUrl.trim() || !editingProduct) return;
-    const cleanUrl = manualImageUrl.trim();
-    const currentImages = Array.isArray(editingProduct.images) && editingProduct.images.length > 0
-      ? [...editingProduct.images]
-      : editingProduct.image ? [editingProduct.image] : [];
+  async function handleCategoryCoverUpload(files: FileList | null) {
+    if (!files || files.length === 0 || !editingCategory) return;
+    setUploadingCategoryCover(true);
+    setCategoryUploadError("");
 
-    const combined = [...currentImages, cleanUrl];
-    setEditingProduct({
-      ...editingProduct,
-      images: combined,
-      image: combined[0],
-    });
-    setManualImageUrl("");
-    triggerToast("Photo URL added.");
+    try {
+      const formData = new FormData();
+      formData.append("files", files[0]);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to upload cover photo.");
+      }
+
+      const uploadedUrl = (data.urls && data.urls[0]) || data.url;
+      setEditingCategory({
+        ...editingCategory,
+        image: uploadedUrl,
+      });
+      triggerToast("Category cover photo uploaded successfully!");
+    } catch (err: any) {
+      setCategoryUploadError(err.message || "Upload failed. Please try again.");
+    } finally {
+      setUploadingCategoryCover(false);
+    }
   }
 
   async function handleDeleteProduct(id: string, name: string) {
@@ -2025,68 +2033,6 @@ export default function AdminPage() {
                           </div>
                         </div>
                       )}
-
-                      {/* Manual URL Input Fallback & Presets */}
-                      <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid #222222" }}>
-                        <div style={{ fontSize: "10px", color: "#888888", marginBottom: "6px", letterSpacing: "0.06em" }}>
-                          OR ADD BY IMAGE URL / PRESET:
-                        </div>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <input
-                            type="text"
-                            className={styles.fieldInput}
-                            value={manualImageUrl}
-                            onChange={(e) => setManualImageUrl(e.target.value)}
-                            placeholder="Paste image link e.g. /black-tee.jfif or https://..."
-                            style={{ flex: 1 }}
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddManualImage}
-                            disabled={!manualImageUrl.trim()}
-                            className={styles.smallBtn}
-                            style={{
-                              background: manualImageUrl.trim() ? "#ffffff" : "#222222",
-                              color: manualImageUrl.trim() ? "#000000" : "#666666",
-                              padding: "0 16px",
-                              fontSize: "10px",
-                              fontWeight: 700,
-                              cursor: manualImageUrl.trim() ? "pointer" : "not-allowed",
-                            }}
-                          >
-                            + ATTACH URL
-                          </button>
-                        </div>
-
-                        {/* Presets */}
-                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "8px" }}>
-                          <span style={{ fontSize: "10px", color: "#888888", alignSelf: "center" }}>
-                            PRESET ASSETS:
-                          </span>
-                          {PRESET_IMAGES.map((preset) => (
-                            <button
-                              key={preset.url}
-                              type="button"
-                              className={styles.smallBtn}
-                              style={{ fontSize: "9px", padding: "3px 8px" }}
-                              onClick={() => {
-                                const current = editingProduct.images && editingProduct.images.length > 0
-                                  ? [...editingProduct.images]
-                                  : editingProduct.image ? [editingProduct.image] : [];
-                                const combined = [...current, preset.url];
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  images: combined,
-                                  image: combined[0],
-                                });
-                                triggerToast(`Added ${preset.label}`);
-                              }}
-                            >
-                              + {preset.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -2339,16 +2285,73 @@ export default function AdminPage() {
 
                   <div className={styles.fullSpan}>
                     <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>Cover Image URL</label>
-                      <input
-                        type="text"
-                        className={styles.fieldInput}
-                        value={editingCategory.image || ""}
-                        onChange={(e) =>
-                          setEditingCategory({ ...editingCategory, image: e.target.value })
-                        }
-                        placeholder="/black-tee.jfif"
-                      />
+                      <label className={styles.fieldLabel}>COLLECTION COVER PHOTO (BROWSE &amp; UPLOAD)</label>
+
+                      <div
+                        style={{
+                          border: "2px dashed #333333",
+                          background: "#0a0a0a",
+                          padding: "20px",
+                          textAlign: "center",
+                          cursor: "pointer",
+                          position: "relative",
+                          marginBottom: "12px",
+                        }}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            opacity: 0,
+                            cursor: "pointer",
+                          }}
+                          onChange={(e) => handleCategoryCoverUpload(e.target.files)}
+                          disabled={uploadingCategoryCover}
+                        />
+                        <div style={{ pointerEvents: "none" }}>
+                          <div style={{ fontSize: "22px", marginBottom: "6px" }}>📁</div>
+                          <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.12em", color: "#ffffff", textTransform: "uppercase" }}>
+                            {uploadingCategoryCover ? "UPLOADING COVER PHOTO..." : "+ BROWSE & UPLOAD COVER PHOTO FROM COMPUTER"}
+                          </div>
+                          <div style={{ fontSize: "10px", color: "#888888", marginTop: "4px" }}>
+                            Supports JPG, PNG, WEBP, JFIF. Directly uploaded and formatted for this collection.
+                          </div>
+                        </div>
+                      </div>
+
+                      {categoryUploadError && (
+                        <div style={{ color: "#ff4444", fontSize: "11px", marginBottom: "10px" }}>
+                          ⚠️ {categoryUploadError}
+                        </div>
+                      )}
+
+                      {editingCategory.image && (
+                        <div style={{ display: "flex", alignItems: "center", gap: "14px", background: "#111111", padding: "10px 14px", border: "1px solid #222222" }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={editingCategory.image}
+                            alt="Cover preview"
+                            style={{ width: "50px", height: "50px", objectFit: "cover", border: "1px solid #333333" }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#ffffff" }}>ACTIVE COVER PHOTO</div>
+                            <div style={{ fontSize: "10px", color: "#777777", wordBreak: "break-all" }}>{editingCategory.image}</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setEditingCategory({ ...editingCategory, image: "" })}
+                            className={styles.deleteBtn}
+                            style={{ padding: "4px 8px", fontSize: "10px" }}
+                          >
+                            REMOVE
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
