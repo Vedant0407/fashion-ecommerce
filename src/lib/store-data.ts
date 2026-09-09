@@ -70,6 +70,12 @@ export type StoreData = {
 
 const DATA_DIR = path.join(process.cwd(), "src", "data");
 const DATA_FILE = path.join(DATA_DIR, "store-data.json");
+const TMP_FILE = path.join(
+  typeof process !== "undefined" && process.platform === "win32"
+    ? DATA_DIR
+    : "/tmp",
+  "store-data-cache.json"
+);
 
 const DEFAULT_COUPONS: StoreCoupon[] = [
   {
@@ -224,6 +230,8 @@ const DEFAULT_ORDERS: StoreOrder[] = [
   },
 ];
 
+let memoryData: StoreData | null = null;
+
 export function getInitialData(): StoreData {
   return {
     products: FALLBACK_PRODUCTS,
@@ -235,46 +243,53 @@ export function getInitialData(): StoreData {
 }
 
 export async function readStoreData(): Promise<StoreData> {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      await fs.promises.mkdir(DATA_DIR, { recursive: true });
-    }
-
-    if (!fs.existsSync(DATA_FILE)) {
-      const initial = getInitialData();
-      await fs.promises.writeFile(DATA_FILE, JSON.stringify(initial, null, 2), "utf-8");
-      return initial;
-    }
-
-    const raw = await fs.promises.readFile(DATA_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-
-    // Merge in any missing sections
-    const initial = getInitialData();
-    const merged: StoreData = {
-      products: parsed.products && parsed.products.length ? parsed.products : initial.products,
-      categories: parsed.categories && parsed.categories.length ? parsed.categories : initial.categories,
-      orders: parsed.orders || initial.orders,
-      coupons: parsed.coupons || initial.coupons,
-      settings: { ...initial.settings, ...(parsed.settings || {}) },
-    };
-
-    return merged;
-  } catch (error) {
-    console.error("Error reading store-data.json, returning defaults:", error);
-    return getInitialData();
+  if (memoryData) {
+    return memoryData;
   }
+
+  try {
+    // Check tmp file first (updated during runtime)
+    if (fs.existsSync(TMP_FILE)) {
+      const raw = await fs.promises.readFile(TMP_FILE, "utf-8");
+      memoryData = JSON.parse(raw);
+      return memoryData!;
+    }
+
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = await fs.promises.readFile(DATA_FILE, "utf-8");
+      const parsed = JSON.parse(raw);
+      const initial = getInitialData();
+      memoryData = {
+        products: parsed.products && parsed.products.length ? parsed.products : initial.products,
+        categories: parsed.categories && parsed.categories.length ? parsed.categories : initial.categories,
+        orders: parsed.orders || initial.orders,
+        coupons: parsed.coupons || initial.coupons,
+        settings: { ...initial.settings, ...(parsed.settings || {}) },
+      };
+      return memoryData;
+    }
+  } catch (error) {
+    console.warn("Could not read persistent store-data, using defaults:", error);
+  }
+
+  memoryData = getInitialData();
+  return memoryData;
 }
 
 export async function writeStoreData(data: StoreData): Promise<void> {
+  memoryData = data;
   try {
     if (!fs.existsSync(DATA_DIR)) {
       await fs.promises.mkdir(DATA_DIR, { recursive: true });
     }
     await fs.promises.writeFile(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
   } catch (error) {
-    console.error("Error writing store-data.json:", error);
-    throw error;
+    // If writing to repo root failed (e.g. read-only filesystem on Vercel), persist to /tmp
+    try {
+      await fs.promises.writeFile(TMP_FILE, JSON.stringify(data, null, 2), "utf-8");
+    } catch {
+      // Memory state is retained in memoryData
+    }
   }
 }
 

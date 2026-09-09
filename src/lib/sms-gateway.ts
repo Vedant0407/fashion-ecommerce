@@ -24,11 +24,11 @@ export async function sendRealSms(
 
   // Check store settings first, then environment variables
   let fast2smsKey = process.env.FAST2SMS_API_KEY?.trim() || "";
-  let twoFactorKey = process.env.TWO_FACTOR_API_KEY?.trim() || "";
+  let twoFactorKey = process.env.TWO_FACTOR_API_KEY?.trim() || "414d129d-ac3b-11f1-90d7-0200cd936042";
   let twilioSid = process.env.TWILIO_ACCOUNT_SID?.trim() || "";
   let twilioToken = process.env.TWILIO_AUTH_TOKEN?.trim() || "";
   let twilioFrom = process.env.TWILIO_PHONE_NUMBER?.trim() || "";
-  let preferredProvider: string = "fast2sms";
+  let preferredProvider: string = "2factor";
 
   try {
     const settings: any = await getStoreSettings();
@@ -55,36 +55,26 @@ export async function sendRealSms(
   }
 
   // 1. If 2Factor is selected or available
-  if (preferredProvider === "2factor" && twoFactorKey) {
+  if (twoFactorKey && (preferredProvider === "2factor" || !fast2smsKey)) {
     const result = await dispatch2Factor(twoFactorKey, cleanPhone, otpCode);
     if (result.sent) return result;
-    if (result.gatewayResponse) return result;
   }
 
-  // 2. If Twilio is selected or available
-  if (preferredProvider === "twilio" && twilioSid && twilioToken && twilioFrom) {
-    const result = await dispatchTwilio(twilioSid, twilioToken, twilioFrom, cleanPhone, otpCode);
-    if (result.sent) return result;
-  }
-
-  // 3. Fast2SMS (Free & Instant in India - Recommended)
+  // 2. Fast2SMS (if configured)
   if (fast2smsKey) {
     const result = await dispatchFast2Sms(fast2smsKey, cleanPhone, otpCode);
     if (result.sent) return result;
-    // If it failed and returned an explicit gateway error, return it
-    if (result.gatewayResponse) {
-      return result;
-    }
   }
 
-  // Fallback checks if other keys exist
-  if (twoFactorKey && preferredProvider !== "2factor") {
-    const result = await dispatch2Factor(twoFactorKey, cleanPhone, otpCode);
+  // 3. Twilio (if configured)
+  if (twilioSid && twilioToken && twilioFrom) {
+    const result = await dispatchTwilio(twilioSid, twilioToken, twilioFrom, cleanPhone, otpCode);
     if (result.sent) return result;
   }
 
-  if (twilioSid && twilioToken && twilioFrom && preferredProvider !== "twilio") {
-    const result = await dispatchTwilio(twilioSid, twilioToken, twilioFrom, cleanPhone, otpCode);
+  // 4. Secondary fallback to 2Factor if not previously successful
+  if (twoFactorKey) {
+    const result = await dispatch2Factor(twoFactorKey, cleanPhone, otpCode);
     if (result.sent) return result;
   }
 
