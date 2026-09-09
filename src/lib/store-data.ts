@@ -121,7 +121,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   storeNotice: "All orders placed today are dispatched within 24 hours.",
   supportPhone: "+91 98765 43210",
   supportEmail: "concierge@greeno.in",
-  adminPasskey: "greeno2026",
+  adminPasskey: "aman2026",
   currency: "INR",
 };
 

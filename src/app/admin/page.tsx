@@ -46,7 +46,7 @@ export default function AdminPage() {
     storeNotice: "All orders dispatched within 24 hours.",
     supportPhone: "+91 98765 43210",
     supportEmail: "concierge@greeno.in",
-    adminPasskey: "greeno2026",
+    adminPasskey: "aman2026",
     currency: "INR",
   });
 
@@ -85,12 +85,13 @@ export default function AdminPage() {
     }, 3000);
   }
 
-  // Load Session and All Data
+  // Always require passkey on every open or refresh
   useEffect(() => {
-    const savedToken = localStorage.getItem("greeno_admin_token");
-    if (savedToken === "authenticated") {
-      setIsAuthenticated(true);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("greeno_admin_token");
+      sessionStorage.removeItem("greeno_admin_token");
     }
+    setIsAuthenticated(false);
   }, []);
 
   async function fetchAllData() {
@@ -138,26 +139,43 @@ export default function AdminPage() {
   }, [isAuthenticated]);
 
   // Handle Passkey Login
-  function handleUnlock(e: React.FormEvent) {
+  async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
     const cleanPass = passkeyInput.trim();
-    if (
-      cleanPass === settings.adminPasskey ||
-      cleanPass === "greeno2026" ||
-      cleanPass === "admin123"
-    ) {
+
+    if (cleanPass === "aman2026" || cleanPass === settings.adminPasskey) {
       setIsAuthenticated(true);
-      localStorage.setItem("greeno_admin_token", "authenticated");
       setAuthError("");
-    } else {
-      setAuthError("Invalid passkey. Hint: default is greeno2026");
+      return;
     }
+
+    // Secondary check against server settings in case passkey was updated in store data
+    try {
+      const res = await fetch("/api/admin/settings");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings?.adminPasskey && cleanPass === data.settings.adminPasskey) {
+          setSettings(data.settings);
+          setIsAuthenticated(true);
+          setAuthError("");
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    setAuthError("Incorrect passkey. Access denied.");
   }
 
   function handleLock() {
-    localStorage.removeItem("greeno_admin_token");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("greeno_admin_token");
+      sessionStorage.removeItem("greeno_admin_token");
+    }
     setIsAuthenticated(false);
     setPasskeyInput("");
+    setAuthError("");
   }
 
   // ----------------- Products CRUD -----------------
@@ -638,7 +656,7 @@ export default function AdminPage() {
           </form>
 
           <div className={styles.authHint}>
-            Default passkey: <strong>greeno2026</strong>
+            Restricted access • Authorized personnel only
           </div>
 
           <div style={{ marginTop: "24px" }}>
@@ -1411,7 +1429,7 @@ export default function AdminPage() {
                         onChange={(e) =>
                           setSettings({ ...settings, adminPasskey: e.target.value })
                         }
-                        placeholder="e.g. greeno2026"
+                        placeholder="e.g. aman2026"
                         required
                       />
                       <span style={{ fontSize: "10px", color: "#666666" }}>
