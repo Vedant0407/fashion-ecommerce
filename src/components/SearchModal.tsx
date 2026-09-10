@@ -113,13 +113,46 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             paddingBottom: "12px",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+            <button
+              onClick={onClose}
+              aria-label="Back"
+              title="Go back"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "6px 8px 6px 0",
+                fontSize: "12px",
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                color: "#000000",
+                flexShrink: 0,
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                style={{ width: "18px", height: "18px" }}
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span>BACK</span>
+            </button>
+
+            <span style={{ color: "#d0d0cc", fontSize: "18px", lineHeight: "1" }}>|</span>
+
             <svg
               viewBox="0 0 24 24"
               fill="none"
               stroke="#000000"
               strokeWidth="1.8"
-              style={{ width: "24px", height: "24px" }}
+              style={{ width: "22px", height: "22px", flexShrink: 0 }}
             >
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-4.35-4.35" strokeLinecap="round" />

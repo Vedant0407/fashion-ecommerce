@@ -169,23 +169,87 @@ export default function CartPage() {
                 <span>{cart.length} {cart.length === 1 ? "ITEM" : "ITEMS"}</span>
               </div>
 
+              {/* Items breakdown with name and price */}
+              <div
+                className="cart-summary-items-breakdown"
+                style={{
+                  padding: "16px 0",
+                  borderBottom: "1px solid #deded9",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "9px",
+                    letterSpacing: "0.14em",
+                    color: "#777777",
+                    fontWeight: 700,
+                  }}
+                >
+                  ITEMS IN BAG
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {cart.map((item) => (
+                    <div
+                      key={`${item.id}-${item.size || ""}-${item.color || ""}`}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        gap: "12px",
+                        fontSize: "11px",
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            color: "#000000",
+                            letterSpacing: "0.02em",
+                            textTransform: "uppercase",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={item.name}
+                        >
+                          {item.name}
+                        </div>
+                        <div style={{ fontSize: "9px", color: "#777777", marginTop: "2px" }}>
+                          QTY: {item.quantity}
+                          {item.size ? ` · SIZE: ${item.size}` : ""}
+                          {item.color ? ` · COLOR: ${item.color}` : ""}
+                        </div>
+                      </div>
+                      <strong style={{ fontWeight: 600, color: "#000000", whiteSpace: "nowrap" }}>
+                        ₹{(Number(item.price) * item.quantity).toLocaleString("en-IN")}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="cart-summary-lines">
                 <div>
                   <span>SUBTOTAL</span>
                   <strong>₹{subtotal.toLocaleString("en-IN")}</strong>
                 </div>
+
+                <div style={{ color: discount > 0 ? "#16a34a" : "inherit" }}>
+                  <span>
+                    DISCOUNT {appliedCoupon ? `(${appliedCoupon.code})` : ""}
+                  </span>
+                  <strong style={{ color: discount > 0 ? "#16a34a" : "inherit" }}>
+                    {discount > 0 ? `-₹${discount.toLocaleString("en-IN")}` : "₹0"}
+                  </strong>
+                </div>
+
                 <div>
                   <span>SHIPPING</span>
                   <strong>{shipping === 0 ? "FREE" : `₹${shipping.toLocaleString("en-IN")}`}</strong>
                 </div>
-                {discount > 0 && (
-                  <div style={{ color: "#16a34a" }}>
-                    <span>
-                      DISCOUNT ({appliedCoupon?.code})
-                    </span>
-                    <strong>-₹{discount.toLocaleString("en-IN")}</strong>
-                  </div>
-                )}
               </div>
 
               <div className="cart-promo">
