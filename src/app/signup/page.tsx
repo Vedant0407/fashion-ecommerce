@@ -255,20 +255,6 @@ export default function SignupPage() {
 
   return (
     <main className="auth-page">
-      {/* On-screen Notification Card */}
-      {activeCode && (
-        <GatewayNotification
-          type="email"
-          target={email}
-          code={activeCode}
-          onAutoFill={(code) => {
-            setOtpCode(code);
-            handleVerifyAndSignup(undefined, code);
-          }}
-          onDismiss={() => setActiveCode(null)}
-        />
-      )}
-
       <div className="auth-container">
         <p className="auth-label">GREENO / ACCOUNT</p>
 
@@ -369,47 +355,7 @@ export default function SignupPage() {
                 marginBottom: "24px",
               }}
             >
-              <div>
-                ✉ <strong>Check your email inbox and Spam/Promotions folder.</strong> Look for your 6-digit security code.
-              </div>
-              {activeCode && (
-                <div
-                  style={{
-                    marginTop: "10px",
-                    paddingTop: "10px",
-                    borderTop: "1px dashed #cccccc",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "8px",
-                  }}
-                >
-                  <span style={{ fontSize: "10px", color: "#666666" }}>
-                    Provider delayed? Emergency passkey: <strong>{activeCode}</strong>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtpCode(activeCode);
-                      handleVerifyAndSignup(undefined, activeCode);
-                    }}
-                    style={{
-                      background: "#000000",
-                      color: "#ffffff",
-                      border: "none",
-                      padding: "4px 8px",
-                      fontSize: "9px",
-                      fontWeight: 800,
-                      letterSpacing: "0.1em",
-                      cursor: "pointer",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Auto-Fill Code ({activeCode})
-                  </button>
-                </div>
-              )}
+              ✉ <strong>Check your email inbox and Spam folder.</strong> We dispatched a 6-digit verification code to <strong>{email}</strong>. Please enter the code below to complete registration.
             </div>
 
             <form onSubmit={handleVerifyAndSignup}>
