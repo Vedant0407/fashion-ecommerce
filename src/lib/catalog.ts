@@ -234,34 +234,38 @@ export async function getAllProducts(): Promise<Product[]> {
           const serverProducts: Product[] =
             json.success && Array.isArray(json.products) ? json.products : [];
 
-          // Merge server products and local products seamlessly
+          // Merge local products and server products seamlessly
+          // localProducts (admin created items) MUST BE AT THE FRONT
           const productMap = new Map<string, Product>();
-          for (const sp of serverProducts) {
-            if (sp?.id) productMap.set(sp.id, sp);
+          for (const lp of localProducts) {
+            if (lp?.id) productMap.set(lp.id, lp);
           }
 
           let hadMissingOnServer = false;
           const missingOnServer: Product[] = [];
+          const serverIds = new Set(serverProducts.map((p) => p?.id).filter(Boolean));
 
           for (const lp of localProducts) {
-            if (lp?.id) {
-              if (!productMap.has(lp.id)) {
-                productMap.set(lp.id, lp);
-                missingOnServer.push(lp);
-                hadMissingOnServer = true;
-              } else {
-                // Merge local updates (stock, flags, images)
-                const existing = productMap.get(lp.id)!;
-                productMap.set(lp.id, { ...existing, ...lp });
+            if (lp?.id && !serverIds.has(lp.id)) {
+              missingOnServer.push(lp);
+              hadMissingOnServer = true;
+            }
+          }
+
+          for (const sp of serverProducts) {
+            if (sp?.id) {
+              if (!productMap.has(sp.id)) {
+                productMap.set(sp.id, sp);
               }
             }
           }
 
           const merged = Array.from(productMap.values());
 
-          // Save merged state back to local cache
+          // Save merged state back to local cache and cookie bridge
           try {
             localStorage.setItem("greeno_store_products", JSON.stringify(merged));
+            document.cookie = `greeno_custom_products=${encodeURIComponent(JSON.stringify(merged))}; path=/; max-age=31536000; SameSite=Lax`;
           } catch {}
 
           // Background sync to server if local products were missing
@@ -399,9 +403,12 @@ export async function getProductsByCategory(categorySlug: string): Promise<Produ
   const cleanSlug = categorySlug.toLowerCase().trim();
 
   return products.filter((p) => {
+    if ((cleanSlug === "newin" || cleanSlug === "new-in" || cleanSlug === "new") && p.is_new) return true;
+    if (cleanSlug === "trending" && p.is_trending) return true;
+    if (cleanSlug === "featured" && p.is_featured) return true;
+    if (p.collection_tag?.toLowerCase() === cleanSlug) return true;
     if (p.category_slug?.toLowerCase() === cleanSlug) return true;
     if (p.category_name?.toLowerCase().replace(/[\s-]/g, "") === cleanSlug.replace(/[\s-]/g, "")) return true;
-    if (p.collection_tag?.toLowerCase() === cleanSlug) return true;
 
     if (cleanSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee"))) return true;
     if (cleanSlug === "hoodies" && (p.id.includes("hoodie") || p.name.toLowerCase().includes("hoodie"))) return true;

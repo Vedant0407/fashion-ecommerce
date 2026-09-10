@@ -75,6 +75,8 @@ export default function ShopPage() {
     } else if (selectedCategory !== "ALL") {
       const catSlug = selectedCategory.toLowerCase();
       list = list.filter((p) => {
+        if (p.collection_tag?.toLowerCase() === catSlug) return true;
+        if (p.collection_tag?.toUpperCase() === selectedCategory) return true;
         if (p.category_slug?.toLowerCase() === catSlug) return true;
         if (p.category_name?.toUpperCase() === selectedCategory) return true;
         if (catSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee"))) return true;
@@ -98,7 +100,23 @@ export default function ShopPage() {
     return list;
   }, [products, selectedCategory, sortBy]);
 
-  const categories = ["ALL", "NEW IN", "TRENDING", ...FALLBACK_CATEGORIES.map((c) => c.name)];
+  const dynamicCollections = useMemo(() => {
+    const tags = new Set<string>();
+    for (const p of products) {
+      if (p?.collection_tag?.trim()) {
+        tags.add(p.collection_tag.trim().toUpperCase());
+      }
+    }
+    return Array.from(tags);
+  }, [products]);
+
+  const categories = [
+    "ALL",
+    "NEW IN",
+    "TRENDING",
+    ...FALLBACK_CATEGORIES.map((c) => c.name),
+    ...dynamicCollections,
+  ];
 
   return (
     <main

@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { syncStoreProducts } from "@/lib/store-data";
 import { Product } from "@/lib/catalog";
 
@@ -17,11 +17,17 @@ export async function POST(request: NextRequest) {
 
     const updatedProducts = await syncStoreProducts(products);
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       count: updatedProducts.length,
       products: updatedProducts,
     });
+    res.cookies.set("greeno_custom_products", encodeURIComponent(JSON.stringify(updatedProducts)), {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+    });
+    return res;
   } catch (error: any) {
     console.error("POST /api/admin/products/sync error:", error);
     return NextResponse.json(

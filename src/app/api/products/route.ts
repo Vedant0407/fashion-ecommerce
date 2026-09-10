@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreProducts } from "@/lib/store-data";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -13,9 +15,28 @@ export async function GET(request: NextRequest) {
 
     let products = await getStoreProducts();
 
+    // Cookie bridge: read client-saved custom products so serverless lambda cold starts never lose new products
+    const cookieCustom = request.cookies.get("greeno_custom_products")?.value;
+    if (cookieCustom) {
+      try {
+        const parsedCustom = JSON.parse(decodeURIComponent(cookieCustom));
+        if (Array.isArray(parsedCustom) && parsedCustom.length > 0) {
+          const cookieIds = new Set(parsedCustom.map((p: any) => p?.id).filter(Boolean));
+          products = [
+            ...parsedCustom,
+            ...products.filter((p) => !cookieIds.has(p.id)),
+          ];
+        }
+      } catch {}
+    }
+
     if (category && category.toLowerCase() !== "all") {
       const cleanSlug = category.toLowerCase().trim();
       products = products.filter((p) => {
+        if ((cleanSlug === "newin" || cleanSlug === "new-in" || cleanSlug === "new") && p.is_new) return true;
+        if (cleanSlug === "trending" && p.is_trending) return true;
+        if (cleanSlug === "featured" && p.is_featured) return true;
+        if (p.collection_tag?.toLowerCase() === cleanSlug) return true;
         if (p.category_slug?.toLowerCase() === cleanSlug) return true;
         if (p.category_name?.toLowerCase().replace(/[\s-]/g, "") === cleanSlug.replace(/[\s-]/g, "")) return true;
         if (cleanSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee"))) return true;
@@ -35,6 +56,7 @@ export async function GET(request: NextRequest) {
           p.name.toLowerCase().includes(q) ||
           (p.description && p.description.toLowerCase().includes(q)) ||
           (p.category_name && p.category_name.toLowerCase().includes(q)) ||
+          (p.collection_tag && p.collection_tag.toLowerCase().includes(q)) ||
           (p.color && p.color.toLowerCase().includes(q))
       );
     }

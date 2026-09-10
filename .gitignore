@@ -42,5 +42,6 @@ next-env.d.ts
 
 # runtime & uploaded files
 src/data/otp-store.json
+src/data/store-data-cache.json
 public/uploads/*
 !public/uploads/.gitkeep

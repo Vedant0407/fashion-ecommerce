@@ -35,6 +35,22 @@ const categoryMeta: Record<
     name: "ACCESSORIES",
     description: "Refined stainless steel chains and everyday streetwear accessories.",
   },
+  newin: {
+    name: "NEW ARRIVALS",
+    description: "The freshest drops, limited runs, and newest releases from the GreenO atelier.",
+  },
+  "new-in": {
+    name: "NEW ARRIVALS",
+    description: "The freshest drops, limited runs, and newest releases from the GreenO atelier.",
+  },
+  new: {
+    name: "NEW ARRIVALS",
+    description: "The freshest drops, limited runs, and newest releases from the GreenO atelier.",
+  },
+  trending: {
+    name: "TRENDING NOW",
+    description: "Most coveted streetwear silhouettes and best-selling pieces of the season.",
+  },
 };
 
 export default function CategoryPage() {

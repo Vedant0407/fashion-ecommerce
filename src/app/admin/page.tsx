@@ -135,15 +135,29 @@ export default function AdminPage() {
         } catch {}
 
         const productMap = new Map<string, Product>();
-        for (const p of serverProducts) {
-          if (p?.id) productMap.set(p.id, p);
+        // Add local products FIRST so newly created custom items are preserved at the top
+        for (const lp of localProducts) {
+          if (!lp) continue;
+          const id = (lp.id && lp.id.trim()) || (lp.name ? lp.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "") || `prod-${Date.now()}`;
+          lp.id = id;
+          productMap.set(id, lp);
         }
 
+        // Then add server products that aren't already locally managed
         let hadMissing = false;
         const missingToSync: Product[] = [];
+        for (const sp of serverProducts) {
+          if (sp?.id) {
+            if (!productMap.has(sp.id)) {
+              productMap.set(sp.id, sp);
+            }
+          }
+        }
+
+        // Check if server is missing any local products to background sync
+        const serverIds = new Set(serverProducts.map((p) => p?.id).filter(Boolean));
         for (const lp of localProducts) {
-          if (lp?.id && !productMap.has(lp.id)) {
-            productMap.set(lp.id, lp);
+          if (lp?.id && !serverIds.has(lp.id)) {
             missingToSync.push(lp);
             hadMissing = true;
           }
@@ -153,6 +167,7 @@ export default function AdminPage() {
         setProducts(mergedProducts);
         try {
           localStorage.setItem("greeno_store_products", JSON.stringify(mergedProducts));
+          document.cookie = `greeno_custom_products=${encodeURIComponent(JSON.stringify(mergedProducts))}; path=/; max-age=31536000; SameSite=Lax`;
         } catch {}
 
         // Background sync to server if local products were missing
@@ -344,13 +359,46 @@ export default function AdminPage() {
         0
       );
 
-      const payload = {
+      const cleanName = editingProduct.name.trim();
+      const autoSlug = cleanName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const generatedId =
+        (editingProduct.id && editingProduct.id.trim()) ||
+        autoSlug ||
+        `prod-${Date.now()}`;
+
+      const payload: Product = {
         ...editingProduct,
+        id: generatedId,
+        name: cleanName,
+        price: Number(editingProduct.price),
+        description: editingProduct.description || "",
+        category_slug: editingProduct.category_slug || "t-shirts",
+        category_name: editingProduct.category_name || "T-SHIRTS",
+        category_id: editingProduct.category_id || null,
+        collection_tag: editingProduct.collection_tag?.trim() || null,
+        image:
+          editingProduct.image ||
+          (Array.isArray(editingProduct.images) && editingProduct.images[0]) ||
+          "/black-tee.jfif",
+        images:
+          Array.isArray(editingProduct.images) && editingProduct.images.length > 0
+            ? editingProduct.images
+            : [editingProduct.image || "/black-tee.jfif"],
         colors: resolvedColors,
         color: resolvedColors[0] || "BLACK",
         size_stock: resolvedSizeStock,
         stock: computedStock,
-        collection_tag: editingProduct.collection_tag?.trim() || null,
+        is_new: Boolean(editingProduct.is_new),
+        is_trending: Boolean(editingProduct.is_trending),
+        is_featured: Boolean(editingProduct.is_featured),
+        material: editingProduct.material || "100% Cotton",
+        fabric: editingProduct.fabric || "Heavyweight Knit",
+        fit: editingProduct.fit || "Oversized Fit",
+        product_no:
+          editingProduct.product_no || `GO-${Math.floor(1000 + Math.random() * 9000)}`,
       };
 
       const res = await fetch("/api/admin/products", {
@@ -360,42 +408,46 @@ export default function AdminPage() {
       });
 
       if (res.ok) {
-        let savedProduct: Product = payload as Product;
+        let savedProduct: Product = payload;
         try {
           const resData = await res.json();
-          if (resData.product) savedProduct = resData.product;
+          if (resData.product && resData.product.id) {
+            savedProduct = resData.product;
+          }
         } catch {}
 
-        // Persist immediately to localStorage
+        // Persist immediately to localStorage with new product AT THE FRONT
         try {
           const raw = localStorage.getItem("greeno_store_products");
           let list: Product[] = raw ? JSON.parse(raw) : [];
           if (!Array.isArray(list)) list = [];
-          const idx = list.findIndex((p) => p.id === savedProduct.id);
-          if (idx >= 0) {
-            list[idx] = { ...list[idx], ...savedProduct };
-          } else {
-            list.unshift(savedProduct);
-          }
-          localStorage.setItem("greeno_store_products", JSON.stringify(list));
-        } catch {}
+          const filtered = list.filter((p) => p && p.id && p.id !== savedProduct.id);
+          const updatedList = [savedProduct, ...filtered];
+          localStorage.setItem("greeno_store_products", JSON.stringify(updatedList));
 
-        // Update local state immediately
-        setProducts((prev) => {
-          const idx = prev.findIndex((p) => p.id === savedProduct.id);
-          if (idx >= 0) {
-            const next = [...prev];
-            next[idx] = { ...next[idx], ...savedProduct };
-            return next;
-          }
-          return [savedProduct, ...prev];
-        });
+          // Set cookie bridge for serverless compatibility
+          document.cookie = `greeno_custom_products=${encodeURIComponent(
+            JSON.stringify(updatedList)
+          )}; path=/; max-age=31536000; SameSite=Lax`;
+        } catch (storageErr) {
+          console.warn("Storage sync error:", storageErr);
+        }
+
+        // Update local React state immediately (Row 1 at top)
+        setProducts((prev) => [
+          savedProduct,
+          ...prev.filter((p) => p.id !== savedProduct.id),
+        ]);
 
         // Broadcast to all open tabs and storefront components
         window.dispatchEvent(new Event("greeno_products_updated"));
         window.dispatchEvent(new Event("storage"));
 
-        triggerToast(isUpdating ? "Product updated successfully." : "Product created successfully.");
+        triggerToast(
+          isUpdating
+            ? "Product updated successfully."
+            : "Product created successfully."
+        );
         setIsProductModalOpen(false);
         setEditingProduct(null);
         await fetchAllData();
@@ -532,6 +584,7 @@ export default function AdminPage() {
             if (Array.isArray(list)) {
               const filtered = list.filter((p: any) => p.id !== id);
               localStorage.setItem("greeno_store_products", JSON.stringify(filtered));
+              document.cookie = `greeno_custom_products=${encodeURIComponent(JSON.stringify(filtered))}; path=/; max-age=31536000; SameSite=Lax`;
             }
           }
         } catch {}
@@ -574,6 +627,7 @@ export default function AdminPage() {
                 p.id === productId ? { ...p, stock: clampedStock } : p
               );
               localStorage.setItem("greeno_store_products", JSON.stringify(updated));
+              document.cookie = `greeno_custom_products=${encodeURIComponent(JSON.stringify(updated))}; path=/; max-age=31536000; SameSite=Lax`;
             }
           }
         } catch {}

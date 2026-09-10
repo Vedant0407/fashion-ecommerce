@@ -6,9 +6,27 @@ import {
 } from "@/lib/store-data";
 import { Product } from "@/lib/catalog";
 
-export async function GET() {
+export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
   try {
-    const products = await getStoreProducts();
+    let products = await getStoreProducts();
+
+    // Cookie bridge: merge any client-saved custom products at the front
+    const cookieCustom = request.cookies.get("greeno_custom_products")?.value;
+    if (cookieCustom) {
+      try {
+        const parsedCustom = JSON.parse(decodeURIComponent(cookieCustom));
+        if (Array.isArray(parsedCustom) && parsedCustom.length > 0) {
+          const cookieIds = new Set(parsedCustom.map((p: any) => p?.id).filter(Boolean));
+          products = [
+            ...parsedCustom,
+            ...products.filter((p) => !cookieIds.has(p.id)),
+          ];
+        }
+      } catch {}
+    }
+
     return NextResponse.json({ success: true, count: products.length, products });
   } catch (error: any) {
     console.error("GET /api/admin/products error:", error);
@@ -97,7 +115,14 @@ export async function POST(request: NextRequest) {
     };
 
     const saved = await saveStoreProduct(newProduct);
-    return NextResponse.json({ success: true, product: saved });
+    const updatedStore = await getStoreProducts();
+    const res = NextResponse.json({ success: true, product: saved });
+    res.cookies.set("greeno_custom_products", encodeURIComponent(JSON.stringify(updatedStore)), {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+    });
+    return res;
   } catch (error: any) {
     console.error("POST /api/admin/products error:", error);
     return NextResponse.json(
@@ -156,7 +181,14 @@ export async function PUT(request: NextRequest) {
     };
 
     const saved = await saveStoreProduct(updatedProduct);
-    return NextResponse.json({ success: true, product: saved });
+    const updatedStore = await getStoreProducts();
+    const res = NextResponse.json({ success: true, product: saved });
+    res.cookies.set("greeno_custom_products", encodeURIComponent(JSON.stringify(updatedStore)), {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+    });
+    return res;
   } catch (error: any) {
     console.error("PUT /api/admin/products error:", error);
     return NextResponse.json(
@@ -186,7 +218,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, message: `Product '${id}' deleted successfully.` });
+    const updatedStore = await getStoreProducts();
+    const res = NextResponse.json({ success: true, message: `Product '${id}' deleted successfully.` });
+    res.cookies.set("greeno_custom_products", encodeURIComponent(JSON.stringify(updatedStore)), {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+    });
+    return res;
   } catch (error: any) {
     console.error("DELETE /api/admin/products error:", error);
     return NextResponse.json(

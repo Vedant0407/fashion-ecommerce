@@ -352,19 +352,27 @@ export async function readStoreData(): Promise<StoreData> {
     console.warn("Notice: could not read TMP_FILE:", err);
   }
 
-  // Merge products so custom products created by admin are never lost
+  // Merge products so custom products created by admin are preserved AT THE FRONT
+  const initialIds = new Set(initial.products.map((p) => p.id));
   const productMap = new Map<string, Product>();
-  for (const p of initial.products) {
-    if (p?.id) productMap.set(p.id, p);
-  }
-  if (fileData?.products && Array.isArray(fileData.products)) {
-    for (const p of fileData.products) {
-      if (p?.id) productMap.set(p.id, p);
+
+  // 1. First add any custom products found in tmpData or fileData
+  const allStored = [
+    ...(tmpData?.products && Array.isArray(tmpData.products) ? tmpData.products : []),
+    ...(fileData?.products && Array.isArray(fileData.products) ? fileData.products : []),
+  ];
+
+  for (const p of allStored) {
+    if (p?.id && !initialIds.has(p.id) && !productMap.has(p.id)) {
+      productMap.set(p.id, p);
     }
   }
-  if (tmpData?.products && Array.isArray(tmpData.products)) {
-    for (const p of tmpData.products) {
-      if (p?.id) productMap.set(p.id, p);
+
+  // 2. Then add initial products (overwritten by any fileData/tmpData updates to stock/flags)
+  for (const p of initial.products) {
+    if (p?.id && !productMap.has(p.id)) {
+      const stored = allStored.find((s) => s?.id === p.id);
+      productMap.set(p.id, stored ? { ...p, ...stored } : p);
     }
   }
 
@@ -497,14 +505,15 @@ export async function syncStoreProducts(clientProducts: Product[]): Promise<Prod
 
   const data = await readStoreData();
   const existingMap = new Map(data.products.map((p) => [p.id, p]));
+  const updatedClientProducts: Product[] = [];
 
   for (const cp of clientProducts) {
     if (!cp || !cp.id) continue;
     const existing = existingMap.get(cp.id);
     if (!existing) {
-      existingMap.set(cp.id, cp);
+      updatedClientProducts.push(cp);
     } else {
-      existingMap.set(cp.id, {
+      const merged = {
         ...existing,
         ...cp,
         stock: cp.stock !== undefined ? cp.stock : existing.stock,
@@ -512,11 +521,16 @@ export async function syncStoreProducts(clientProducts: Product[]): Promise<Prod
         is_new: cp.is_new !== undefined ? cp.is_new : existing.is_new,
         is_trending: cp.is_trending !== undefined ? cp.is_trending : existing.is_trending,
         is_featured: cp.is_featured !== undefined ? cp.is_featured : existing.is_featured,
-      });
+      };
+      existingMap.set(cp.id, merged);
+      updatedClientProducts.push(merged);
     }
   }
 
-  data.products = Array.from(existingMap.values());
+  const clientIds = new Set(updatedClientProducts.map((p) => p.id));
+  const remainingExisting = data.products.filter((p) => p?.id && !clientIds.has(p.id));
+
+  data.products = [...updatedClientProducts, ...remainingExisting];
   await writeStoreData(data);
   return data.products;
 }
