@@ -55,6 +55,17 @@ export default function TrendingProducts() {
       }
     }
     loadTrending();
+
+    const handleUpdate = () => {
+      loadTrending();
+    };
+
+    window.addEventListener("greeno_products_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("greeno_products_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, []);
 
   const total = trendingList.length;

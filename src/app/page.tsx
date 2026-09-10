@@ -25,6 +25,17 @@ export default function HomePage() {
       }
     }
     loadNewIn();
+
+    const handleUpdate = () => {
+      loadNewIn();
+    };
+
+    window.addEventListener("greeno_products_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("greeno_products_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, []);
 
   // Duplicate list to ensure seamless infinite looping marquee

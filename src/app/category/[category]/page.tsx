@@ -66,6 +66,17 @@ export default function CategoryPage() {
     }
 
     loadCategoryProducts();
+
+    const handleUpdate = () => {
+      loadCategoryProducts();
+    };
+
+    window.addEventListener("greeno_products_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("greeno_products_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, [rawSlug]);
 
   const sortedProducts = useMemo(() => {

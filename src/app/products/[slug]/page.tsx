@@ -84,6 +84,17 @@ export default function ProductPage() {
     }
 
     loadProduct();
+
+    const handleUpdate = () => {
+      loadProduct();
+    };
+
+    window.addEventListener("greeno_products_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("greeno_products_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, [slug]);
 
   useEffect(() => {
@@ -97,6 +108,17 @@ export default function ProductPage() {
     }
 
     loadOtherProducts();
+
+    const handleUpdate = () => {
+      loadOtherProducts();
+    };
+
+    window.addEventListener("greeno_products_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("greeno_products_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, []);
 
   // Determine effective context: "newin" | "trending" | "products"

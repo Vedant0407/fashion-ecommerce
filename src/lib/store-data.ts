@@ -352,6 +352,41 @@ export async function readStoreData(): Promise<StoreData> {
     console.warn("Notice: could not read TMP_FILE:", err);
   }
 
+  // Merge products so custom products created by admin are never lost
+  const productMap = new Map<string, Product>();
+  for (const p of initial.products) {
+    if (p?.id) productMap.set(p.id, p);
+  }
+  if (fileData?.products && Array.isArray(fileData.products)) {
+    for (const p of fileData.products) {
+      if (p?.id) productMap.set(p.id, p);
+    }
+  }
+  if (tmpData?.products && Array.isArray(tmpData.products)) {
+    for (const p of tmpData.products) {
+      if (p?.id) productMap.set(p.id, p);
+    }
+  }
+
+  // Merge categories
+  const categoryMap = new Map<string, Category>();
+  for (const c of initial.categories) {
+    const key = c?.id || c?.slug;
+    if (key) categoryMap.set(key, c);
+  }
+  if (fileData?.categories && Array.isArray(fileData.categories)) {
+    for (const c of fileData.categories) {
+      const key = c?.id || c?.slug;
+      if (key) categoryMap.set(key, c);
+    }
+  }
+  if (tmpData?.categories && Array.isArray(tmpData.categories)) {
+    for (const c of tmpData.categories) {
+      const key = c?.id || c?.slug;
+      if (key) categoryMap.set(key, c);
+    }
+  }
+
   // Merge orders from both sources so no order is ever lost
   const orderMap = new Map<string, StoreOrder>();
   for (const o of initial.orders) {
@@ -386,8 +421,8 @@ export async function readStoreData(): Promise<StoreData> {
 
   const base = tmpData || fileData || {};
   memoryData = {
-    products: base.products && base.products.length ? base.products : (fileData?.products || initial.products),
-    categories: base.categories && base.categories.length ? base.categories : (fileData?.categories || initial.categories),
+    products: Array.from(productMap.values()),
+    categories: Array.from(categoryMap.values()),
     orders: Array.from(orderMap.values()).sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     ),
@@ -453,6 +488,37 @@ export async function deleteStoreProduct(productId: string): Promise<boolean> {
     return true;
   }
   return false;
+}
+
+export async function syncStoreProducts(clientProducts: Product[]): Promise<Product[]> {
+  if (!Array.isArray(clientProducts) || clientProducts.length === 0) {
+    return getStoreProducts();
+  }
+
+  const data = await readStoreData();
+  const existingMap = new Map(data.products.map((p) => [p.id, p]));
+
+  for (const cp of clientProducts) {
+    if (!cp || !cp.id) continue;
+    const existing = existingMap.get(cp.id);
+    if (!existing) {
+      existingMap.set(cp.id, cp);
+    } else {
+      existingMap.set(cp.id, {
+        ...existing,
+        ...cp,
+        stock: cp.stock !== undefined ? cp.stock : existing.stock,
+        size_stock: cp.size_stock || existing.size_stock,
+        is_new: cp.is_new !== undefined ? cp.is_new : existing.is_new,
+        is_trending: cp.is_trending !== undefined ? cp.is_trending : existing.is_trending,
+        is_featured: cp.is_featured !== undefined ? cp.is_featured : existing.is_featured,
+      });
+    }
+  }
+
+  data.products = Array.from(existingMap.values());
+  await writeStoreData(data);
+  return data.products;
 }
 
 // ----------------- Category Helpers -----------------

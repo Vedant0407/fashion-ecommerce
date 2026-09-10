@@ -122,7 +122,47 @@ export default function AdminPage() {
 
       if (prodRes.ok) {
         const prodData = await prodRes.json();
-        if (prodData.products) setProducts(prodData.products);
+        const serverProducts: Product[] = prodData.products || [];
+
+        // Also merge with any products saved locally in browser
+        let localProducts: Product[] = [];
+        try {
+          const raw = localStorage.getItem("greeno_store_products");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) localProducts = parsed;
+          }
+        } catch {}
+
+        const productMap = new Map<string, Product>();
+        for (const p of serverProducts) {
+          if (p?.id) productMap.set(p.id, p);
+        }
+
+        let hadMissing = false;
+        const missingToSync: Product[] = [];
+        for (const lp of localProducts) {
+          if (lp?.id && !productMap.has(lp.id)) {
+            productMap.set(lp.id, lp);
+            missingToSync.push(lp);
+            hadMissing = true;
+          }
+        }
+
+        const mergedProducts = Array.from(productMap.values());
+        setProducts(mergedProducts);
+        try {
+          localStorage.setItem("greeno_store_products", JSON.stringify(mergedProducts));
+        } catch {}
+
+        // Background sync to server if local products were missing
+        if (hadMissing && missingToSync.length > 0) {
+          fetch("/api/admin/products/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ products: missingToSync }),
+          }).catch(() => {});
+        }
       }
       if (catRes.ok) {
         const catData = await catRes.json();
@@ -320,6 +360,41 @@ export default function AdminPage() {
       });
 
       if (res.ok) {
+        let savedProduct: Product = payload as Product;
+        try {
+          const resData = await res.json();
+          if (resData.product) savedProduct = resData.product;
+        } catch {}
+
+        // Persist immediately to localStorage
+        try {
+          const raw = localStorage.getItem("greeno_store_products");
+          let list: Product[] = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(list)) list = [];
+          const idx = list.findIndex((p) => p.id === savedProduct.id);
+          if (idx >= 0) {
+            list[idx] = { ...list[idx], ...savedProduct };
+          } else {
+            list.unshift(savedProduct);
+          }
+          localStorage.setItem("greeno_store_products", JSON.stringify(list));
+        } catch {}
+
+        // Update local state immediately
+        setProducts((prev) => {
+          const idx = prev.findIndex((p) => p.id === savedProduct.id);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = { ...next[idx], ...savedProduct };
+            return next;
+          }
+          return [savedProduct, ...prev];
+        });
+
+        // Broadcast to all open tabs and storefront components
+        window.dispatchEvent(new Event("greeno_products_updated"));
+        window.dispatchEvent(new Event("storage"));
+
         triggerToast(isUpdating ? "Product updated successfully." : "Product created successfully.");
         setIsProductModalOpen(false);
         setEditingProduct(null);
@@ -450,6 +525,21 @@ export default function AdminPage() {
       });
 
       if (res.ok) {
+        try {
+          const raw = localStorage.getItem("greeno_store_products");
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const filtered = list.filter((p: any) => p.id !== id);
+              localStorage.setItem("greeno_store_products", JSON.stringify(filtered));
+            }
+          }
+        } catch {}
+
+        setProducts((prev) => prev.filter((p) => p.id !== id));
+        window.dispatchEvent(new Event("greeno_products_updated"));
+        window.dispatchEvent(new Event("storage"));
+
         triggerToast(`Product '${name}' deleted.`);
         await fetchAllData();
       } else {
@@ -463,16 +553,33 @@ export default function AdminPage() {
 
   async function handleQuickStock(productId: string, newStock: number) {
     try {
+      const clampedStock = Math.max(0, newStock);
       const res = await fetch("/api/admin/products", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: productId, stock: Math.max(0, newStock) }),
+        body: JSON.stringify({ id: productId, stock: clampedStock }),
       });
 
       if (res.ok) {
         setProducts((prev) =>
-          prev.map((p) => (p.id === productId ? { ...p, stock: Math.max(0, newStock) } : p))
+          prev.map((p) => (p.id === productId ? { ...p, stock: clampedStock } : p))
         );
+
+        try {
+          const raw = localStorage.getItem("greeno_store_products");
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const updated = list.map((p: any) =>
+                p.id === productId ? { ...p, stock: clampedStock } : p
+              );
+              localStorage.setItem("greeno_store_products", JSON.stringify(updated));
+            }
+          }
+        } catch {}
+
+        window.dispatchEvent(new Event("greeno_products_updated"));
+        window.dispatchEvent(new Event("storage"));
         triggerToast("Stock updated.");
       }
     } catch (err) {

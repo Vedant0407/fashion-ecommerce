@@ -216,16 +216,76 @@ export const FALLBACK_PRODUCTS: Product[] = [
 export async function getAllProducts(): Promise<Product[]> {
   try {
     if (typeof window !== "undefined") {
+      let localProducts: Product[] = [];
+      try {
+        const raw = localStorage.getItem("greeno_store_products");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) localProducts = parsed;
+        }
+      } catch (localErr) {
+        console.warn("Error reading local products:", localErr);
+      }
+
       try {
         const res = await fetch("/api/products", { cache: "no-store" });
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.products) && json.products.length > 0) {
-            return json.products;
+          const serverProducts: Product[] =
+            json.success && Array.isArray(json.products) ? json.products : [];
+
+          // Merge server products and local products seamlessly
+          const productMap = new Map<string, Product>();
+          for (const sp of serverProducts) {
+            if (sp?.id) productMap.set(sp.id, sp);
+          }
+
+          let hadMissingOnServer = false;
+          const missingOnServer: Product[] = [];
+
+          for (const lp of localProducts) {
+            if (lp?.id) {
+              if (!productMap.has(lp.id)) {
+                productMap.set(lp.id, lp);
+                missingOnServer.push(lp);
+                hadMissingOnServer = true;
+              } else {
+                // Merge local updates (stock, flags, images)
+                const existing = productMap.get(lp.id)!;
+                productMap.set(lp.id, { ...existing, ...lp });
+              }
+            }
+          }
+
+          const merged = Array.from(productMap.values());
+
+          // Save merged state back to local cache
+          try {
+            localStorage.setItem("greeno_store_products", JSON.stringify(merged));
+          } catch {}
+
+          // Background sync to server if local products were missing
+          if (hadMissingOnServer && missingOnServer.length > 0) {
+            fetch("/api/admin/products/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ products: missingOnServer }),
+            }).catch(() => {});
+          }
+
+          if (merged.length > 0) {
+            return merged;
           }
         }
       } catch (clientFetchErr) {
-        console.warn("Client fetch /api/products warning, checking local fallbacks:", clientFetchErr);
+        console.warn("Client fetch /api/products warning, using local cache:", clientFetchErr);
+        if (localProducts.length > 0) {
+          return localProducts;
+        }
+      }
+
+      if (localProducts.length > 0) {
+        return localProducts;
       }
     }
 
@@ -300,7 +360,7 @@ export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | 
   const products = await getAllProducts();
   const lower = String(idOrSlug).toLowerCase().trim();
 
-  const found = products.find((p) => {
+  let found = products.find((p) => {
     if (!p) return false;
     const pId = p.id ? String(p.id).toLowerCase() : "";
     const pName = p.name ? String(p.name).toLowerCase() : "";
@@ -310,6 +370,26 @@ export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | 
       pId.replace(/-/g, " ") === lower.replace(/-/g, " ")
     );
   });
+
+  // Secondary check against localStorage in case of delay
+  if (!found && typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("greeno_store_products");
+      if (raw) {
+        const localList: Product[] = JSON.parse(raw);
+        found = localList.find((p) => {
+          if (!p) return false;
+          const pId = p.id ? String(p.id).toLowerCase() : "";
+          const pName = p.name ? String(p.name).toLowerCase() : "";
+          return (
+            pId === lower ||
+            pName === lower.replace(/-/g, " ") ||
+            pId.replace(/-/g, " ") === lower.replace(/-/g, " ")
+          );
+        });
+      }
+    } catch {}
+  }
 
   return found || null;
 }
@@ -321,6 +401,7 @@ export async function getProductsByCategory(categorySlug: string): Promise<Produ
   return products.filter((p) => {
     if (p.category_slug?.toLowerCase() === cleanSlug) return true;
     if (p.category_name?.toLowerCase().replace(/[\s-]/g, "") === cleanSlug.replace(/[\s-]/g, "")) return true;
+    if (p.collection_tag?.toLowerCase() === cleanSlug) return true;
 
     if (cleanSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee"))) return true;
     if (cleanSlug === "hoodies" && (p.id.includes("hoodie") || p.name.toLowerCase().includes("hoodie"))) return true;
