@@ -8,13 +8,16 @@ export type Product = {
   category_id?: string | null;
   category_slug?: string | null;
   category_name?: string | null;
+  collection_tag?: string | null;
   image: string;
   images?: string[];
   stock?: number | null;
+  size_stock?: Record<string, number>;
   is_featured?: boolean;
   is_new?: boolean;
   is_trending?: boolean;
   color?: string | null;
+  colors?: string[];
   product_no?: string | null;
   material?: string | null;
   fabric?: string | null;
@@ -262,12 +265,15 @@ export async function getAllProducts(): Promise<Product[]> {
         category_id: item.category_id,
         category_slug: categoryData?.slug || undefined,
         category_name: categoryData?.name || undefined,
+        collection_tag: item.collection_tag || undefined,
         image: item.image || "/black-tee.jfif",
         stock: item.stock ?? 50,
+        size_stock: item.size_stock || undefined,
         is_featured: Boolean(item.is_featured),
         is_new: Boolean(item.is_new),
         is_trending: Boolean(item.is_trending),
         color: item.color || "BLACK",
+        colors: Array.isArray(item.colors) ? item.colors : item.color ? [item.color] : ["BLACK"],
         product_no: item.product_no || `GO-${item.id.slice(0, 4)}`,
         material: item.material || "100% Cotton",
         fabric: item.fabric || "Premium Quality",

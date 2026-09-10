@@ -25,6 +25,7 @@ export default function ProductPage() {
 
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
+  const [selectedColor, setSelectedColor] = useState<string>("BLACK");
 
   // Navigation context: 'newin' | 'trending' | 'products'
   const [browseContext, setBrowseContext] = useState<string | null>(null);
@@ -46,6 +47,25 @@ export default function ProductPage() {
       try {
         const found = await getProductByIdOrSlug(slug);
         setProduct(found);
+        if (found) {
+          const defaultColor =
+            Array.isArray(found.colors) && found.colors.length > 0
+              ? found.colors[0]
+              : found.color || "BLACK";
+          setSelectedColor(defaultColor);
+
+          // If size_stock is present and "M" has 0 units, pick first in-stock size
+          if (found.size_stock && typeof found.size_stock === "object") {
+            const sizes = ["S", "M", "L", "XL", "XXL"];
+            const currentM = Number(found.size_stock["M"] ?? 0);
+            if (currentM === 0) {
+              const available = sizes.find((s) => Number(found.size_stock?.[s] ?? 0) > 0);
+              if (available) {
+                setSelectedSize(available);
+              }
+            }
+          }
+        }
       } catch (err) {
         console.error("Error loading product:", err);
         setProduct(null);
@@ -180,7 +200,22 @@ export default function ProductPage() {
       ? product.images
       : [image];
 
+  // Size-wise stock calculation
+  const currentSizeQty = useMemo(() => {
+    if (!product) return 0;
+    if (product.size_stock && typeof product.size_stock === "object") {
+      return product.size_stock[selectedSize] !== undefined
+        ? Number(product.size_stock[selectedSize]) || 0
+        : Number(product.stock) || 0;
+    }
+    return Number(product.stock) || 0;
+  }, [product, selectedSize]);
+
+  const isSizeOutOfStock = currentSizeQty <= 0;
+  const isSizeLowStock = currentSizeQty > 0 && currentSizeQty <= 5;
+
   const handleAddToCart = () => {
+    if (isSizeOutOfStock) return;
     addToCart(
       {
         id: product.id,
@@ -188,7 +223,7 @@ export default function ProductPage() {
         price: Number(product.price),
         image: image,
         size: selectedSize,
-        color: product.color || "BLACK",
+        color: selectedColor || product.color || "BLACK",
       },
       quantity
     );
@@ -213,13 +248,30 @@ export default function ProductPage() {
           {/* LEFT - PRODUCT DETAILS (ONLY THE SELECTED PRODUCT) */}
           <div className="product-left">
 
-            <p className="product-category">
-              {activeContext === "newin"
-                ? "GREENO // NEW IN"
-                : activeContext === "trending"
-                ? "GREENO // TRENDING"
-                : `GREENO // ${product.category_name || "COLLECTION"}`}
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "8px" }}>
+              <p className="product-category" style={{ margin: 0 }}>
+                {activeContext === "newin"
+                  ? "GREENO // NEW IN"
+                  : activeContext === "trending"
+                  ? "GREENO // TRENDING"
+                  : `GREENO // ${product.category_name || "COLLECTION"}`}
+              </p>
+              {product.collection_tag && (
+                <span
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    background: "#000000",
+                    color: "#ffffff",
+                    padding: "2px 8px",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  COLLECTION: {product.collection_tag}
+                </span>
+              )}
+            </div>
 
             <h1>{product.name}</h1>
 
@@ -303,70 +355,175 @@ export default function ProductPage() {
 
             {/* COLOR */}
             <div className="right-option">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <h3 style={{ margin: 0 }}>
+                  COLOR: <span style={{ color: "#000000", fontWeight: 700 }}>{selectedColor}</span>
+                </h3>
+              </div>
 
-              <h3>COLOR</h3>
+              <div className="color-options">
+                {(Array.isArray(product.colors) && product.colors.length > 0
+                  ? product.colors
+                  : [product.color || "BLACK"]
+                ).map((col) => {
+                  const COLOR_MAP: Record<string, string> = {
+                    BLACK: "#111111",
+                    WHITE: "#f8f9fa",
+                    GREY: "#71717a",
+                    GRAY: "#71717a",
+                    OLIVE: "#556b2f",
+                    BEIGE: "#d4c5b9",
+                    CREAM: "#fef9e7",
+                    NAVY: "#0f172a",
+                    BROWN: "#582f0e",
+                    RED: "#dc2626",
+                    CHARCOAL: "#27272a",
+                    SAGE: "#9caf88",
+                    KHAKI: "#c3b091",
+                  };
+                  const hex = COLOR_MAP[col.toUpperCase()] || "#333333";
+                  const isSelected = selectedColor.toUpperCase() === col.toUpperCase();
 
-              <button className="color-option active">
-
-                <span className="color-dot" />
-
-                {product.color || "BLACK"}
-
-              </button>
-
+                  return (
+                    <button
+                      key={col}
+                      type="button"
+                      className={`color-option ${isSelected ? "active" : ""}`}
+                      onClick={() => setSelectedColor(col)}
+                    >
+                      <span
+                        className="color-dot"
+                        style={{
+                          backgroundColor: hex,
+                          border: col.toUpperCase() === "WHITE" ? "1px solid #cccccc" : undefined,
+                        }}
+                      />
+                      {col.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* PRODUCT NUMBER */}
             <div className="right-info">
-
               <h3>PRODUCT NUMBER</h3>
-
-              <p>
-                {product.id}
-              </p>
-
+              <p>{product.id}</p>
             </div>
 
             {/* SIZE */}
             <div className="right-option">
-
-              <h3>CHOOSE SIZE</h3>
-
-              <div className="size-options">
-
-                {["S", "M", "L", "XL"].map((size) => (
-                  <button
-                    key={size}
-                    className={
-                      selectedSize === size
-                        ? "size-button active"
-                        : "size-button"
-                    }
-                    onClick={() =>
-                      setSelectedSize(size)
-                    }
-                  >
-                    {size}
-                  </button>
-                ))}
-
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <h3 style={{ margin: 0 }}>CHOOSE SIZE</h3>
+                {isSizeLowStock && (
+                  <span style={{ fontSize: "11px", color: "#dc2626", fontWeight: 700, letterSpacing: "0.05em" }}>
+                    🔥 ONLY {currentSizeQty} LEFT!
+                  </span>
+                )}
+                {isSizeOutOfStock && (
+                  <span style={{ fontSize: "11px", color: "#b91c1c", fontWeight: 700, letterSpacing: "0.05em" }}>
+                    ✕ OUT OF STOCK
+                  </span>
+                )}
               </div>
 
+              <div className="size-options">
+                {(["S", "M", "L", "XL", "XXL"] as const).map((size) => {
+                  const sizeQty =
+                    product.size_stock && typeof product.size_stock === "object"
+                      ? product.size_stock[size] !== undefined
+                        ? Number(product.size_stock[size]) || 0
+                        : Number(product.stock) || 0
+                      : Number(product.stock ?? 10);
+                  const isOut = sizeQty <= 0;
+                  const isLow = sizeQty > 0 && sizeQty <= 5;
+                  const isSelected = selectedSize === size;
+
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      className={`size-button ${isSelected ? "active" : ""} ${isOut ? "disabled" : ""} ${isLow ? "has-low-stock" : ""}`}
+                      onClick={() => setSelectedSize(size)}
+                      title={
+                        isOut
+                          ? `Size ${size}: Out of stock`
+                          : isLow
+                          ? `Size ${size}: Only ${sizeQty} left!`
+                          : `Size ${size}: In stock`
+                      }
+                    >
+                      <span>{size}</span>
+                      {isLow && <span className="size-low-indicator" title={`Only ${sizeQty} left`}>•</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* URGENCY BANNER IF <= 5 UNITS */}
+              {isSizeLowStock && (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    padding: "10px 14px",
+                    background: "#fff1f2",
+                    border: "1px solid #fecdd3",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <span style={{ fontSize: "14px" }}>⚠️</span>
+                  <div style={{ fontSize: "11px", color: "#be123c", letterSpacing: "0.04em", lineHeight: "1.4" }}>
+                    <strong>ONLY {currentSizeQty} LEFT IN SIZE {selectedSize}</strong> &mdash; Order soon before it sells out!
+                  </div>
+                </div>
+              )}
+
+              {/* OUT OF STOCK BANNER */}
+              {isSizeOutOfStock && (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    padding: "10px 14px",
+                    background: "#fef2f2",
+                    border: "1px solid #f87171",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <span style={{ fontSize: "14px" }}>✕</span>
+                  <div style={{ fontSize: "11px", color: "#b91c1c", letterSpacing: "0.04em", lineHeight: "1.4" }}>
+                    <strong>SIZE {selectedSize} IS CURRENTLY OUT OF STOCK.</strong> Please select another size.
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ACTIONS */}
             <div className="product-actions">
-
               <button
                 className="add-to-cart-button"
                 onClick={handleAddToCart}
+                disabled={isSizeOutOfStock}
                 style={{
-                  background: added ? "#16a34a" : "#111",
+                  background: isSizeOutOfStock
+                    ? "#999999"
+                    : added
+                    ? "#16a34a"
+                    : "#111",
                   color: "#fff",
+                  cursor: isSizeOutOfStock ? "not-allowed" : "pointer",
                   transition: "background 0.2s ease",
+                  opacity: isSizeOutOfStock ? 0.7 : 1,
                 }}
               >
-                {added ? "ADDED TO BAG ✓" : "ADD TO SHOPPING BAG"}
+                {isSizeOutOfStock
+                  ? `OUT OF STOCK IN SIZE ${selectedSize}`
+                  : added
+                  ? "ADDED TO BAG ✓"
+                  : "ADD TO SHOPPING BAG"}
               </button>
 
               <button

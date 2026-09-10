@@ -29,13 +29,16 @@ export async function POST(request: NextRequest) {
       category_id,
       category_name,
       category_slug,
+      collection_tag,
       image,
       images,
       stock = 50,
+      size_stock,
       is_featured = false,
       is_new = true,
       is_trending = false,
       color,
+      colors,
       product_no,
       material,
       fabric,
@@ -56,6 +59,19 @@ export async function POST(request: NextRequest) {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
 
+    // Calculate total stock from size_stock if provided
+    let computedStock = Number(stock) || 0;
+    if (size_stock && typeof size_stock === "object") {
+      computedStock = Object.values(size_stock).reduce(
+        (sum: number, q: any) => sum + Math.max(0, Number(q) || 0),
+        0
+      );
+    }
+
+    const resolvedColors = Array.isArray(colors) && colors.length > 0
+      ? colors
+      : color ? [color] : ["BLACK"];
+
     const newProduct: Product = {
       id: id || `prod-${Date.now()}`,
       name: name.trim(),
@@ -64,13 +80,16 @@ export async function POST(request: NextRequest) {
       category_id: category_id || null,
       category_name: category_name || "STREETWEAR",
       category_slug: category_slug || "streetwear",
+      collection_tag: collection_tag?.trim() || null,
       image: image || (Array.isArray(images) && images[0]) || "/black-tee.jfif",
       images: Array.isArray(images) && images.length > 0 ? images : image ? [image] : ["/black-tee.jfif"],
-      stock: Number(stock) || 0,
+      stock: computedStock,
+      size_stock: size_stock && typeof size_stock === "object" ? size_stock : undefined,
       is_featured: Boolean(is_featured),
       is_new: Boolean(is_new),
       is_trending: Boolean(is_trending),
-      color: color?.trim() || "BLACK",
+      color: resolvedColors[0] || "BLACK",
+      colors: resolvedColors,
       product_no: product_no?.trim() || `GO-${Math.floor(1000 + Math.random() * 9000)}`,
       material: material?.trim() || "100% Cotton",
       fabric: fabric?.trim() || "Heavyweight Knit",
@@ -110,11 +129,27 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    let computedStock = updates.stock !== undefined ? Number(updates.stock) : existing.stock;
+    if (updates.size_stock && typeof updates.size_stock === "object") {
+      computedStock = Object.values(updates.size_stock).reduce(
+        (sum: number, q: any) => sum + Math.max(0, Number(q) || 0),
+        0
+      );
+    }
+
+    const resolvedColors = Array.isArray(updates.colors) && updates.colors.length > 0
+      ? updates.colors
+      : updates.color ? [updates.color] : existing.colors || [existing.color || "BLACK"];
+
     const updatedProduct: Product = {
       ...existing,
       ...updates,
       price: updates.price !== undefined ? Number(updates.price) : existing.price,
-      stock: updates.stock !== undefined ? Number(updates.stock) : existing.stock,
+      stock: computedStock,
+      size_stock: updates.size_stock !== undefined ? updates.size_stock : existing.size_stock,
+      colors: resolvedColors,
+      color: resolvedColors[0] || existing.color || "BLACK",
+      collection_tag: updates.collection_tag !== undefined ? (updates.collection_tag?.trim() || null) : existing.collection_tag,
       is_featured: updates.is_featured !== undefined ? Boolean(updates.is_featured) : existing.is_featured,
       is_new: updates.is_new !== undefined ? Boolean(updates.is_new) : existing.is_new,
       is_trending: updates.is_trending !== undefined ? Boolean(updates.is_trending) : existing.is_trending,

@@ -62,6 +62,7 @@ export default function AdminPage() {
   // Product Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [customColorInput, setCustomColorInput] = useState<string>("");
   const [uploadingImages, setUploadingImages] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string>("");
 
@@ -286,10 +287,36 @@ export default function AdminPage() {
       const isUpdating = Boolean(editingProduct.id && products.some((p) => p.id === editingProduct.id));
       const method = isUpdating ? "PUT" : "POST";
 
+      const resolvedColors =
+        Array.isArray(editingProduct.colors) && editingProduct.colors.length > 0
+          ? editingProduct.colors
+          : editingProduct.color
+          ? [editingProduct.color]
+          : ["BLACK"];
+
+      const resolvedSizeStock =
+        editingProduct.size_stock && typeof editingProduct.size_stock === "object"
+          ? editingProduct.size_stock
+          : { S: 10, M: 15, L: 15, XL: 10, XXL: 0 };
+
+      const computedStock = Object.values(resolvedSizeStock).reduce(
+        (sum: number, q: any) => sum + Math.max(0, Number(q) || 0),
+        0
+      );
+
+      const payload = {
+        ...editingProduct,
+        colors: resolvedColors,
+        color: resolvedColors[0] || "BLACK",
+        size_stock: resolvedSizeStock,
+        stock: computedStock,
+        collection_tag: editingProduct.collection_tag?.trim() || null,
+      };
+
       const res = await fetch("/api/admin/products", {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingProduct),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -861,19 +888,36 @@ export default function AdminPage() {
     }
   }
 
+  // Available Collection Tags for Filtering
+  const availableCollections = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      if (p.collection_tag && p.collection_tag.trim()) {
+        set.add(p.collection_tag.trim());
+      }
+    });
+    return Array.from(set);
+  }, [products]);
+
   // ----------------- Filtered Data -----------------
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
+      const q = productSearch.toLowerCase();
       const matchesSearch =
-        p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-        p.id.toLowerCase().includes(productSearch.toLowerCase()) ||
-        (p.product_no && p.product_no.toLowerCase().includes(productSearch.toLowerCase()));
+        p.name.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q) ||
+        Boolean(p.collection_tag && p.collection_tag.toLowerCase().includes(q)) ||
+        Boolean(p.colors && p.colors.some((c) => c.toLowerCase().includes(q))) ||
+        Boolean(p.color && p.color.toLowerCase().includes(q)) ||
+        Boolean(p.product_no && p.product_no.toLowerCase().includes(q));
 
       const matchesCat =
         productCategoryFilter === "ALL" ||
         (productCategoryFilter === "NEW_IN" && Boolean(p.is_new)) ||
         (productCategoryFilter === "TRENDING" && Boolean(p.is_trending)) ||
         (productCategoryFilter === "FEATURED" && Boolean(p.is_featured)) ||
+        (productCategoryFilter.startsWith("COLLECTION:") &&
+          p.collection_tag?.toLowerCase() === productCategoryFilter.replace("COLLECTION:", "").toLowerCase()) ||
         p.category_slug === productCategoryFilter ||
         p.category_name?.toUpperCase() === productCategoryFilter.toUpperCase();
 
@@ -1296,17 +1340,22 @@ export default function AdminPage() {
                         price: 2499,
                         category_slug: categories[0]?.slug || "t-shirts",
                         category_name: categories[0]?.name || "T-SHIRTS",
+                        collection_tag: "",
                         image: "/black-tee.jfif",
+                        images: ["/black-tee.jfif"],
                         stock: 50,
+                        size_stock: { S: 10, M: 15, L: 15, XL: 10, XXL: 0 },
                         is_featured: false,
                         is_new: true,
                         is_trending: false,
+                        colors: ["BLACK"],
                         color: "BLACK",
                         material: "100% Cotton",
                         fabric: "Heavyweight Jersey",
                         fit: "Oversized Fit",
                         description: "",
                       });
+                      setCustomColorInput("");
                       setIsProductModalOpen(true);
                     }}
                   >
@@ -1318,7 +1367,7 @@ export default function AdminPage() {
                   <input
                     type="text"
                     className={styles.searchInput}
-                    placeholder="Search by title, ID, or product code..."
+                    placeholder="Search by title, code, collection tag, or color..."
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
                   />
@@ -1334,6 +1383,15 @@ export default function AdminPage() {
                       <option value="NEW_IN">✦ NEW IN SECTION ({products.filter((p) => p.is_new).length})</option>
                       <option value="TRENDING">★ TRENDING SECTION ({products.filter((p) => p.is_trending).length})</option>
                       <option value="FEATURED">◆ CURATED CATALOGUE ({products.filter((p) => p.is_featured).length})</option>
+                      {availableCollections.length > 0 && (
+                        <optgroup label="BY COLLECTION TAG">
+                          {availableCollections.map((col) => (
+                            <option key={col} value={`COLLECTION:${col}`}>
+                              🏷️ {col} ({products.filter((p) => p.collection_tag === col).length})
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                       <optgroup label="BY CATEGORY">
                         {categories.map((c) => (
                           <option key={c.slug} value={c.slug}>
@@ -1351,7 +1409,7 @@ export default function AdminPage() {
                       <tr>
                         <th>Item</th>
                         <th>Product Details</th>
-                        <th>Collection</th>
+                        <th>Category &amp; Drop</th>
                         <th>Price</th>
                         <th>Stock Units</th>
                         <th>Tags</th>
@@ -1359,80 +1417,169 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredProducts.map((p) => (
-                        <tr key={p.id}>
-                          <td>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={p.image} alt={p.name} className={styles.productThumb} />
-                          </td>
-                          <td>
-                            <div style={{ fontWeight: 700, letterSpacing: "0.04em" }}>{p.name}</div>
-                            <div style={{ fontSize: "10px", color: "#888888", fontFamily: "monospace" }}>
-                              {p.product_no || p.id} &bull; {p.color || "BLACK"}
-                            </div>
-                          </td>
-                          <td>
-                            <span className={styles.badge}>
-                              {p.category_name || p.category_slug?.toUpperCase() || "STREETWEAR"}
-                            </span>
-                          </td>
-                          <td style={{ fontWeight: 700 }}>₹{p.price.toLocaleString("en-IN")}</td>
-                          <td>
-                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                              <button
-                                className={styles.smallBtn}
-                                style={{ padding: "2px 6px" }}
-                                onClick={() => handleQuickStock(p.id, (p.stock || 0) - 5)}
-                              >
-                                -5
-                              </button>
-                              <span
-                                style={{
-                                  fontWeight: 700,
-                                  minWidth: "28px",
-                                  textAlign: "center",
-                                  color: (p.stock || 0) < 10 ? "#ffaa00" : "#ffffff",
-                                }}
-                              >
-                                {p.stock ?? 0}
+                      {filteredProducts.map((p) => {
+                        const productColors =
+                          Array.isArray(p.colors) && p.colors.length > 0
+                            ? p.colors
+                            : p.color
+                            ? [p.color]
+                            : ["BLACK"];
+
+                        return (
+                          <tr key={p.id}>
+                            <td>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={p.image} alt={p.name} className={styles.productThumb} />
+                            </td>
+                            <td>
+                              <div style={{ fontWeight: 700, letterSpacing: "0.04em" }}>{p.name}</div>
+                              <div style={{ fontSize: "10px", color: "#888888", fontFamily: "monospace", marginTop: "3px" }}>
+                                {p.product_no || p.id}
+                              </div>
+                              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginTop: "4px" }}>
+                                {productColors.map((col, cIdx) => (
+                                  <span
+                                    key={cIdx}
+                                    style={{
+                                      fontSize: "9px",
+                                      fontWeight: 700,
+                                      padding: "1px 5px",
+                                      background: "#161616",
+                                      border: "1px solid #333333",
+                                      color: "#cccccc",
+                                      letterSpacing: "0.05em",
+                                    }}
+                                  >
+                                    {col}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td>
+                              <span className={styles.badge}>
+                                {p.category_name || p.category_slug?.toUpperCase() || "STREETWEAR"}
                               </span>
-                              <button
-                                className={styles.smallBtn}
-                                style={{ padding: "2px 6px" }}
-                                onClick={() => handleQuickStock(p.id, (p.stock || 0) + 5)}
-                              >
-                                +5
-                              </button>
-                            </div>
-                          </td>
-                          <td>
-                            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                              {p.is_featured && <span className={styles.badge}>FEATURED</span>}
-                              {p.is_new && <span className={styles.badge}>NEW</span>}
-                              {p.is_trending && <span className={styles.badge}>TRENDING</span>}
-                            </div>
-                          </td>
-                          <td>
-                            <div className={styles.actionGroup}>
-                              <button
-                                className={styles.smallBtn}
-                                onClick={() => {
-                                  setEditingProduct({ ...p });
-                                  setIsProductModalOpen(true);
-                                }}
-                              >
-                                EDIT
-                              </button>
-                              <button
-                                className={styles.deleteBtn}
-                                onClick={() => handleDeleteProduct(p.id, p.name)}
-                              >
-                                DELETE
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                              {p.collection_tag && (
+                                <div>
+                                  <span className={styles.collectionBadge}>
+                                    🏷️ {p.collection_tag}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ fontWeight: 700 }}>₹{p.price.toLocaleString("en-IN")}</td>
+                            <td>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <button
+                                  className={styles.smallBtn}
+                                  style={{ padding: "2px 6px" }}
+                                  onClick={() => handleQuickStock(p.id, (p.stock || 0) - 5)}
+                                >
+                                  -5
+                                </button>
+                                <span
+                                  style={{
+                                    fontWeight: 700,
+                                    minWidth: "28px",
+                                    textAlign: "center",
+                                    color: (p.stock || 0) < 10 ? "#ffaa00" : "#ffffff",
+                                  }}
+                                >
+                                  {p.stock ?? 0}
+                                </span>
+                                <button
+                                  className={styles.smallBtn}
+                                  style={{ padding: "2px 6px" }}
+                                  onClick={() => handleQuickStock(p.id, (p.stock || 0) + 5)}
+                                >
+                                  +5
+                                </button>
+                              </div>
+                              {p.size_stock && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: "4px",
+                                    flexWrap: "wrap",
+                                    fontSize: "9px",
+                                    fontFamily: "monospace",
+                                    marginTop: "5px",
+                                  }}
+                                >
+                                  {Object.entries(p.size_stock).map(([sz, qty]) => {
+                                    const num = Number(qty);
+                                    const isLow = num > 0 && num <= 5;
+                                    const isOut = num === 0;
+                                    return (
+                                      <span
+                                        key={sz}
+                                        style={{
+                                          color: isOut ? "#ff5555" : isLow ? "#f59e0b" : "#888888",
+                                          fontWeight: isLow || isOut ? 700 : 500,
+                                        }}
+                                        title={isLow ? `Low stock: ${num} left!` : isOut ? "Out of stock" : `${num} in stock`}
+                                      >
+                                        {sz}:{num}{isLow ? "⚠️" : ""}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                                {p.is_featured && <span className={styles.badge}>FEATURED</span>}
+                                {p.is_new && <span className={styles.badge}>NEW</span>}
+                                {p.is_trending && <span className={styles.badge}>TRENDING</span>}
+                              </div>
+                            </td>
+                            <td>
+                              <div className={styles.actionGroup}>
+                                <button
+                                  className={styles.smallBtn}
+                                  onClick={() => {
+                                    const prodColors =
+                                      Array.isArray(p.colors) && p.colors.length > 0
+                                        ? p.colors
+                                        : p.color
+                                        ? [p.color]
+                                        : ["BLACK"];
+                                    const prodStock = p.stock ?? 50;
+                                    const prodSizeStock =
+                                      p.size_stock && typeof p.size_stock === "object"
+                                        ? { ...p.size_stock }
+                                        : {
+                                            S: Math.floor(prodStock * 0.2),
+                                            M: Math.floor(prodStock * 0.3),
+                                            L: Math.floor(prodStock * 0.3),
+                                            XL: Math.floor(prodStock * 0.2),
+                                            XXL: 0,
+                                          };
+                                    setEditingProduct({
+                                      ...p,
+                                      colors: prodColors,
+                                      color: prodColors[0] || "BLACK",
+                                      collection_tag: p.collection_tag || "",
+                                      size_stock: prodSizeStock,
+                                      stock: prodStock,
+                                    });
+                                    setCustomColorInput("");
+                                    setIsProductModalOpen(true);
+                                  }}
+                                >
+                                  EDIT
+                                </button>
+                                <button
+                                  className={styles.deleteBtn}
+                                  onClick={() => handleDeleteProduct(p.id, p.name)}
+                                >
+                                  DELETE
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2820,23 +2967,26 @@ export default function AdminPage() {
                   </div>
 
                   <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Stock Available (Units) *</label>
+                    <label className={styles.fieldLabel}>Total Calculated Stock (Units)</label>
                     <input
                       type="number"
                       className={styles.fieldInput}
                       value={editingProduct.stock ?? 50}
-                      onChange={(e) =>
-                        setEditingProduct({ ...editingProduct, stock: Number(e.target.value) })
-                      }
-                      required
+                      readOnly
+                      style={{ background: "#111111", color: "#aaaaaa", cursor: "not-allowed" }}
+                      title="Computed automatically as sum of size stock quantities below"
                     />
+                    <div style={{ fontSize: "10px", color: "#888888", marginTop: "2px" }}>
+                      Sum of S + M + L + XL + XXL below.
+                    </div>
                   </div>
 
+                  {/* GARMENT CATEGORY DROPDOWN */}
                   <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Collection / Category *</label>
+                    <label className={styles.fieldLabel}>Garment Category (Apparel Type) *</label>
                     <select
                       className={styles.fieldSelect}
-                      value={editingProduct.category_slug || ""}
+                      value={editingProduct.category_slug || "t-shirts"}
                       onChange={(e) => {
                         const selectedSlug = e.target.value;
                         const match = categories.find((c) => c.slug === selectedSlug);
@@ -2847,24 +2997,336 @@ export default function AdminPage() {
                           category_id: match ? match.id : null,
                         });
                       }}
+                      required
                     >
-                      {categories.map((c) => (
-                        <option key={c.slug} value={c.slug}>
-                          {c.name}
-                        </option>
-                      ))}
+                      <option value="t-shirts">T-SHIRTS</option>
+                      <option value="hoodies">HOODIES</option>
+                      <option value="pants">PANTS / TROUSERS</option>
+                      <option value="caps">CAPS &amp; HEADWEAR</option>
+                      <option value="bags">BAGS &amp; TOTES</option>
+                      <option value="accessories">ACCESSORIES</option>
+                      {categories
+                        .filter(
+                          (c) =>
+                            !["t-shirts", "hoodies", "pants", "caps", "bags", "accessories"].includes(
+                              c.slug.toLowerCase()
+                            )
+                        )
+                        .map((c) => (
+                          <option key={c.slug} value={c.slug}>
+                            {c.name}
+                          </option>
+                        ))}
                     </select>
+                    <div style={{ fontSize: "10px", color: "#888888", marginTop: "2px" }}>
+                      Which clothing category this piece belongs to (hoodie, pants, t-shirts, etc.).
+                    </div>
                   </div>
 
+                  {/* COLLECTION / DROP TAG */}
                   <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Colorway</label>
+                    <label className={styles.fieldLabel}>Collection / Drop Tag (Optional)</label>
                     <input
                       type="text"
                       className={styles.fieldInput}
-                      value={editingProduct.color || ""}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, color: e.target.value })}
-                      placeholder="e.g. BLACK, VINTAGE WASH, OLIVE"
+                      value={editingProduct.collection_tag || ""}
+                      onChange={(e) =>
+                        setEditingProduct({ ...editingProduct, collection_tag: e.target.value })
+                      }
+                      placeholder="e.g. Summer Drop 2026, Cyberpunk Capsule..."
+                      list="admin-collection-suggestions"
                     />
+                    <datalist id="admin-collection-suggestions">
+                      {availableCollections.map((col) => (
+                        <option key={col} value={col} />
+                      ))}
+                      <option value="Summer Drop 2026" />
+                      <option value="Winter Capsule 2026" />
+                      <option value="Signature Series" />
+                      <option value="Core Essentials" />
+                    </datalist>
+                    <div style={{ fontSize: "10px", color: "#888888", marginTop: "2px" }}>
+                      Distinct collection drop name. Keeps drops separate from storefront sections.
+                    </div>
+                  </div>
+
+                  {/* MULTI-COLOR MANAGEMENT */}
+                  <div className={styles.fullSpan}>
+                    <div className={styles.fieldGroup}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <label className={styles.fieldLabel}>
+                          AVAILABLE COLORWAYS (ONE OR MORE COLORS) *
+                        </label>
+                        <span style={{ fontSize: "10px", color: "#888888" }}>
+                          {(editingProduct.colors?.length || (editingProduct.color ? 1 : 0))} COLOR(S) CONFIGURED
+                        </span>
+                      </div>
+
+                      {/* Display active color chips */}
+                      <div className={styles.colorTagsContainer}>
+                        {(Array.isArray(editingProduct.colors) && editingProduct.colors.length > 0
+                          ? editingProduct.colors
+                          : editingProduct.color
+                          ? [editingProduct.color]
+                          : ["BLACK"]
+                        ).map((cName, cIdx) => {
+                          const COLOR_MAP: Record<string, string> = {
+                            BLACK: "#111111",
+                            WHITE: "#f8f9fa",
+                            GREY: "#71717a",
+                            GRAY: "#71717a",
+                            OLIVE: "#556b2f",
+                            BEIGE: "#d4c5b9",
+                            CREAM: "#fef9e7",
+                            NAVY: "#0f172a",
+                            BROWN: "#582f0e",
+                            RED: "#dc2626",
+                            CHARCOAL: "#27272a",
+                            SAGE: "#9caf88",
+                            KHAKI: "#c3b091",
+                          };
+                          const hex = COLOR_MAP[cName.toUpperCase()] || "#444444";
+                          const isPrimary = cIdx === 0;
+
+                          return (
+                            <div key={cName} className={styles.colorTag}>
+                              <span
+                                className={styles.colorTagDot}
+                                style={{
+                                  backgroundColor: hex,
+                                  border: cName.toUpperCase() === "WHITE" ? "1px solid #666" : undefined,
+                                }}
+                              />
+                              <span>{cName.toUpperCase()}</span>
+                              {isPrimary && (
+                                <span style={{ fontSize: "9px", color: "#aaaaaa", fontWeight: 400 }}>
+                                  (PRIMARY)
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                className={styles.colorTagRemove}
+                                title={`Remove ${cName}`}
+                                onClick={() => {
+                                  const currentList =
+                                    Array.isArray(editingProduct.colors) && editingProduct.colors.length > 0
+                                      ? editingProduct.colors
+                                      : editingProduct.color
+                                      ? [editingProduct.color]
+                                      : ["BLACK"];
+                                  if (currentList.length <= 1) {
+                                    alert("At least one colorway must remain.");
+                                    return;
+                                  }
+                                  const updated = currentList.filter((c) => c !== cName);
+                                  setEditingProduct({
+                                    ...editingProduct,
+                                    colors: updated,
+                                    color: updated[0] || "BLACK",
+                                  });
+                                }}
+                              >
+                                &times;
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Quick Add Palette & Custom Input */}
+                      <div
+                        style={{
+                          background: "#0d0d0d",
+                          border: "1px solid #222222",
+                          padding: "12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                          <span style={{ fontSize: "10px", color: "#888888", fontWeight: 700 }}>
+                            QUICK ADD PALETTE:
+                          </span>
+                          {[
+                            "BLACK",
+                            "WHITE",
+                            "GREY",
+                            "OLIVE",
+                            "BEIGE",
+                            "NAVY",
+                            "BROWN",
+                            "CREAM",
+                            "RED",
+                            "CHARCOAL",
+                            "SAGE",
+                          ].map((col) => (
+                            <button
+                              key={col}
+                              type="button"
+                              className={styles.quickColorBtn}
+                              onClick={() => {
+                                const currentList =
+                                  Array.isArray(editingProduct.colors) && editingProduct.colors.length > 0
+                                    ? [...editingProduct.colors]
+                                    : editingProduct.color
+                                    ? [editingProduct.color]
+                                    : [];
+                                if (!currentList.includes(col)) {
+                                  const updated = [...currentList, col];
+                                  setEditingProduct({
+                                    ...editingProduct,
+                                    colors: updated,
+                                    color: updated[0] || col,
+                                  });
+                                }
+                              }}
+                            >
+                              + {col}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <input
+                            type="text"
+                            className={styles.fieldInput}
+                            placeholder="Add custom colorway name (e.g. DUSTY ROSE, WASHED INDIGO)..."
+                            value={customColorInput}
+                            onChange={(e) => setCustomColorInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                const val = customColorInput.trim().toUpperCase();
+                                if (!val) return;
+                                const currentList =
+                                  Array.isArray(editingProduct.colors) && editingProduct.colors.length > 0
+                                    ? [...editingProduct.colors]
+                                    : editingProduct.color
+                                    ? [editingProduct.color]
+                                    : [];
+                                if (!currentList.includes(val)) {
+                                  const updated = [...currentList, val];
+                                  setEditingProduct({
+                                    ...editingProduct,
+                                    colors: updated,
+                                    color: updated[0] || val,
+                                  });
+                                }
+                                setCustomColorInput("");
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className={styles.smallBtn}
+                            style={{ padding: "0 16px", whiteSpace: "nowrap" }}
+                            onClick={() => {
+                              const val = customColorInput.trim().toUpperCase();
+                              if (!val) return;
+                              const currentList =
+                                Array.isArray(editingProduct.colors) && editingProduct.colors.length > 0
+                                  ? [...editingProduct.colors]
+                                  : editingProduct.color
+                                  ? [editingProduct.color]
+                                  : [];
+                              if (!currentList.includes(val)) {
+                                const updated = [...currentList, val];
+                                setEditingProduct({
+                                  ...editingProduct,
+                                  colors: updated,
+                                  color: updated[0] || val,
+                                });
+                              }
+                              setCustomColorInput("");
+                            }}
+                          >
+                            + ADD COLOR
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SIZE-WISE INVENTORY MATRIX */}
+                  <div className={styles.fullSpan}>
+                    <div className={styles.fieldGroup}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <label className={styles.fieldLabel}>
+                          SIZE-WISE INVENTORY &amp; LOW STOCK ALERTS (S, M, L, XL, XXL) *
+                        </label>
+                        <span style={{ fontSize: "10px", color: "#aaaaaa", fontWeight: 700 }}>
+                          TOTAL: {editingProduct.stock ?? 0} UNITS
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "10px", color: "#888888" }}>
+                        Specify units per size. If any size has <strong>5 or fewer units</strong>, the storefront automatically warns customers with <strong>&ldquo;ONLY 5 LEFT&rdquo;</strong>.
+                      </div>
+
+                      <div className={styles.sizeStockGrid}>
+                        {(["S", "M", "L", "XL", "XXL"] as const).map((sz) => {
+                          const rawSizeStock =
+                            editingProduct.size_stock && typeof editingProduct.size_stock === "object"
+                              ? editingProduct.size_stock
+                              : { S: 10, M: 15, L: 15, XL: 10, XXL: 0 };
+                          const qty = rawSizeStock[sz] ?? 0;
+                          const isLow = qty > 0 && qty <= 5;
+                          const isOut = qty === 0;
+
+                          return (
+                            <div
+                              key={sz}
+                              className={styles.sizeStockBox}
+                              style={{
+                                borderColor: isOut ? "#ef4444" : isLow ? "#f59e0b" : "#282828",
+                                background: isOut ? "#1a0808" : isLow ? "#1c1407" : "#0d0d0d",
+                              }}
+                            >
+                              <div className={styles.sizeStockLabel}>
+                                <span>SIZE {sz}</span>
+                                {isLow && (
+                                  <span style={{ color: "#f59e0b", fontSize: "9px", fontWeight: 700 }}>
+                                    ⚠️ ONLY {qty} LEFT
+                                  </span>
+                                )}
+                                {isOut && (
+                                  <span style={{ color: "#ef4444", fontSize: "9px", fontWeight: 700 }}>
+                                    ✕ OUT
+                                  </span>
+                                )}
+                                {!isLow && !isOut && (
+                                  <span style={{ color: "#22c55e", fontSize: "9px", fontWeight: 600 }}>
+                                    ✓ OK
+                                  </span>
+                                )}
+                              </div>
+                              <input
+                                type="number"
+                                min="0"
+                                className={styles.sizeStockInput}
+                                value={qty}
+                                onChange={(e) => {
+                                  const num = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                  const updatedStock = {
+                                    ...rawSizeStock,
+                                    [sz]: num,
+                                  };
+                                  const computedTotal = Object.values(updatedStock).reduce(
+                                    (sum, q) => sum + (Number(q) || 0),
+                                    0
+                                  );
+                                  setEditingProduct({
+                                    ...editingProduct,
+                                    size_stock: updatedStock,
+                                    stock: computedTotal,
+                                  });
+                                }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
 
                   <div className={styles.fullSpan}>

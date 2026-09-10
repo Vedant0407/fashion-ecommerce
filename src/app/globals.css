@@ -1423,19 +1423,36 @@ select {
 
 /* COLOR */
 
+.color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .color-option {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   border: 1px solid #e5e5e5;
   border-radius: 0px;
   background: #ffffff;
   color: #000000;
-  padding: 9px 16px;
+  padding: 8px 14px;
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.color-option:hover {
+  border-color: #000000;
+}
+
+.color-option.active {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
 }
 
 .color-dot {
@@ -1444,17 +1461,20 @@ select {
   border-radius: 50%;
   background: #111111;
   border: 1px solid rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 /* SIZE */
 
 .size-options {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .size-button {
-  width: 44px;
+  position: relative;
+  width: 46px;
   height: 42px;
   border: 1px solid #e5e5e5;
   border-radius: 0px;
@@ -1465,9 +1485,12 @@ select {
   font-weight: 600;
   letter-spacing: 0.05em;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.size-button:hover {
+.size-button:hover:not(.disabled) {
   border-color: #000000;
 }
 
@@ -1475,6 +1498,27 @@ select {
   background: #000000;
   color: #ffffff;
   border-color: #000000;
+}
+
+.size-button.disabled {
+  background: #f9f9f9;
+  color: #b0b0b0;
+  border-color: #e5e5e5;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.size-button.has-low-stock {
+  border-color: #f59e0b;
+}
+
+.size-low-indicator {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  color: #ef4444;
+  font-size: 14px;
+  line-height: 1;
 }
 
 /* =========================================
