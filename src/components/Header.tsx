@@ -100,8 +100,11 @@ export default function Header() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("greeno_user_name");
       localStorage.removeItem("greeno_user_email");
+      localStorage.removeItem("greeno_cart");
+      localStorage.removeItem("greeno_coupon");
       document.cookie = "greeno_session=; path=/; max-age=0";
       window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
     }
     setIsLoggedIn(false);
     setAccountOpen(false);

@@ -66,8 +66,11 @@ export default function AccountPage() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("greeno_user_name");
       localStorage.removeItem("greeno_user_email");
+      localStorage.removeItem("greeno_cart");
+      localStorage.removeItem("greeno_coupon");
       document.cookie = "greeno_session=; path=/; max-age=0";
       window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
     }
     router.push("/login");
     router.refresh();

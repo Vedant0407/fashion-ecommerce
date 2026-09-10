@@ -199,6 +199,13 @@ export default function SignupPage() {
         return;
       }
 
+      const normalizedEmail = email.trim().toLowerCase();
+      const firstLoginKey = `greeno_cart_cleared_for_${normalizedEmail}`;
+      localStorage.removeItem("greeno_cart");
+      localStorage.removeItem("greeno_coupon");
+      localStorage.setItem(firstLoginKey, "true");
+      window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
+
       localStorage.setItem("greeno_user_name", name.trim());
       localStorage.setItem("greeno_user_email", email.trim());
       document.cookie = `greeno_session=${encodeURIComponent(email.trim())}; path=/; max-age=2592000; SameSite=Lax`;

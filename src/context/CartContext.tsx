@@ -54,6 +54,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Load saved cart and coupon
   useEffect(() => {
+    // If a user is logged in for the first time, guarantee an empty cart
+    const userEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
+    if (userEmail) {
+      const normalizedEmail = userEmail.trim().toLowerCase();
+      const firstLoginKey = `greeno_cart_cleared_for_${normalizedEmail}`;
+      if (!localStorage.getItem(firstLoginKey)) {
+        localStorage.removeItem("greeno_cart");
+        localStorage.removeItem("greeno_coupon");
+        localStorage.setItem(firstLoginKey, "true");
+        setCart([]);
+        setAppliedCoupon(null);
+        setLoaded(true);
+        return;
+      }
+    }
+
     const savedCart = localStorage.getItem("greeno_cart");
     if (savedCart) {
       try {
@@ -73,6 +89,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     setLoaded(true);
+  }, []);
+
+  // Listen for cart reset events (e.g. on first login, signup, or logout)
+  useEffect(() => {
+    const handleCartReset = () => {
+      setCart([]);
+      setAppliedCoupon(null);
+      try {
+        localStorage.removeItem("greeno_cart");
+        localStorage.removeItem("greeno_coupon");
+      } catch {
+        // Ignore
+      }
+    };
+
+    window.addEventListener("greeno_cart_reset", handleCartReset);
+    return () => {
+      window.removeEventListener("greeno_cart_reset", handleCartReset);
+    };
   }, []);
 
   // Save cart
