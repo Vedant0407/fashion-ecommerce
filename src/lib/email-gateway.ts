@@ -118,8 +118,32 @@ export async function sendRealEmail(
       ? Boolean(settings.smtpSecure)
       : smtpPort === 465;
 
-  const smtpUser = settings.smtpUser || process.env.SMTP_USER || "";
-  const smtpPass = settings.smtpPass || process.env.SMTP_PASS || "";
+  let smtpUser = settings.smtpUser || process.env.SMTP_USER || "";
+  let smtpPass = settings.smtpPass || process.env.SMTP_PASS || "";
+
+  // If credentials are missing in process.env (e.g. if server was started before .env.local was updated), read directly from disk
+  if (!smtpPass || !smtpUser) {
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const envPath = path.join(process.cwd(), ".env.local");
+      if (fs.existsSync(envPath)) {
+        const lines = fs.readFileSync(envPath, "utf-8").split("\n");
+        for (const line of lines) {
+          const parts = line.split("=");
+          if (parts.length >= 2) {
+            const k = parts[0].trim();
+            const val = parts.slice(1).join("=").trim().replace(/^["']|["']$/g, "");
+            if (k === "SMTP_PASS" && !smtpPass) smtpPass = val;
+            if (k === "SMTP_USER" && !smtpUser) smtpUser = val;
+          }
+        }
+      }
+    } catch {
+      // Ignore disk read error
+    }
+  }
+
   const smtpFrom =
     settings.smtpFrom ||
     process.env.SMTP_FROM ||
@@ -144,10 +168,10 @@ export async function sendRealEmail(
   }
 
   // 3. Try SMTP / Gmail if credentials exist
-  if (smtpHost && smtpUser && smtpPass) {
+  if (smtpUser && smtpPass) {
     const smtpResult = await dispatchNodemailerSmtp(
       {
-        host: smtpHost,
+        host: smtpHost || "smtp.gmail.com",
         port: smtpPort,
         secure: smtpSecure,
         user: smtpUser,
@@ -204,18 +228,32 @@ async function dispatchNodemailerSmtp(
   recipientName?: string
 ): Promise<EmailDispatchResult> {
   try {
-    const transporter = nodemailer.createTransport({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      auth: {
-        user: config.user,
-        pass: config.pass,
-      },
-      connectionTimeout: 8000,
-      greetingTimeout: 5000,
-      socketTimeout: 10000,
-    });
+    const cleanPass = (config.pass || "").replace(/\s+/g, "");
+    const cleanUser = (config.user || "").trim();
+    const isGmail = config.host.includes("gmail") || cleanUser.endsWith("@gmail.com");
+
+    const transporter = nodemailer.createTransport(
+      isGmail
+        ? {
+            service: "gmail",
+            auth: {
+              user: cleanUser,
+              pass: cleanPass,
+            },
+          }
+        : {
+            host: config.host,
+            port: config.port,
+            secure: config.secure,
+            auth: {
+              user: cleanUser,
+              pass: cleanPass,
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 8000,
+            socketTimeout: 15000,
+          }
+    );
 
     const htmlContent = buildBrandedEmailHtml(otpCode, recipientName);
     const textContent = `Your GreenO security verification code is: ${otpCode}. Valid for 10 minutes. Enter this code on the verification screen.`;
