@@ -86,26 +86,36 @@ function OrderSuccessContent() {
             {order?.items && order.items.length > 0 && (
               <div className={styles.sectionBox}>
                 <h2 className={styles.sectionTitle}>ORDERED PIECES</h2>
-                {order.items.map((item: any) => (
-                  <div className={styles.orderItem} key={item.id}>
-                    <img
-                      src={item.image || "/black-tee.jfif"}
-                      alt={item.name}
-                      className={styles.itemImage}
-                    />
-                    <div className={styles.itemInfo}>
-                      <p className={styles.itemName}>{item.name}</p>
-                      <p className={styles.itemMeta}>
-                        Quantity: {item.quantity}
-                        {item.size ? ` · Size: ${item.size}` : ""}
-                        {item.color ? ` · ${item.color}` : ""}
-                      </p>
+                {order.items.map((item: any, idx: number) => {
+                  const rawP = item.price ?? item.product_price ?? 0;
+                  const unitPrice =
+                    typeof rawP === "number" && !isNaN(rawP)
+                      ? rawP
+                      : parseFloat(String(rawP).replace(/[^0-9.]/g, "")) || 0;
+                  const qty = Number(item.quantity) || 1;
+                  const itName = item.name || item.product_name || "Streetwear Piece";
+
+                  return (
+                    <div className={styles.orderItem} key={item.id || idx}>
+                      <img
+                        src={item.image || "/black-tee.jfif"}
+                        alt={itName}
+                        className={styles.itemImage}
+                      />
+                      <div className={styles.itemInfo}>
+                        <p className={styles.itemName}>{itName}</p>
+                        <p className={styles.itemMeta}>
+                          Quantity: {qty}
+                          {item.size ? ` · Size: ${item.size}` : ""}
+                          {item.color ? ` · ${item.color}` : ""}
+                        </p>
+                      </div>
+                      <span className={styles.itemPrice}>
+                        ₹{(unitPrice * qty).toLocaleString("en-IN")}
+                      </span>
                     </div>
-                    <span className={styles.itemPrice}>
-                      ₹{(Number(item.price) * item.quantity).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

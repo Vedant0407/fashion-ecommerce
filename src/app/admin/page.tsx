@@ -3092,21 +3092,31 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedOrder.items.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>
-                          <div style={{ fontWeight: 700 }}>{item.name}</div>
-                          <div style={{ fontSize: "10px", color: "#888" }}>
-                            Size: {item.size || "M"} {item.color ? `• ${item.color}` : ""}
-                          </div>
-                        </td>
-                        <td>{item.quantity}</td>
-                        <td>₹{item.price.toLocaleString("en-IN")}</td>
-                        <td style={{ fontWeight: 700 }}>
-                          ₹{(item.price * item.quantity).toLocaleString("en-IN")}
-                        </td>
-                      </tr>
-                    ))}
+                    {selectedOrder.items.map((item, idx) => {
+                      const itName = item.name || (item as any).product_name || "Streetwear Item";
+                      const rawP = item.price ?? (item as any).product_price ?? 0;
+                      const unitP =
+                        typeof rawP === "number" && !isNaN(rawP)
+                          ? rawP
+                          : parseFloat(String(rawP).replace(/[^0-9.]/g, "")) || 0;
+                      const itQty = Number(item.quantity) || 1;
+
+                      return (
+                        <tr key={idx}>
+                          <td>
+                            <div style={{ fontWeight: 700 }}>{itName}</div>
+                            <div style={{ fontSize: "10px", color: "#888" }}>
+                              Size: {item.size || "M"} {item.color ? `• ${item.color}` : ""}
+                            </div>
+                          </td>
+                          <td>{itQty}</td>
+                          <td>₹{unitP.toLocaleString("en-IN")}</td>
+                          <td style={{ fontWeight: 700 }}>
+                            ₹{(unitP * itQty).toLocaleString("en-IN")}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

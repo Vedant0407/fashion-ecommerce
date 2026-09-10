@@ -223,15 +223,25 @@ export async function POST(request: NextRequest) {
         state: state.trim(),
         pincode: pincode.trim(),
       },
-      items: items.map((item: any) => ({
-        product_id: item.id,
-        name: item.name,
-        price: Number(item.price),
-        quantity: Number(item.quantity) || 1,
-        image: item.image,
-        size: item.size || "M",
-        color: item.color,
-      })),
+      items: items.map((item: any) => {
+        const rawP = item.price ?? item.product_price ?? 0;
+        const cleanP =
+          typeof rawP === "number"
+            ? rawP
+            : parseFloat(String(rawP).replace(/[^0-9.]/g, "")) || 0;
+        const nm = item.name || item.product_name || "Streetwear Piece";
+        return {
+          product_id: item.id || item.product_id,
+          name: nm,
+          product_name: nm,
+          price: cleanP,
+          product_price: cleanP,
+          quantity: Number(item.quantity) || 1,
+          image: item.image,
+          size: item.size || "M",
+          color: item.color,
+        };
+      }),
       subtotal: calculatedSubtotal,
       shipping: finalShipping,
       discount,

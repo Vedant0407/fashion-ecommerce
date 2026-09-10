@@ -30,13 +30,24 @@ type Order = {
 };
 
 type OrderItem = {
-  id: string;
-  product_id: string;
-  product_name: string;
-  product_price: number;
+  id?: string;
+  product_id?: string;
+  product_name?: string;
+  name?: string;
+  product_price?: number;
+  price?: number;
   quantity: number;
   image?: string;
+  size?: string;
+  color?: string;
 };
+
+function parsePrice(val: any): number {
+  if (typeof val === "number" && !isNaN(val)) return val;
+  if (!val) return 0;
+  const num = parseFloat(String(val).replace(/[^0-9.]/g, ""));
+  return isNaN(num) ? 0 : num;
+}
 
 export default function OrderDetailsPage() {
   const router = useRouter();
@@ -290,30 +301,52 @@ export default function OrderDetailsPage() {
                 ORDERED ITEMS ({items.length})
               </h2>
 
-              {items.map((item) => (
-                <div className={styles.orderItem} key={item.id}>
-                  <img
-                    src={(item as any).image || "/black-tee.jfif"}
-                    alt={item.product_name}
-                    className={styles.itemImage}
-                  />
+              {items.map((item, idx) => {
+                const itName = (item as any).name || item.product_name || "Streetwear Piece";
+                let unitPrice = parsePrice((item as any).price ?? item.product_price);
+                const itemQty = Number(item.quantity) || 1;
 
-                  <div className={styles.itemInfo}>
-                    <p className={styles.itemName}>{item.product_name}</p>
-                    <p className={styles.itemMeta}>
-                      Quantity: {item.quantity}
-                      {(item as any).size ? ` · Size: ${(item as any).size}` : ""}
-                      {(item as any).color ? ` · Color: ${(item as any).color}` : ""}
-                    </p>
+                // If unitPrice is missing or 0, fallback from order subtotal
+                if (unitPrice === 0 && order?.subtotal) {
+                  const totalUnits = items.reduce(
+                    (sum, it) => sum + (Number(it.quantity) || 1),
+                    0
+                  );
+                  unitPrice = Math.round(parsePrice(order.subtotal) / (totalUnits || 1));
+                }
+
+                const itemTotal = unitPrice * itemQty;
+
+                return (
+                  <div className={styles.orderItem} key={item.id || idx}>
+                    <img
+                      src={(item as any).image || "/black-tee.jfif"}
+                      alt={itName}
+                      className={styles.itemImage}
+                    />
+
+                    <div className={styles.itemInfo}>
+                      <p className={styles.itemName}>{itName}</p>
+                      <p className={styles.itemMeta}>
+                        Quantity: {itemQty}
+                        {(item as any).size ? ` · Size: ${(item as any).size}` : ""}
+                        {(item as any).color ? ` · Color: ${(item as any).color}` : ""}
+                      </p>
+                    </div>
+
+                    <div style={{ textAlign: "right" }}>
+                      <span className={styles.itemPrice}>
+                        ₹{itemTotal.toLocaleString("en-IN")}
+                      </span>
+                      {itemQty > 1 && (
+                        <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
+                          ₹{unitPrice.toLocaleString("en-IN")} each
+                        </div>
+                      )}
+                    </div>
                   </div>
-
-                  <span className={styles.itemPrice}>
-                    ₹{(Number(item.product_price) * item.quantity).toLocaleString(
-                      "en-IN"
-                    )}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Shipping Address Box */}
@@ -392,28 +425,28 @@ export default function OrderDetailsPage() {
 
               <div className={styles.summaryRow}>
                 <span style={{ color: "#777" }}>SUBTOTAL</span>
-                <span>₹{Number(order.subtotal).toLocaleString("en-IN")}</span>
+                <span>₹{parsePrice(order.subtotal).toLocaleString("en-IN")}</span>
               </div>
 
-              {Number((order as any).discount) > 0 && (
+              {parsePrice((order as any).discount) > 0 && (
                 <div className={styles.summaryRow} style={{ color: "#16a34a" }}>
                   <span>DISCOUNT</span>
-                  <span>-₹{Number((order as any).discount).toLocaleString("en-IN")}</span>
+                  <span>-₹{parsePrice((order as any).discount).toLocaleString("en-IN")}</span>
                 </div>
               )}
 
               <div className={styles.summaryRow}>
                 <span style={{ color: "#777" }}>DELIVERY</span>
                 <span>
-                  {Number(order.shipping) === 0
+                  {parsePrice(order.shipping) === 0
                     ? "FREE"
-                    : `₹${Number(order.shipping).toLocaleString("en-IN")}`}
+                    : `₹${parsePrice(order.shipping).toLocaleString("en-IN")}`}
                 </span>
               </div>
 
               <div className={styles.summaryTotal}>
                 <span>TOTAL</span>
-                <span>₹{Number(order.total).toLocaleString("en-IN")}</span>
+                <span>₹{parsePrice(order.total).toLocaleString("en-IN")}</span>
               </div>
             </div>
 
