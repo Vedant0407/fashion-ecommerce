@@ -56,12 +56,21 @@ export default function Header() {
   useEffect(() => {
     const supabase = createClient();
 
-    async function loadSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    function updateLoginState(sessionUser?: any) {
+      const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
+      setIsLoggedIn(!!sessionUser || !!storedEmail);
+    }
 
-      setIsLoggedIn(!!session);
+    async function loadSession() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        updateLoginState(session?.user);
+      } catch (err) {
+        updateLoginState();
+      }
     }
 
     loadSession();
@@ -69,15 +78,32 @@ export default function Header() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
+      updateLoginState(session?.user);
     });
 
-    return () => subscription.unsubscribe();
+    const handleStorageChange = () => updateLoginState();
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("greeno_user_name");
+      localStorage.removeItem("greeno_user_email");
+      document.cookie = "greeno_session=; path=/; max-age=0";
+      window.dispatchEvent(new Event("storage"));
+    }
+    setIsLoggedIn(false);
     setAccountOpen(false);
     router.push("/login");
     router.refresh();

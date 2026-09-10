@@ -37,7 +37,9 @@ export default function SignupPage() {
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (user) {
+        const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
+
+        if (user || storedEmail) {
           router.push("/account");
           return;
         }
@@ -198,6 +200,9 @@ export default function SignupPage() {
       }
 
       localStorage.setItem("greeno_user_name", name.trim());
+      localStorage.setItem("greeno_user_email", email.trim());
+      document.cookie = `greeno_session=${encodeURIComponent(email.trim())}; path=/; max-age=2592000; SameSite=Lax`;
+      window.dispatchEvent(new Event("storage"));
 
       setActiveCode(null);
       setMessage("Verification successful! Account created. Redirecting...");
@@ -205,7 +210,7 @@ export default function SignupPage() {
       setTimeout(() => {
         router.push("/account");
         router.refresh();
-      }, 500);
+      }, 400);
     } catch (err: any) {
       console.error("SIGNUP VERIFY ERROR:", err);
       setError(err.message || "Verification failed. Please try again.");

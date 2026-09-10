@@ -16,33 +16,59 @@ export default function AccountPage() {
 
   useEffect(() => {
     async function loadAccount() {
-      const supabase = createClient();
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+        if (user) {
+          const localName = typeof window !== "undefined" ? localStorage.getItem("greeno_user_name") : null;
+          setUserName(
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            localName ||
+            "GreenO Customer"
+          );
+          setUserEmail(user.email || "");
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Supabase auth check error:", err);
+      }
 
-      if (error || !user) {
-        router.push("/login");
+      // Check for local verified session
+      const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
+      const storedName = typeof window !== "undefined" ? localStorage.getItem("greeno_user_name") : null;
+
+      if (storedEmail) {
+        setUserName(storedName || storedEmail.split("@")[0].toUpperCase());
+        setUserEmail(storedEmail);
+        setLoading(false);
         return;
       }
 
-      setUserName(
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
-        "GreenO Customer"
-      );
-      setUserEmail(user.email || "");
-      setLoading(false);
+      // No active session found, redirect to login
+      router.push("/login");
     }
 
     loadAccount();
   }, [router]);
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore signOut errors
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("greeno_user_name");
+      localStorage.removeItem("greeno_user_email");
+      document.cookie = "greeno_session=; path=/; max-age=0";
+      window.dispatchEvent(new Event("storage"));
+    }
     router.push("/login");
     router.refresh();
   }

@@ -30,7 +30,9 @@ function LoginFormContent() {
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (user) {
+        const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
+
+        if (user || storedEmail) {
           router.push(redirectUrl);
           return;
         }
@@ -82,11 +84,13 @@ function LoginFormContent() {
           const fallbackName = email.split("@")[0].toUpperCase();
           localStorage.setItem("greeno_user_name", fallbackName);
           localStorage.setItem("greeno_user_email", email.trim());
+          document.cookie = `greeno_session=${encodeURIComponent(email.trim())}; path=/; max-age=2592000; SameSite=Lax`;
+          window.dispatchEvent(new Event("storage"));
           setMessage("Login successful! Redirecting...");
           setTimeout(() => {
             router.push(redirectUrl);
             router.refresh();
-          }, 400);
+          }, 300);
           return;
         }
 
@@ -102,13 +106,15 @@ function LoginFormContent() {
 
       localStorage.setItem("greeno_user_name", userName);
       localStorage.setItem("greeno_user_email", email.trim());
+      document.cookie = `greeno_session=${encodeURIComponent(email.trim())}; path=/; max-age=2592000; SameSite=Lax`;
+      window.dispatchEvent(new Event("storage"));
 
       setMessage("Login successful! Redirecting...");
 
       setTimeout(() => {
         router.push(redirectUrl);
         router.refresh();
-      }, 400);
+      }, 300);
     } catch (err: any) {
       console.error("LOGIN ERROR:", err);
       setError(err.message || "Failed to sign in. Please try again.");

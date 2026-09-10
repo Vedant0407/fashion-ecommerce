@@ -54,27 +54,37 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     async function loadUser() {
-      // Check for locally saved user name first
+      // Check for locally saved user info first
       const savedName = localStorage.getItem("greeno_user_name");
+      const savedEmail = localStorage.getItem("greeno_user_email");
+
       if (savedName) {
         setFullName(savedName);
       }
-
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
+      if (savedEmail) {
+        setEmail(savedEmail);
         setIsLoggedIn(true);
-        setEmail(user.email || "");
-        if (!savedName) {
-          setFullName(
-            user.user_metadata?.full_name ||
-            user.user_metadata?.name ||
-            ""
-          );
+      }
+
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          setIsLoggedIn(true);
+          setEmail(user.email || savedEmail || "");
+          if (!savedName) {
+            setFullName(
+              user.user_metadata?.full_name ||
+              user.user_metadata?.name ||
+              ""
+            );
+          }
         }
+      } catch (err) {
+        // Ignore
       }
     }
 

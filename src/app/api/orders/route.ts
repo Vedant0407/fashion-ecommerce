@@ -4,36 +4,54 @@ import { addStoreOrder, getStoreOrders } from "@/lib/store-data";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    let authenticatedUser: any = null;
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      authenticatedUser = user;
+    } catch {
+      // Supabase user fetch failed
+    }
 
-    if (userError || !user) {
+    const queryEmail = request.nextUrl.searchParams.get("email")?.trim().toLowerCase();
+    const cookieEmail = request.cookies.get("greeno_session")?.value
+      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
+      : null;
+    const effectiveEmail = authenticatedUser?.email?.toLowerCase() || queryEmail || cookieEmail;
+
+    if (!authenticatedUser && !effectiveEmail) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    // Attempt to load from Supabase
-    const { data: dbOrders, error: ordersError } = await supabase
-      .from("orders")
-      .select(
-        "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
-      )
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+    let dbOrders: any[] = [];
+    if (authenticatedUser) {
+      const supabase = await createClient();
+      const { data, error: ordersError } = await supabase
+        .from("orders")
+        .select(
+          "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
+        )
+        .eq("user_id", authenticatedUser.id)
+        .order("created_at", { ascending: false });
 
-    if (!ordersError && dbOrders && dbOrders.length > 0) {
+      if (!ordersError && data) {
+        dbOrders = data;
+      }
+    }
+
+    if (dbOrders && dbOrders.length > 0) {
       return NextResponse.json({ success: true, orders: dbOrders });
     }
 
     // Fallback / merge with store-data filtered by user's email if available
     const allStoreOrders = await getStoreOrders();
     const userOrders = allStoreOrders.filter(
-      (o) => o.customer.email.toLowerCase() === user.email?.toLowerCase()
+      (o) => o.customer?.email?.toLowerCase() === effectiveEmail
     );
 
     return NextResponse.json({

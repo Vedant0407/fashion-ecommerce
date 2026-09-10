@@ -24,34 +24,61 @@ export default function OrdersPage() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+        let user: any = null;
+        try {
+          const supabase = createClient();
+          const {
+            data: { user: supabaseUser },
+          } = await supabase.auth.getUser();
+          user = supabaseUser;
+        } catch {
+          // Supabase getUser failed
+        }
 
-        if (userError || !user) {
+        const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
+
+        if (!user && !storedEmail) {
           setError("Please log in to view your orders.");
           setLoading(false);
           return;
         }
 
-        const { data, error: ordersError } = await supabase
-          .from("orders")
-          .select(
-            "id, status, subtotal, shipping, total, payment_status, payment_method, created_at"
-          )
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
+        const effectiveEmail = user?.email || storedEmail || "";
 
-        if (ordersError) {
-          console.error("Orders error:", ordersError);
-          setError(ordersError.message);
-          setLoading(false);
-          return;
+        // First query via API route
+        try {
+          const res = await fetch(`/api/orders?email=${encodeURIComponent(effectiveEmail)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && Array.isArray(data.orders)) {
+              setOrders(data.orders);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (apiErr) {
+          console.warn("Orders API fetch warning:", apiErr);
         }
 
-        setOrders(data || []);
+        // Direct Supabase fallback
+        if (user) {
+          const supabase = createClient();
+          const { data, error: ordersError } = await supabase
+            .from("orders")
+            .select(
+              "id, status, subtotal, shipping, total, payment_status, payment_method, created_at"
+            )
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
+
+          if (!ordersError && data) {
+            setOrders(data);
+            setLoading(false);
+            return;
+          }
+        }
+
+        setOrders([]);
       } catch (err) {
         console.error("FETCH ORDERS ERROR:", err);
         setError("Something went wrong while loading your orders.");

@@ -51,49 +51,67 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     async function fetchOrder() {
       try {
-        const supabase = createClient();
+        let user: any = null;
+        try {
+          const supabase = createClient();
+          const {
+            data: { user: supabaseUser },
+          } = await supabase.auth.getUser();
+          user = supabaseUser;
+        } catch {
+          // Supabase getUser failed
+        }
 
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+        const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
 
-        if (userError || !user) {
+        if (!user && !storedEmail) {
           router.push("/login");
           return;
         }
 
-        const { data: orderData, error: orderError } = await supabase
-          .from("orders")
-          .select(
-            "id, address_id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
-          )
-          .eq("id", orderId)
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (orderError || !orderData) {
-          console.error("Order error:", orderError);
-          setError("Order not found.");
-          setLoading(false);
-          return;
+        // 1. Fetch via API route
+        try {
+          const res = await fetch(`/api/orders/${orderId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.order) {
+              setOrder(data.order);
+              setItems(data.order.items || []);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (apiErr) {
+          console.warn("Order details API fetch warning:", apiErr);
         }
 
-        setOrder(orderData);
+        // 2. Direct Supabase fallback
+        if (user) {
+          const supabase = createClient();
+          const { data: orderData, error: orderError } = await supabase
+            .from("orders")
+            .select(
+              "id, address_id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
+            )
+            .eq("id", orderId)
+            .eq("user_id", user.id)
+            .maybeSingle();
 
-        const { data: itemsData, error: itemsError } = await supabase
-          .from("order_items")
-          .select("id, product_id, product_name, product_price, quantity")
-          .eq("order_id", orderId);
+          if (orderData) {
+            setOrder(orderData);
 
-        if (itemsError) {
-          console.error("Order items error:", itemsError);
-          setError(itemsError.message);
-          setLoading(false);
-          return;
+            const { data: itemsData } = await supabase
+              .from("order_items")
+              .select("id, product_id, product_name, product_price, quantity")
+              .eq("order_id", orderId);
+
+            setItems(itemsData || []);
+            setLoading(false);
+            return;
+          }
         }
 
-        setItems(itemsData || []);
+        setError("Order not found.");
       } catch (err) {
         console.error("ORDER DETAILS ERROR:", err);
         setError("Something went wrong while loading the order.");
