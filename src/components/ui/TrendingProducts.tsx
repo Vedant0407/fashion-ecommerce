@@ -72,7 +72,7 @@ export default function TrendingProducts() {
 
   const activeIndex = current % total;
   const activeItem = trendingList[activeIndex];
-  const itemLink = `/products/${activeItem.id}`;
+  const itemLink = `/products/${activeItem.id}?from=trending`;
 
   const previousSlide = () => {
     setCurrent((prev) => (prev === 0 ? total - 1 : prev - 1));

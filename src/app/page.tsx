@@ -84,7 +84,7 @@ export default function HomePage() {
                   return (
                     <Link
                       key={`${prod.id}-${idx}`}
-                      href={`/products/${prod.id}`}
+                      href={`/products/${prod.id}?from=newin`}
                       className={`new-in-card ${cardClass}`}
                     >
                       <div className="new-in-image">

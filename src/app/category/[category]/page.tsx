@@ -317,7 +317,7 @@ export default function CategoryPage() {
                   </button>
 
                   <Link
-                    href={`/products/${product.id}`}
+                    href={`/products/${product.id}?from=products`}
                     style={{
                       textDecoration: "none",
                       color: "inherit",

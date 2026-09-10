@@ -321,7 +321,17 @@ export default function ShopPage() {
                   </button>
 
                   <Link
-                    href={`/products/${product.id}`}
+                    href={`/products/${product.id}?from=${
+                      selectedCategory === "NEW IN"
+                        ? "newin"
+                        : selectedCategory === "TRENDING"
+                        ? "trending"
+                        : product.is_new
+                        ? "newin"
+                        : product.is_trending
+                        ? "trending"
+                        : "products"
+                    }`}
                     style={{
                       textDecoration: "none",
                       color: "inherit",

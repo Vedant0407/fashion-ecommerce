@@ -86,7 +86,7 @@ export default function ProductsGrid() {
                   </svg>
                 </button>
 
-                <Link href={`/products/${product.id}`} className="product-card-link">
+                <Link href={`/products/${product.id}?from=products`} className="product-card-link">
                   <div className="product-image">
                     <img
                       src={product.image}

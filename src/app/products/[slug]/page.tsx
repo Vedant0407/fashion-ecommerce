@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
@@ -25,6 +25,20 @@ export default function ProductPage() {
 
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
+
+  // Navigation context: 'newin' | 'trending' | 'products'
+  const [browseContext, setBrowseContext] = useState<string | null>(null);
+  const [openAccordion, setOpenAccordion] = useState<string | null>("details");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const from = sp.get("from") || sp.get("section") || sp.get("ref");
+      if (from) {
+        setBrowseContext(from.toLowerCase());
+      }
+    }
+  }, [slug]);
 
   useEffect(() => {
     async function loadProduct() {
@@ -55,6 +69,85 @@ export default function ProductPage() {
 
     loadOtherProducts();
   }, []);
+
+  // Determine effective context: "newin" | "trending" | "products"
+  const activeContext: "newin" | "trending" | "products" = useMemo(() => {
+    if (browseContext === "newin" || browseContext === "new") return "newin";
+    if (browseContext === "trending") return "trending";
+    if (browseContext === "products" || browseContext === "catalogue" || browseContext === "category") return "products";
+
+    // If no explicit query param, determine from product's own tags/flags
+    if (product?.is_new) return "newin";
+    if (product?.is_trending) return "trending";
+    return "products";
+  }, [browseContext, product]);
+
+  // Under-the-product items tailored exclusively to the context
+  const underProducts = useMemo(() => {
+    if (!product) return [];
+
+    if (activeContext === "newin") {
+      // ONLY New In products, excluding current product
+      const news = allProducts.filter(
+        (item) => item.id !== product.id && Boolean(item.is_new)
+      );
+      return news.length > 0 ? news : allProducts.filter((item) => item.id !== product.id).slice(0, 4);
+    }
+
+    if (activeContext === "trending") {
+      // ONLY Trending products, excluding current product
+      const trends = allProducts.filter(
+        (item) => item.id !== product.id && Boolean(item.is_trending)
+      );
+      return trends.length > 0 ? trends : allProducts.filter((item) => item.id !== product.id).slice(0, 4);
+    }
+
+    // Standard product/collection: pieces from same category, excluding current product
+    const catSlug = product.category_slug?.toLowerCase();
+    const catName = product.category_name?.toLowerCase();
+
+    const sameCat = allProducts.filter((item) => {
+      if (item.id === product.id) return false;
+      if (catSlug && item.category_slug?.toLowerCase() === catSlug) return true;
+      if (catName && item.category_name?.toLowerCase() === catName) return true;
+      return false;
+    });
+
+    if (sameCat.length >= 4) {
+      return sameCat.slice(0, 8);
+    }
+
+    // Supplement with other pieces if category has few items
+    const remaining = allProducts.filter(
+      (item) => item.id !== product.id && !sameCat.some((c) => c.id === item.id)
+    );
+    return [...sameCat, ...remaining].slice(0, 8);
+  }, [allProducts, product, activeContext]);
+
+  // Section header for recommended pieces under the product
+  const sectionHeaderInfo = useMemo(() => {
+    if (activeContext === "newin") {
+      return {
+        kicker: "SPRING / SUMMER 2026 // NEW ARRIVALS",
+        title: "MORE NEW IN PIECES",
+        subtitle: "Explore other recently released streetwear drops.",
+      };
+    }
+    if (activeContext === "trending") {
+      return {
+        kicker: "SEASON ESSENTIALS // TRENDING NOW",
+        title: "MORE TRENDING PIECES",
+        subtitle: "Most coveted streetwear styles of the week.",
+      };
+    }
+    return {
+      kicker: `GREENO // ${product?.category_name?.toUpperCase() || "CURATED CATALOGUE"}`,
+      title: product?.category_name
+        ? `MORE ${product.category_name.toUpperCase()}`
+        : "MORE FROM THIS COLLECTION",
+      subtitle: "Curated streetwear pieces designed to complete the look.",
+    };
+  }, [activeContext, product]);
 
   if (loading) {
     return (
@@ -103,10 +196,6 @@ export default function ProductPage() {
     setTimeout(() => setAdded(false), 2000);
   };
 
-  const otherProducts = allProducts.filter(
-    (item) => item.id !== product.id
-  );
-
   return (
     <>
       <main className="product-page">
@@ -121,11 +210,15 @@ export default function ProductPage() {
 
         <div className="product-detail">
 
-          {/* LEFT - PRODUCT DETAILS */}
+          {/* LEFT - PRODUCT DETAILS (ONLY THE SELECTED PRODUCT) */}
           <div className="product-left">
 
             <p className="product-category">
-              GREENO COLLECTION
+              {activeContext === "newin"
+                ? "GREENO // NEW IN"
+                : activeContext === "trending"
+                ? "GREENO // TRENDING"
+                : `GREENO // ${product.category_name || "COLLECTION"}`}
             </p>
 
             <h1>{product.name}</h1>
@@ -137,22 +230,27 @@ export default function ProductPage() {
             <div className="product-left-section">
               <h3>DESCRIPTION</h3>
 
-              <p>
+              <p style={{ whiteSpace: "pre-line", lineHeight: "1.6" }}>
                 {product.description ||
-                  "A premium GreenO product designed for everyday comfort and modern streetwear styling."}
+                  `Exclusive ${product.name} designed with premium streetwear styling, heavyweight construction, and relaxed silhouette.`}
               </p>
             </div>
 
             <div className="product-left-section">
-  <h3>MATERIAL</h3>
-  <p>Premium quality material</p>
-</div>
+              <h3>MATERIAL &amp; FABRIC</h3>
+              <p>
+                {product.material
+                  ? product.fabric
+                    ? `${product.material} • ${product.fabric}`
+                    : product.material
+                  : product.fabric || "Heavyweight Premium Combed Cotton"}
+              </p>
+            </div>
 
             <div className="product-left-section">
-              <h3>FIT</h3>
-
+              <h3>FIT SPECIFICATION</h3>
               <p>
-                Relaxed Fit
+                {product.fit || "Relaxed Boxy Fit"}
               </p>
             </div>
 
@@ -292,55 +390,126 @@ export default function ProductPage() {
 
             </div>
 
-            {/* DETAILS */}
+            {/* DETAILS ACCORDIONS */}
             <div className="product-accordions">
 
+              {/* 1. PRODUCT DETAILS */}
               <div className="product-accordion">
-
-                <button>
-                  <span>PRODUCT DETAILS</span>
-                  <span>+</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenAccordion(openAccordion === "details" ? null : "details")
+                  }
+                >
+                  <span>PRODUCT DETAILS &amp; SPECIFICATIONS</span>
+                  <span>{openAccordion === "details" ? "−" : "+"}</span>
                 </button>
 
-                <div className="accordion-content">
-                  <p>
-                    Premium GreenO streetwear designed
-                    with a modern relaxed silhouette.
+                <div
+                  className="accordion-content"
+                  style={{
+                    display: openAccordion === "details" ? "block" : "none",
+                    paddingBottom: "18px",
+                  }}
+                >
+                  <p style={{ marginBottom: "10px", lineHeight: "1.6" }}>
+                    {product.description ||
+                      `Exclusive ${product.name} tailored for everyday luxury streetwear presence.`}
                   </p>
-                </div>
 
+                  <ul
+                    style={{
+                      margin: "6px 0 0 0",
+                      paddingLeft: "18px",
+                      fontSize: "12px",
+                      color: "#666666",
+                      lineHeight: "1.7",
+                    }}
+                  >
+                    <li>
+                      <strong>Material / Composition:</strong>{" "}
+                      {product.material || "100% Combed Cotton"}
+                    </li>
+                    <li>
+                      <strong>Fabric Construction:</strong>{" "}
+                      {product.fabric || "Heavyweight Premium Knit"}
+                    </li>
+                    <li>
+                      <strong>Fit Silhouette:</strong>{" "}
+                      {product.fit || "Relaxed Boxy Streetwear Fit"}
+                    </li>
+                    <li>
+                      <strong>Colorway:</strong> {product.color || "Black"}
+                    </li>
+                    <li>
+                      <strong>Product Code / SKU:</strong>{" "}
+                      {product.product_no || product.id}
+                    </li>
+                    {product.is_new && (
+                      <li style={{ color: "#000000", fontWeight: 700 }}>
+                        ✦ Spring / Summer 2026 New Arrival
+                      </li>
+                    )}
+                    {product.is_trending && (
+                      <li style={{ color: "#000000", fontWeight: 700 }}>
+                        ★ Trending Season Essential
+                      </li>
+                    )}
+                  </ul>
+                </div>
               </div>
 
+              {/* 2. DELIVERY & RETURNS */}
               <div className="product-accordion">
-
-                <button>
-                  <span>DELIVERY & RETURNS</span>
-                  <span>+</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenAccordion(openAccordion === "delivery" ? null : "delivery")
+                  }
+                >
+                  <span>DELIVERY &amp; 3-DAY RETURNS</span>
+                  <span>{openAccordion === "delivery" ? "−" : "+"}</span>
                 </button>
 
-                <div className="accordion-content">
-                  <p>
-                    Delivery information and return
-                    policy will be available here.
+                <div
+                  className="accordion-content"
+                  style={{
+                    display: openAccordion === "delivery" ? "block" : "none",
+                    paddingBottom: "18px",
+                  }}
+                >
+                  <p style={{ marginBottom: "8px", lineHeight: "1.5" }}>
+                    <strong>Complimentary Express Shipping:</strong> Dispatched within 24 hours. Delivered across India within 2–4 business days with live courier tracking.
+                  </p>
+                  <p style={{ margin: 0, lineHeight: "1.5" }}>
+                    <strong>3-Day Exchange &amp; Return Guarantee:</strong> Items are eligible for complimentary size exchanges or returns within 3 days (72 hours) of delivery directly from your Account Orders dashboard.
                   </p>
                 </div>
-
               </div>
 
+              {/* 3. CARE INSTRUCTIONS */}
               <div className="product-accordion">
-
-                <button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenAccordion(openAccordion === "care" ? null : "care")
+                  }
+                >
                   <span>CARE INSTRUCTIONS</span>
-                  <span>+</span>
+                  <span>{openAccordion === "care" ? "−" : "+"}</span>
                 </button>
 
-                <div className="accordion-content">
-                  <p>
-                    Follow the care instructions provided
-                    with the product.
+                <div
+                  className="accordion-content"
+                  style={{
+                    display: openAccordion === "care" ? "block" : "none",
+                    paddingBottom: "18px",
+                  }}
+                >
+                  <p style={{ lineHeight: "1.6" }}>
+                    Machine wash cold (30°C) inside out with similar colors. Use mild detergent. Do not bleach. Tumble dry on low or line dry in the shade to preserve garment shape and longevity. Cool iron inside out.
                   </p>
                 </div>
-
               </div>
 
             </div>
@@ -349,44 +518,118 @@ export default function ProductPage() {
 
         </div>
 
-        {/* YOU MAY ALSO LIKE */}
+        {/* ============================================================
+            RECOMMENDED PRODUCTS SECTION
+            Exclusively filtered:
+            - If New In: Only other New In pieces
+            - If Trending: Only other Trending pieces
+            - If Product/Category: Only pieces from same collection
+        ============================================================ */}
         <section className="more-products">
 
           <div className="more-products-header">
-            <p>GREENO / COLLECTION</p>
-            <h2>YOU MAY ALSO LIKE</h2>
+            <p>{sectionHeaderInfo.kicker}</p>
+            <h2>{sectionHeaderInfo.title}</h2>
+            {sectionHeaderInfo.subtitle && (
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  color: "#777777",
+                  marginTop: "4px",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {sectionHeaderInfo.subtitle}
+              </span>
+            )}
           </div>
 
           <div className="more-products-grid">
 
-            {otherProducts.map((item) => (
-              <Link
-                href={`/products/${item.id}`}
-                key={item.id}
-                className="more-product-card"
-              >
+            {underProducts.length === 0 ? (
+              <div style={{ padding: "40px 0", color: "#888888", fontSize: "13px" }}>
+                No other pieces available in this section at the moment.
+              </div>
+            ) : (
+              underProducts.map((item) => (
+                <Link
+                  href={`/products/${item.id}?from=${activeContext}`}
+                  key={item.id}
+                  className="more-product-card"
+                >
 
-                <div className="more-product-image">
+                  <div className="more-product-image" style={{ position: "relative" }}>
 
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                  />
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                    />
 
-                </div>
+                    {item.is_new && activeContext === "newin" && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "10px",
+                          left: "10px",
+                          background: "#000000",
+                          color: "#ffffff",
+                          fontSize: "9px",
+                          fontWeight: 800,
+                          padding: "2px 7px",
+                          letterSpacing: "0.1em",
+                        }}
+                      >
+                        NEW
+                      </span>
+                    )}
 
-                <div className="more-product-info">
+                    {item.is_trending && activeContext === "trending" && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: "10px",
+                          left: "10px",
+                          background: "#000000",
+                          color: "#ffffff",
+                          fontSize: "9px",
+                          fontWeight: 800,
+                          padding: "2px 7px",
+                          letterSpacing: "0.1em",
+                        }}
+                      >
+                        TRENDING
+                      </span>
+                    )}
 
-                  <h3>{item.name}</h3>
+                  </div>
 
-                  <p>
-                    ₹{Number(item.price).toLocaleString("en-IN")}
-                  </p>
+                  <div className="more-product-info">
 
-                </div>
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        letterSpacing: "0.14em",
+                        color: "#888888",
+                        textTransform: "uppercase",
+                        marginBottom: "4px",
+                        display: "block",
+                      }}
+                    >
+                      {item.category_name || "GREENO"}
+                    </span>
 
-              </Link>
-            ))}
+                    <h3>{item.name}</h3>
+
+                    <p>
+                      ₹{Number(item.price).toLocaleString("en-IN")}
+                    </p>
+
+                  </div>
+
+                </Link>
+              ))
+            )}
 
           </div>
 
