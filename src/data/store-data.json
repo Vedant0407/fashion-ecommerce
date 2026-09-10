@@ -355,9 +355,9 @@
     "smtpHost": "smtp.gmail.com",
     "smtpPort": 465,
     "smtpSecure": true,
-    "smtpUser": "",
+    "smtpUser": "vedantshrivastava0407@gmail.com",
     "smtpPass": "",
-    "smtpFrom": "GreenO Security <concierge@greeno.in>",
+    "smtpFrom": "GreenO Security <vedantshrivastava0407@gmail.com>",
     "brevoApiKey": "",
     "resendApiKey": ""
   }
