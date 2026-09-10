@@ -296,15 +296,20 @@ export async function getAllProducts(): Promise<Product[]> {
 }
 
 export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | null> {
+  if (!idOrSlug) return null;
   const products = await getAllProducts();
-  const lower = idOrSlug.toLowerCase();
+  const lower = String(idOrSlug).toLowerCase().trim();
 
-  const found = products.find(
-    (p) =>
-      p.id.toLowerCase() === lower ||
-      p.name.toLowerCase() === lower.replace(/-/g, " ") ||
-      p.id.replace(/-/g, " ").toLowerCase() === lower.replace(/-/g, " ")
-  );
+  const found = products.find((p) => {
+    if (!p) return false;
+    const pId = p.id ? String(p.id).toLowerCase() : "";
+    const pName = p.name ? String(p.name).toLowerCase() : "";
+    return (
+      pId === lower ||
+      pName === lower.replace(/-/g, " ") ||
+      pId.replace(/-/g, " ") === lower.replace(/-/g, " ")
+    );
+  });
 
   return found || null;
 }

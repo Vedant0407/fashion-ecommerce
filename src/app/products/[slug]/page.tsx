@@ -16,7 +16,15 @@ export default function ProductPage() {
   const params = useParams();
   const router = useRouter();
 
-  const slug = String(params.slug);
+  const rawSlug = params?.slug;
+  const slug = useMemo(() => {
+    try {
+      const val = Array.isArray(rawSlug) ? rawSlug[0] : (rawSlug ? String(rawSlug) : "");
+      return val ? decodeURIComponent(val) : "";
+    } catch {
+      return Array.isArray(rawSlug) ? rawSlug[0] : (rawSlug ? String(rawSlug) : "");
+    }
+  }, [rawSlug]);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -42,6 +50,7 @@ export default function ProductPage() {
   }, [slug]);
 
   useEffect(() => {
+    if (!slug) return;
     async function loadProduct() {
       setLoading(true);
       try {
@@ -169,6 +178,20 @@ export default function ProductPage() {
     };
   }, [activeContext, product]);
 
+  // Size-wise stock calculation (Placed before conditional returns to adhere to React Rules of Hooks)
+  const currentSizeQty = useMemo(() => {
+    if (!product) return 0;
+    if (product.size_stock && typeof product.size_stock === "object") {
+      return product.size_stock[selectedSize] !== undefined
+        ? Number(product.size_stock[selectedSize]) || 0
+        : Number(product.stock) || 0;
+    }
+    return Number(product.stock) || 0;
+  }, [product, selectedSize]);
+
+  const isSizeOutOfStock = currentSizeQty <= 0;
+  const isSizeLowStock = currentSizeQty > 0 && currentSizeQty <= 5;
+
   if (loading) {
     return (
       <main className="product-page">
@@ -199,20 +222,6 @@ export default function ProductPage() {
     product.images && product.images.length > 0
       ? product.images
       : [image];
-
-  // Size-wise stock calculation
-  const currentSizeQty = useMemo(() => {
-    if (!product) return 0;
-    if (product.size_stock && typeof product.size_stock === "object") {
-      return product.size_stock[selectedSize] !== undefined
-        ? Number(product.size_stock[selectedSize]) || 0
-        : Number(product.stock) || 0;
-    }
-    return Number(product.stock) || 0;
-  }, [product, selectedSize]);
-
-  const isSizeOutOfStock = currentSizeQty <= 0;
-  const isSizeLowStock = currentSizeQty > 0 && currentSizeQty <= 5;
 
   const handleAddToCart = () => {
     if (isSizeOutOfStock) return;
