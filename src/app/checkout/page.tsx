@@ -261,8 +261,72 @@ export default function CheckoutPage() {
 
       setOrderPlaced(true);
 
-      // Save order snapshot locally for order-success presentation
-      localStorage.setItem("greeno_last_order", JSON.stringify(data.order));
+      const placedOrder = data.order || {
+        id: data.orderId,
+        created_at: new Date().toISOString(),
+        customer: {
+          fullName: fullName.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          pincode: pincode.trim(),
+        },
+        items: cart.map((item: any) => ({
+          product_id: item.id,
+          name: item.name,
+          price: Number(item.price),
+          quantity: item.quantity,
+          image: item.image,
+          size: item.size || "M",
+          color: item.color,
+        })),
+        subtotal,
+        shipping,
+        discount,
+        total: Math.max(0, subtotal + shipping - discount),
+        status: "confirmed",
+        payment_method: "COD",
+        payment_status: "pending",
+      };
+
+      // 1. Save single latest order
+      localStorage.setItem("greeno_last_order", JSON.stringify(placedOrder));
+
+      // 2. Save into permanent customer orders list
+      try {
+        const rawCustomerOrders = localStorage.getItem("greeno_customer_orders");
+        const customerOrders = rawCustomerOrders ? JSON.parse(rawCustomerOrders) : [];
+        const filtered = Array.isArray(customerOrders)
+          ? customerOrders.filter((o: any) => o.id !== placedOrder.id)
+          : [];
+        filtered.unshift(placedOrder);
+        localStorage.setItem("greeno_customer_orders", JSON.stringify(filtered));
+      } catch (e) {
+        console.warn("Failed to persist customer order locally:", e);
+      }
+
+      // 3. Save into all orders (for fulfillment & admin)
+      try {
+        const rawAllOrders = localStorage.getItem("greeno_all_orders");
+        const allOrders = rawAllOrders ? JSON.parse(rawAllOrders) : [];
+        const filteredAll = Array.isArray(allOrders)
+          ? allOrders.filter((o: any) => o.id !== placedOrder.id)
+          : [];
+        filteredAll.unshift(placedOrder);
+        localStorage.setItem("greeno_all_orders", JSON.stringify(filteredAll));
+      } catch (e) {
+        console.warn("Failed to persist all orders locally:", e);
+      }
+
+      // 4. Save user email & name so account and orders load seamlessly
+      localStorage.setItem("greeno_user_email", email.trim());
+      if (fullName.trim()) {
+        localStorage.setItem("greeno_user_name", fullName.trim());
+      }
+      document.cookie = `greeno_session=${encodeURIComponent(email.trim())}; path=/; max-age=2592000; SameSite=Lax`;
+      window.dispatchEvent(new Event("storage"));
 
       clearCart();
 

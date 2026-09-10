@@ -48,7 +48,42 @@ export default function OrderDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Helper to find order in local storage
+  function findLocalOrder(id: string): any | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const rawLast = localStorage.getItem("greeno_last_order");
+      if (rawLast) {
+        const parsed = JSON.parse(rawLast);
+        if (parsed?.id === id) return parsed;
+      }
+      const rawCustomer = localStorage.getItem("greeno_customer_orders");
+      if (rawCustomer) {
+        const list = JSON.parse(rawCustomer);
+        const match = Array.isArray(list) ? list.find((o: any) => o.id === id) : null;
+        if (match) return match;
+      }
+      const rawAll = localStorage.getItem("greeno_all_orders");
+      if (rawAll) {
+        const list = JSON.parse(rawAll);
+        const match = Array.isArray(list) ? list.find((o: any) => o.id === id) : null;
+        if (match) return match;
+      }
+    } catch {}
+    return null;
+  }
+
   useEffect(() => {
+    if (!orderId) return;
+
+    // 1. Immediately render locally cached order if available
+    const cachedOrder = findLocalOrder(orderId);
+    if (cachedOrder) {
+      setOrder(cachedOrder);
+      setItems(cachedOrder.items || []);
+      setLoading(false);
+    }
+
     async function fetchOrder() {
       try {
         let user: any = null;
@@ -64,7 +99,7 @@ export default function OrderDetailsPage() {
 
         const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
 
-        if (!user && !storedEmail) {
+        if (!user && !storedEmail && !cachedOrder) {
           router.push("/login");
           return;
         }
@@ -78,6 +113,16 @@ export default function OrderDetailsPage() {
               setOrder(data.order);
               setItems(data.order.items || []);
               setLoading(false);
+
+              // Update local cache with latest status
+              try {
+                const rawCustomer = localStorage.getItem("greeno_customer_orders");
+                if (rawCustomer) {
+                  const list = JSON.parse(rawCustomer);
+                  const updated = list.map((o: any) => (o.id === data.order.id ? { ...o, ...data.order } : o));
+                  localStorage.setItem("greeno_customer_orders", JSON.stringify(updated));
+                }
+              } catch {}
               return;
             }
           }
@@ -87,42 +132,62 @@ export default function OrderDetailsPage() {
 
         // 2. Direct Supabase fallback
         if (user) {
-          const supabase = createClient();
-          const { data: orderData, error: orderError } = await supabase
-            .from("orders")
-            .select(
-              "id, address_id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
-            )
-            .eq("id", orderId)
-            .eq("user_id", user.id)
-            .maybeSingle();
+          try {
+            const supabase = createClient();
+            const { data: orderData } = await supabase
+              .from("orders")
+              .select(
+                "id, address_id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
+              )
+              .eq("id", orderId)
+              .eq("user_id", user.id)
+              .maybeSingle();
 
-          if (orderData) {
-            setOrder(orderData);
+            if (orderData) {
+              setOrder(orderData);
 
-            const { data: itemsData } = await supabase
-              .from("order_items")
-              .select("id, product_id, product_name, product_price, quantity")
-              .eq("order_id", orderId);
+              const { data: itemsData } = await supabase
+                .from("order_items")
+                .select("id, product_id, product_name, product_price, quantity")
+                .eq("order_id", orderId);
 
-            setItems(itemsData || []);
-            setLoading(false);
-            return;
-          }
+              setItems(itemsData || []);
+              setLoading(false);
+              return;
+            }
+          } catch {}
         }
 
-        setError("Order not found.");
+        if (!cachedOrder) {
+          setError("Order not found.");
+        }
       } catch (err) {
         console.error("ORDER DETAILS ERROR:", err);
-        setError("Something went wrong while loading the order.");
+        if (!cachedOrder) {
+          setError("Something went wrong while loading the order.");
+        }
       } finally {
         setLoading(false);
       }
     }
 
-    if (orderId) {
-      fetchOrder();
+    fetchOrder();
+
+    function handleStorageChange() {
+      const refreshed = findLocalOrder(orderId);
+      if (refreshed) {
+        setOrder(refreshed);
+        if (refreshed.items?.length) setItems(refreshed.items);
+      }
     }
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("greeno_order_updated", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("greeno_order_updated", handleStorageChange);
+    };
   }, [orderId, router]);
 
   const getStatusBadgeClass = (status: string) => {

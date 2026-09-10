@@ -257,32 +257,55 @@ export async function readStoreData(): Promise<StoreData> {
     return memoryData;
   }
 
-  try {
-    // Check tmp file first (updated during runtime)
-    if (fs.existsSync(TMP_FILE)) {
-      const raw = await fs.promises.readFile(TMP_FILE, "utf-8");
-      memoryData = JSON.parse(raw);
-      return memoryData!;
-    }
+  const initial = getInitialData();
+  let fileData: Partial<StoreData> | null = null;
+  let tmpData: Partial<StoreData> | null = null;
 
+  try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = await fs.promises.readFile(DATA_FILE, "utf-8");
-      const parsed = JSON.parse(raw);
-      const initial = getInitialData();
-      memoryData = {
-        products: parsed.products && parsed.products.length ? parsed.products : initial.products,
-        categories: parsed.categories && parsed.categories.length ? parsed.categories : initial.categories,
-        orders: parsed.orders || initial.orders,
-        coupons: parsed.coupons || initial.coupons,
-        settings: { ...initial.settings, ...(parsed.settings || {}) },
-      };
-      return memoryData;
+      fileData = JSON.parse(raw);
     }
-  } catch (error) {
-    console.warn("Could not read persistent store-data, using defaults:", error);
+  } catch (err) {
+    console.warn("Notice: could not read DATA_FILE:", err);
   }
 
-  memoryData = getInitialData();
+  try {
+    if (fs.existsSync(TMP_FILE)) {
+      const raw = await fs.promises.readFile(TMP_FILE, "utf-8");
+      tmpData = JSON.parse(raw);
+    }
+  } catch (err) {
+    console.warn("Notice: could not read TMP_FILE:", err);
+  }
+
+  // Merge orders from both sources so no order is ever lost
+  const orderMap = new Map<string, StoreOrder>();
+  for (const o of initial.orders) {
+    orderMap.set(o.id, o);
+  }
+  if (fileData?.orders && Array.isArray(fileData.orders)) {
+    for (const o of fileData.orders) {
+      orderMap.set(o.id, o);
+    }
+  }
+  if (tmpData?.orders && Array.isArray(tmpData.orders)) {
+    for (const o of tmpData.orders) {
+      orderMap.set(o.id, o);
+    }
+  }
+
+  const base = tmpData || fileData || {};
+  memoryData = {
+    products: base.products && base.products.length ? base.products : (fileData?.products || initial.products),
+    categories: base.categories && base.categories.length ? base.categories : (fileData?.categories || initial.categories),
+    orders: Array.from(orderMap.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ),
+    coupons: base.coupons || fileData?.coupons || initial.coupons,
+    settings: { ...initial.settings, ...(fileData?.settings || {}), ...(tmpData?.settings || {}) },
+  };
+
   return memoryData;
 }
 
@@ -293,13 +316,18 @@ export async function writeStoreData(data: StoreData): Promise<void> {
       await fs.promises.mkdir(DATA_DIR, { recursive: true });
     }
     await fs.promises.writeFile(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
-  } catch (error) {
-    // If writing to repo root failed (e.g. read-only filesystem on Vercel), persist to /tmp
-    try {
-      await fs.promises.writeFile(TMP_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch {
-      // Memory state is retained in memoryData
+  } catch {
+    // In read-only environments (e.g. Vercel deployment), root write fails safely
+  }
+
+  try {
+    const tmpDir = path.dirname(TMP_FILE);
+    if (!fs.existsSync(tmpDir)) {
+      await fs.promises.mkdir(tmpDir, { recursive: true });
     }
+    await fs.promises.writeFile(TMP_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch {
+    // Memory state is retained in memoryData
   }
 }
 
@@ -382,7 +410,13 @@ export async function getStoreOrders(): Promise<StoreOrder[]> {
 
 export async function addStoreOrder(order: StoreOrder): Promise<StoreOrder> {
   const data = await readStoreData();
-  data.orders.unshift(order);
+  // Avoid duplicate entries
+  const existingIdx = data.orders.findIndex((o) => o.id === order.id);
+  if (existingIdx >= 0) {
+    data.orders[existingIdx] = { ...data.orders[existingIdx], ...order };
+  } else {
+    data.orders.unshift(order);
+  }
   await writeStoreData(data);
   return order;
 }
@@ -393,16 +427,71 @@ export async function updateStoreOrderStatus(
   payment_status?: StoreOrder["payment_status"]
 ): Promise<StoreOrder | null> {
   const data = await readStoreData();
-  const order = data.orders.find((o) => o.id === orderId);
-  if (!order) return null;
+  let order = data.orders.find((o) => o.id === orderId);
 
-  order.status = status;
-  if (payment_status) {
-    order.payment_status = payment_status;
+  if (!order) {
+    order = {
+      id: orderId,
+      created_at: new Date().toISOString(),
+      customer: {
+        fullName: "Customer",
+        email: "customer@example.com",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
+      },
+      items: [],
+      subtotal: 0,
+      shipping: 0,
+      discount: 0,
+      total: 0,
+      status,
+      payment_method: "COD",
+      payment_status: payment_status || "pending",
+    };
+    data.orders.unshift(order);
+  } else {
+    order.status = status;
+    if (payment_status) {
+      order.payment_status = payment_status;
+    }
   }
 
   await writeStoreData(data);
   return order;
+}
+
+export async function syncStoreOrders(clientOrders: StoreOrder[]): Promise<StoreOrder[]> {
+  if (!Array.isArray(clientOrders) || clientOrders.length === 0) {
+    return getStoreOrders();
+  }
+
+  const data = await readStoreData();
+  const existingMap = new Map(data.orders.map((o) => [o.id, o]));
+
+  for (const co of clientOrders) {
+    if (!co.id) continue;
+    const existing = existingMap.get(co.id);
+    if (!existing) {
+      existingMap.set(co.id, co);
+    } else {
+      existingMap.set(co.id, {
+        ...existing,
+        ...co,
+        status: co.status || existing.status,
+        payment_status: co.payment_status || existing.payment_status,
+      });
+    }
+  }
+
+  data.orders = Array.from(existingMap.values()).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  await writeStoreData(data);
+  return data.orders;
 }
 
 // ----------------- Coupon Helpers -----------------

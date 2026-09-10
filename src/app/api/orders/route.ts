@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const cookieEmail = request.cookies.get("greeno_session")?.value
       ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
       : null;
-    const effectiveEmail = authenticatedUser?.email?.toLowerCase() || queryEmail || cookieEmail;
+    const effectiveEmail = queryEmail || authenticatedUser?.email?.toLowerCase() || cookieEmail;
 
     if (!authenticatedUser && !effectiveEmail) {
       return NextResponse.json(
@@ -27,6 +27,11 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    const emailsToMatch = new Set<string>();
+    if (queryEmail) emailsToMatch.add(queryEmail);
+    if (authenticatedUser?.email) emailsToMatch.add(authenticatedUser.email.toLowerCase().trim());
+    if (cookieEmail) emailsToMatch.add(cookieEmail);
 
     let dbOrders: any[] = [];
     if (authenticatedUser) {
@@ -45,9 +50,10 @@ export async function GET(request: NextRequest) {
     }
 
     const allStoreOrders = await getStoreOrders();
-    const storeUserOrders = allStoreOrders.filter(
-      (o) => o.customer?.email?.toLowerCase() === effectiveEmail
-    );
+    const storeUserOrders = allStoreOrders.filter((o) => {
+      const custEmail = o.customer?.email?.trim().toLowerCase();
+      return custEmail ? emailsToMatch.has(custEmail) : false;
+    });
 
     const orderMap = new Map<string, any>();
 

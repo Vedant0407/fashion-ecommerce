@@ -21,8 +21,35 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Helper to read cached customer orders
+  function getLocalOrders(): Order[] {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem("greeno_customer_orders");
+      const list = raw ? JSON.parse(raw) : [];
+      const lastRaw = localStorage.getItem("greeno_last_order");
+      if (lastRaw) {
+        const lastOrder = JSON.parse(lastRaw);
+        if (lastOrder?.id && !list.some((o: any) => o.id === lastOrder.id)) {
+          list.unshift(lastOrder);
+        }
+      }
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  }
+
   useEffect(() => {
+    // 1. Instantly show locally cached orders so user never sees an empty screen on refresh
+    const local = getLocalOrders();
+    if (local.length > 0) {
+      setOrders(local);
+      setLoading(false);
+    }
+
     async function fetchOrders() {
+      const currentLocal = getLocalOrders();
       try {
         let user: any = null;
         try {
@@ -37,57 +64,117 @@ export default function OrdersPage() {
 
         const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
 
-        if (!user && !storedEmail) {
+        if (!user && !storedEmail && currentLocal.length === 0) {
           setError("Please log in to view your orders.");
           setLoading(false);
           return;
         }
 
-        const effectiveEmail = user?.email || storedEmail || "";
+        const effectiveEmail = user?.email || storedEmail || currentLocal[0]?.id ? storedEmail || user?.email || "" : "";
 
-        // First query via API route
+        // Query server API
+        let serverOrders: Order[] = [];
         try {
           const res = await fetch(`/api/orders?email=${encodeURIComponent(effectiveEmail)}`);
           if (res.ok) {
             const data = await res.json();
             if (data.success && Array.isArray(data.orders)) {
-              setOrders(data.orders);
-              setLoading(false);
-              return;
+              serverOrders = data.orders;
             }
           }
         } catch (apiErr) {
           console.warn("Orders API fetch warning:", apiErr);
         }
 
-        // Direct Supabase fallback
-        if (user) {
-          const supabase = createClient();
-          const { data, error: ordersError } = await supabase
-            .from("orders")
-            .select(
-              "id, status, subtotal, shipping, total, payment_status, payment_method, created_at"
-            )
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
+        // Direct Supabase fallback if user is logged in
+        if (user && serverOrders.length === 0) {
+          try {
+            const supabase = createClient();
+            const { data, error: ordersError } = await supabase
+              .from("orders")
+              .select(
+                "id, status, subtotal, shipping, total, payment_status, payment_method, created_at"
+              )
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false });
 
-          if (!ordersError && data) {
-            setOrders(data);
-            setLoading(false);
-            return;
+            if (!ordersError && data) {
+              serverOrders = data;
+            }
+          } catch {
+            // ignore
           }
         }
 
-        setOrders([]);
+        // Merge server and local orders: server status wins, but local orders are never lost
+        const orderMap = new Map<string, Order>();
+
+        // Add local orders first
+        for (const loc of currentLocal) {
+          if (loc?.id) orderMap.set(loc.id, loc);
+        }
+
+        // Merge with server orders (server status updates e.g. "shipped", "reached" take precedence)
+        for (const srv of serverOrders) {
+          if (srv?.id) {
+            const existing = orderMap.get(srv.id);
+            orderMap.set(srv.id, { ...(existing || {}), ...srv });
+          }
+        }
+
+        const mergedOrders = Array.from(orderMap.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        setOrders(mergedOrders);
+
+        // Update local storage with merged orders
+        if (typeof window !== "undefined" && mergedOrders.length > 0) {
+          try {
+            localStorage.setItem("greeno_customer_orders", JSON.stringify(mergedOrders));
+          } catch {}
+        }
+
+        // If local had orders not on server (e.g. serverless cold start), sync them back to server
+        if (currentLocal.length > 0) {
+          const missingOnServer = currentLocal.filter(
+            (lo) => !serverOrders.some((so) => so.id === lo.id)
+          );
+          if (missingOnServer.length > 0) {
+            fetch("/api/orders/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ orders: missingOnServer }),
+            }).catch(() => {});
+          }
+        }
       } catch (err) {
         console.error("FETCH ORDERS ERROR:", err);
-        setError("Something went wrong while loading your orders.");
+        if (currentLocal.length === 0) {
+          setError("Something went wrong while loading your orders.");
+        }
       } finally {
         setLoading(false);
       }
     }
 
     fetchOrders();
+
+    // Listen for order status updates from admin
+    function handleStorageChange() {
+      const refreshed = getLocalOrders();
+      if (refreshed.length > 0) {
+        setOrders(refreshed);
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("greeno_order_updated", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("greeno_order_updated", handleStorageChange);
+    };
   }, []);
 
   const getStatusBadgeClass = (status: string) => {

@@ -121,7 +121,47 @@ export default function AdminPage() {
       }
       if (orderRes.ok) {
         const orderData = await orderRes.json();
-        if (orderData.orders) setOrders(orderData.orders);
+        const serverOrders = orderData.orders || [];
+
+        // Also merge with any orders saved locally in browser
+        let localOrders: StoreOrder[] = [];
+        try {
+          const rawAll = localStorage.getItem("greeno_all_orders");
+          const rawCust = localStorage.getItem("greeno_customer_orders");
+          const arr1 = rawAll ? JSON.parse(rawAll) : [];
+          const arr2 = rawCust ? JSON.parse(rawCust) : [];
+          localOrders = [...arr1, ...arr2];
+        } catch {}
+
+        const orderMap = new Map<string, StoreOrder>();
+        for (const o of serverOrders) {
+          if (o?.id) orderMap.set(o.id, o);
+        }
+
+        let hadMissing = false;
+        const missingToSync: StoreOrder[] = [];
+        for (const lo of localOrders) {
+          if (lo?.id && !orderMap.has(lo.id)) {
+            orderMap.set(lo.id, lo);
+            missingToSync.push(lo);
+            hadMissing = true;
+          }
+        }
+
+        const mergedOrders = Array.from(orderMap.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        setOrders(mergedOrders);
+
+        // Sync local orders to server if missing
+        if (hadMissing && missingToSync.length > 0) {
+          fetch("/api/orders/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orders: missingToSync }),
+          }).catch(() => {});
+        }
       }
       if (coupRes.ok) {
         const coupData = await coupRes.json();
@@ -430,6 +470,39 @@ export default function AdminPage() {
         setOrders((prev) =>
           prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
         );
+
+        // Update in localStorage so client and customer account tabs retain it forever
+        try {
+          const updateLocalList = (key: string) => {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const list = JSON.parse(raw);
+              if (Array.isArray(list)) {
+                const updated = list.map((o: any) =>
+                  o.id === orderId ? { ...o, status: newStatus } : o
+                );
+                localStorage.setItem(key, JSON.stringify(updated));
+              }
+            }
+          };
+          updateLocalList("greeno_all_orders");
+          updateLocalList("greeno_customer_orders");
+          const rawLast = localStorage.getItem("greeno_last_order");
+          if (rawLast) {
+            const last = JSON.parse(rawLast);
+            if (last?.id === orderId) {
+              last.status = newStatus;
+              localStorage.setItem("greeno_last_order", JSON.stringify(last));
+            }
+          }
+          window.dispatchEvent(new Event("storage"));
+          window.dispatchEvent(
+            new CustomEvent("greeno_order_updated", {
+              detail: { orderId, status: newStatus },
+            })
+          );
+        } catch {}
+
         triggerToast(`Order status updated to ${newStatus.toUpperCase()}`);
       } else {
         const data = await res.json();
