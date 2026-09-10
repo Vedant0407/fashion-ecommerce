@@ -20,6 +20,49 @@ export async function GET(
       // Supabase user fetch failed
     }
 
+    // Check store-data first to get full item options and latest admin status
+    const allStoreOrders = await getStoreOrders();
+    const matched = allStoreOrders.find((o) => o.id === id);
+
+    if (matched) {
+      return NextResponse.json({
+        success: true,
+        order: {
+          id: matched.id,
+          status: matched.status,
+          subtotal: matched.subtotal,
+          shipping: matched.shipping,
+          discount: matched.discount || 0,
+          total: matched.total,
+          payment_status: matched.payment_status,
+          payment_method: matched.payment_method,
+          created_at: matched.created_at,
+          customer: matched.customer,
+          addresses: {
+            full_name: matched.customer?.fullName || "Customer",
+            name: matched.customer?.fullName || "Customer",
+            phone: matched.customer?.phone || "",
+            address_line1: matched.customer?.address || "",
+            city: matched.customer?.city || "",
+            state: matched.customer?.state || "",
+            postal_code: matched.customer?.pincode || "",
+            pincode: matched.customer?.pincode || "",
+            country: "India",
+          },
+          items: matched.items.map((it) => ({
+            id: it.id || it.product_id,
+            product_id: it.product_id,
+            product_name: it.name,
+            product_price: it.price,
+            quantity: it.quantity,
+            image: it.image,
+            size: it.size,
+            color: it.color,
+          })),
+        },
+      });
+    }
+
     let query = supabase
       .from("orders")
       .select(
@@ -34,41 +77,6 @@ export async function GET(
     const { data: order, error: orderError } = await query.maybeSingle();
 
     if (orderError || !order) {
-      // Check store-data fallback
-      const allStoreOrders = await getStoreOrders();
-      const matched = allStoreOrders.find((o) => o.id === id);
-
-      if (matched) {
-        return NextResponse.json({
-          success: true,
-          order: {
-            id: matched.id,
-            status: matched.status,
-            subtotal: matched.subtotal,
-            shipping: matched.shipping,
-            total: matched.total,
-            payment_status: matched.payment_status,
-            payment_method: matched.payment_method,
-            created_at: matched.created_at,
-            addresses: {
-              name: matched.customer?.fullName || "Customer",
-              phone: matched.customer?.phone || "",
-              address_line1: matched.customer?.address || "",
-              city: matched.customer?.city || "",
-              state: matched.customer?.state || "",
-              pincode: matched.customer?.pincode || "",
-            },
-            items: matched.items.map((it) => ({
-              id: it.id || it.product_id,
-              product_id: it.product_id,
-              product_name: it.name,
-              product_price: it.price,
-              quantity: it.quantity,
-            })),
-          },
-        });
-      }
-
       return NextResponse.json(
         { success: false, message: "Order not found" },
         { status: 404 }

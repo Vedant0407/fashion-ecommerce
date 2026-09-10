@@ -30,7 +30,7 @@ export type StoreOrder = {
   shipping: number;
   discount: number;
   total: number;
-  status: "confirmed" | "processing" | "shipped" | "delivered" | "cancelled";
+  status: "confirmed" | "processing" | "shipped" | "delivered" | "reached" | "cancelled";
   payment_method: string;
   payment_status: "pending" | "paid" | "failed";
   notes?: string;

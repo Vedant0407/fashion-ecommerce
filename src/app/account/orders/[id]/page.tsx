@@ -126,12 +126,14 @@ export default function OrderDetailsPage() {
   }, [orderId, router]);
 
   const getStatusBadgeClass = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch ((status || "").toLowerCase()) {
       case "confirmed":
+      case "processing":
         return styles.statusConfirmed;
       case "shipped":
         return styles.statusShipped;
       case "delivered":
+      case "reached":
         return styles.statusDelivered;
       default:
         return styles.statusPending;
@@ -139,8 +141,8 @@ export default function OrderDetailsPage() {
   };
 
   const getStepActiveIndex = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === "delivered") return 4;
+    const s = (status || "").toLowerCase();
+    if (s === "delivered" || s === "reached") return 4;
     if (s === "shipped") return 3;
     if (s === "confirmed" || s === "processing") return 2;
     return 1;
@@ -197,17 +199,21 @@ export default function OrderDetailsPage() {
 
           <div className={`${styles.step} ${activeStep >= 2 ? styles.stepActive : ""}`}>
             <div className={styles.stepDot} />
-            <span className={styles.stepLabel}>2. CONFIRMED</span>
+            <span className={styles.stepLabel}>
+              2. {order.status?.toLowerCase() === "processing" ? "PROCESSING" : "CONFIRMED"}
+            </span>
           </div>
 
           <div className={`${styles.step} ${activeStep >= 3 ? styles.stepActive : ""}`}>
             <div className={styles.stepDot} />
-            <span className={styles.stepLabel}>3. IN TRANSIT</span>
+            <span className={styles.stepLabel}>3. SHIPPED / IN TRANSIT</span>
           </div>
 
           <div className={`${styles.step} ${activeStep >= 4 ? styles.stepActive : ""}`}>
             <div className={styles.stepDot} />
-            <span className={styles.stepLabel}>4. DELIVERED</span>
+            <span className={styles.stepLabel}>
+              4. {order.status?.toLowerCase() === "reached" ? "REACHED" : "DELIVERED"}
+            </span>
           </div>
         </div>
 
@@ -222,14 +228,18 @@ export default function OrderDetailsPage() {
               {items.map((item) => (
                 <div className={styles.orderItem} key={item.id}>
                   <img
-                    src="/black-tee.jfif"
+                    src={(item as any).image || "/black-tee.jfif"}
                     alt={item.product_name}
                     className={styles.itemImage}
                   />
 
                   <div className={styles.itemInfo}>
                     <p className={styles.itemName}>{item.product_name}</p>
-                    <p className={styles.itemMeta}>Quantity: {item.quantity}</p>
+                    <p className={styles.itemMeta}>
+                      Quantity: {item.quantity}
+                      {(item as any).size ? ` · Size: ${(item as any).size}` : ""}
+                      {(item as any).color ? ` · Color: ${(item as any).color}` : ""}
+                    </p>
                   </div>
 
                   <span className={styles.itemPrice}>
@@ -246,20 +256,20 @@ export default function OrderDetailsPage() {
               <div className={styles.sectionBox}>
                 <h2 className={styles.sectionTitle}>SHIPPING ADDRESS</h2>
                 <p style={{ margin: "0 0 6px", fontWeight: 600, fontSize: "14px" }}>
-                  {address.full_name}
+                  {address.full_name || (address as any).name || "Customer"}
                 </p>
                 <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}>
-                  {address.address_line1}
+                  {address.address_line1 || (address as any).address}
                 </p>
                 <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}>
-                  {address.city}, {address.state} - {address.postal_code}
+                  {address.city}, {address.state} - {address.postal_code || (address as any).pincode}
                 </p>
                 <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}>
                   {address.country || "India"}
                 </p>
-                {address.phone && (
+                {(address.phone || (order as any).customer?.phone) && (
                   <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#777" }}>
-                    Contact Phone: {address.phone}
+                    Contact Phone: {address.phone || (order as any).customer?.phone}
                   </p>
                 )}
               </div>
@@ -277,12 +287,17 @@ export default function OrderDetailsPage() {
               </div>
 
               <div className={styles.summaryRow}>
-                <span style={{ color: "#777" }}>DATE</span>
+                <span style={{ color: "#777" }}>DATE PLACED</span>
                 <span>
                   {new Date(order.created_at).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
+                  })}
+                  {" at "}
+                  {new Date(order.created_at).toLocaleTimeString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </span>
               </div>
@@ -314,6 +329,13 @@ export default function OrderDetailsPage() {
                 <span style={{ color: "#777" }}>SUBTOTAL</span>
                 <span>₹{Number(order.subtotal).toLocaleString("en-IN")}</span>
               </div>
+
+              {Number((order as any).discount) > 0 && (
+                <div className={styles.summaryRow} style={{ color: "#16a34a" }}>
+                  <span>DISCOUNT</span>
+                  <span>-₹{Number((order as any).discount).toLocaleString("en-IN")}</span>
+                </div>
+              )}
 
               <div className={styles.summaryRow}>
                 <span style={{ color: "#777" }}>DELIVERY</span>

@@ -91,12 +91,14 @@ export default function OrdersPage() {
   }, []);
 
   const getStatusBadgeClass = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch ((status || "").toLowerCase()) {
       case "confirmed":
+      case "processing":
         return styles.statusConfirmed;
       case "shipped":
         return styles.statusShipped;
       case "delivered":
+      case "reached":
         return styles.statusDelivered;
       default:
         return styles.statusPending;

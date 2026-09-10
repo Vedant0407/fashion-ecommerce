@@ -671,11 +671,13 @@ export default function AdminPage() {
 
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
+      const q = orderSearch.toLowerCase();
       const matchesSearch =
-        o.id.toLowerCase().includes(orderSearch.toLowerCase()) ||
-        o.customer.fullName.toLowerCase().includes(orderSearch.toLowerCase()) ||
+        o.id.toLowerCase().includes(q) ||
+        o.customer.fullName.toLowerCase().includes(q) ||
+        (o.customer.email && o.customer.email.toLowerCase().includes(q)) ||
         o.customer.phone.includes(orderSearch) ||
-        o.customer.city.toLowerCase().includes(orderSearch.toLowerCase());
+        o.customer.city.toLowerCase().includes(q);
 
       const matchesStatus =
         orderStatusFilter === "ALL" || o.status.toLowerCase() === orderStatusFilter.toLowerCase();
@@ -973,7 +975,7 @@ export default function AdminPage() {
                           <td>
                             <span
                               className={`${styles.badge} ${
-                                order.status === "delivered"
+                                order.status === "delivered" || order.status === "reached"
                                   ? styles.badgeSuccess
                                   : order.status === "cancelled"
                                   ? styles.badgeDanger
@@ -1283,6 +1285,7 @@ export default function AdminPage() {
                       <option value="confirmed">CONFIRMED</option>
                       <option value="processing">PROCESSING</option>
                       <option value="shipped">SHIPPED</option>
+                      <option value="reached">REACHED</option>
                       <option value="delivered">DELIVERED</option>
                       <option value="cancelled">CANCELLED</option>
                     </select>
@@ -1343,6 +1346,7 @@ export default function AdminPage() {
                               <option value="confirmed">Confirmed</option>
                               <option value="processing">Processing</option>
                               <option value="shipped">Shipped</option>
+                              <option value="reached">Reached / Delivered</option>
                               <option value="delivered">Delivered</option>
                               <option value="cancelled">Cancelled</option>
                             </select>
@@ -3072,6 +3076,7 @@ export default function AdminPage() {
                   <option value="confirmed">Confirmed</option>
                   <option value="processing">Processing</option>
                   <option value="shipped">Shipped</option>
+                  <option value="reached">Reached / Delivered</option>
                   <option value="delivered">Delivered</option>
                   <option value="cancelled">Cancelled</option>
                 </select>

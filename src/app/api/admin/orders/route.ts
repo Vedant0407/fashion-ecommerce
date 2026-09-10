@@ -4,12 +4,63 @@ import {
   updateStoreOrderStatus,
   readStoreData,
   writeStoreData,
+  StoreOrder,
 } from "@/lib/store-data";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
-    const orders = await getStoreOrders();
-    return NextResponse.json({ success: true, count: orders.length, orders });
+    const storeOrders = await getStoreOrders();
+
+    // Optionally merge with any orders from Supabase that aren't in store-data
+    try {
+      const supabase = await createClient();
+      const { data: dbOrders } = await supabase
+        .from("orders")
+        .select(
+          "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
+        )
+        .order("created_at", { ascending: false });
+
+      if (dbOrders && dbOrders.length > 0) {
+        const storeOrderIds = new Set(storeOrders.map((o) => o.id));
+        for (const dbOrder of (dbOrders as any[])) {
+          if (!storeOrderIds.has(dbOrder.id)) {
+            const rawAddr = dbOrder.addresses;
+            const addr = (Array.isArray(rawAddr) ? rawAddr[0] : rawAddr) || {};
+            storeOrders.push({
+              id: dbOrder.id,
+              created_at: dbOrder.created_at,
+              customer: {
+                fullName: addr.full_name || "Customer",
+                email: "customer@example.com",
+                phone: addr.phone || "",
+                address: addr.address_line1 || "",
+                city: addr.city || "",
+                state: addr.state || "",
+                pincode: addr.postal_code || "",
+              },
+              items: [],
+              subtotal: Number(dbOrder.subtotal) || 0,
+              shipping: Number(dbOrder.shipping) || 0,
+              discount: 0,
+              total: Number(dbOrder.total) || 0,
+              status: dbOrder.status as StoreOrder["status"],
+              payment_method: dbOrder.payment_method || "COD",
+              payment_status: dbOrder.payment_status || "pending",
+            });
+          }
+        }
+      }
+    } catch {
+      // Supabase fetch optional
+    }
+
+    storeOrders.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    return NextResponse.json({ success: true, count: storeOrders.length, orders: storeOrders });
   } catch (error: any) {
     console.error("GET /api/admin/orders error:", error);
     return NextResponse.json(
@@ -31,7 +82,23 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // 1. Update in persistent store data
     const updated = await updateStoreOrderStatus(id, status, payment_status);
+
+    // 2. Also update in Supabase orders table
+    try {
+      const supabase = await createClient();
+      await supabase
+        .from("orders")
+        .update({
+          status,
+          ...(payment_status ? { payment_status } : {}),
+        })
+        .eq("id", id);
+    } catch (dbErr) {
+      console.warn("Supabase status sync notice:", dbErr);
+    }
+
     if (!updated) {
       return NextResponse.json(
         { success: false, message: `Order '${id}' not found.` },

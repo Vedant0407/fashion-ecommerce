@@ -44,19 +44,50 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (dbOrders && dbOrders.length > 0) {
-      return NextResponse.json({ success: true, orders: dbOrders });
+    const allStoreOrders = await getStoreOrders();
+    const storeUserOrders = allStoreOrders.filter(
+      (o) => o.customer?.email?.toLowerCase() === effectiveEmail
+    );
+
+    const orderMap = new Map<string, any>();
+
+    // First add DB orders
+    for (const dbOrder of dbOrders) {
+      const rawAddr = dbOrder.addresses;
+      const addr = (Array.isArray(rawAddr) ? rawAddr[0] : rawAddr) || {};
+      orderMap.set(dbOrder.id, {
+        id: dbOrder.id,
+        created_at: dbOrder.created_at,
+        status: dbOrder.status,
+        subtotal: dbOrder.subtotal,
+        shipping: dbOrder.shipping,
+        total: dbOrder.total,
+        payment_status: dbOrder.payment_status,
+        payment_method: dbOrder.payment_method,
+        customer: {
+          fullName: addr.full_name || "Customer",
+          email: effectiveEmail,
+          phone: addr.phone || "",
+          address: addr.address_line1 || "",
+          city: addr.city || "",
+          state: addr.state || "",
+          pincode: addr.postal_code || "",
+        },
+      });
     }
 
-    // Fallback / merge with store-data filtered by user's email if available
-    const allStoreOrders = await getStoreOrders();
-    const userOrders = allStoreOrders.filter(
-      (o) => o.customer?.email?.toLowerCase() === effectiveEmail
+    // Store orders take precedence because they contain admin status updates and items
+    for (const stOrder of storeUserOrders) {
+      orderMap.set(stOrder.id, stOrder);
+    }
+
+    const mergedOrders = Array.from(orderMap.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
     return NextResponse.json({
       success: true,
-      orders: userOrders.length > 0 ? userOrders : (dbOrders || []),
+      orders: mergedOrders,
     });
   } catch (error: any) {
     console.error("GET /api/orders error:", error);
