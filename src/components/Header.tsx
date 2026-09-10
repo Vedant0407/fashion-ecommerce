@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -22,6 +22,7 @@ export default function Header() {
   const [announcementText, setAnnouncementText] = useState(
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"
   );
+  const accountRef = useRef<HTMLDivElement>(null);
 
   const isHomePage = pathname === "/";
 
@@ -89,6 +90,38 @@ export default function Header() {
       window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
+
+  // Close account menu on route change
+  useEffect(() => {
+    setAccountOpen(false);
+  }, [pathname]);
+
+  // Close account menu when clicking outside or pressing Escape
+  useEffect(() => {
+    if (!accountOpen) return;
+
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setAccountOpen(false);
+      }
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setAccountOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [accountOpen]);
 
   async function handleLogout() {
     try {
@@ -180,7 +213,7 @@ export default function Header() {
               )}
             </Link>
 
-            <div className="account-wrapper">
+            <div className="account-wrapper" ref={accountRef}>
               <button
                 className="header-icon"
                 onClick={() => setAccountOpen((open) => !open)}
