@@ -12,8 +12,8 @@
       "images": [
         "/black-tee.jfif"
       ],
-      "stock": 10,
-      "is_featured": false,
+      "stock": 15,
+      "is_featured": true,
       "is_new": true,
       "is_trending": false,
       "color": "BLACK",

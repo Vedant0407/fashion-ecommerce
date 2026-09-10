@@ -1,8 +1,7 @@
 import nodemailer from "nodemailer";
 import { getStoreSettings } from "./store-data";
-import { createClient } from "./supabase/server";
 
-export type EmailProvider = "gmail" | "smtp" | "brevo" | "resend" | "supabase" | "none";
+export type EmailProvider = "gmail" | "smtp" | "brevo" | "resend" | "none";
 
 export interface EmailDispatchResult {
   sent: boolean;
@@ -14,6 +13,7 @@ export interface EmailDispatchResult {
 
 /**
  * Generate a responsive brutalist HTML email for GreenO 6-digit OTP verification.
+ * Contains ONLY the 6-digit verification passcode and NO sign-in or magic links.
  */
 function buildBrandedEmailHtml(otpCode: string, recipientName?: string): string {
   const name = recipientName ? recipientName.trim() : "Valued Member";
@@ -33,7 +33,7 @@ function buildBrandedEmailHtml(otpCode: string, recipientName?: string): string 
     .title { font-size: 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff; margin-bottom: 12px; }
     .text { font-size: 13px; line-height: 1.6; color: #cccccc; margin-bottom: 24px; }
     .code-box { background-color: #1a1a1a; border: 1px solid #333333; padding: 24px; text-align: center; margin: 28px 0; }
-    .code { font-size: 36px; font-weight: 900; letter-spacing: 0.35em; color: #ffffff; font-family: 'Courier New', Courier, monospace; margin: 0; }
+    .code { font-size: 38px; font-weight: 900; letter-spacing: 0.35em; color: #ffffff; font-family: 'Courier New', Courier, monospace; margin: 0; }
     .code-hint { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #888888; margin-top: 10px; }
     .security-note { font-size: 11px; color: #777777; line-height: 1.5; border-top: 1px solid #222222; padding-top: 20px; margin-top: 30px; }
     .footer { text-align: center; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #555555; margin-top: 30px; }
@@ -43,18 +43,18 @@ function buildBrandedEmailHtml(otpCode: string, recipientName?: string): string 
   <div class="container" style="max-width: 540px; margin: 40px auto; background-color: #121212; border: 1px solid #262626; padding: 40px 32px;">
     <div class="header" style="border-bottom: 2px solid #ffffff; padding-bottom: 20px; margin-bottom: 30px;">
       <h1 class="brand" style="font-size: 20px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; color: #ffffff; margin: 0;">GREENO</h1>
-      <div class="subbrand" style="font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #888888; margin-top: 6px;">OFF-DUTY ATELIER &bull; SECURITY GATEWAY</div>
+      <div class="subbrand" style="font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #888888; margin-top: 6px;">OFF-DUTY ATELIER &bull; VERIFICATION GATEWAY</div>
     </div>
 
     <div class="title" style="font-size: 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff; margin-bottom: 12px;">SECURITY VERIFICATION PASSCODE</div>
 
     <p class="text" style="font-size: 13px; line-height: 1.6; color: #cccccc; margin-bottom: 24px;">
       Hello ${name},<br />
-      We received a request to verify your identity for your GreenO account. Enter the 6-digit security passcode below to complete authentication:
+      Please use the 6-digit verification passcode below to verify your GreenO identity. Do not share this passcode with anyone:
     </p>
 
     <div class="code-box" style="background-color: #1a1a1a; border: 1px solid #333333; padding: 24px; text-align: center; margin: 28px 0;">
-      <div class="code" style="font-size: 36px; font-weight: 900; letter-spacing: 0.35em; color: #ffffff; font-family: 'Courier New', Courier, monospace; margin: 0;">
+      <div class="code" style="font-size: 38px; font-weight: 900; letter-spacing: 0.35em; color: #ffffff; font-family: 'Courier New', Courier, monospace; margin: 0;">
         ${otpCode}
       </div>
       <div class="code-hint" style="font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #888888; margin-top: 10px;">
@@ -63,11 +63,11 @@ function buildBrandedEmailHtml(otpCode: string, recipientName?: string): string 
     </div>
 
     <p class="text" style="font-size: 13px; line-height: 1.6; color: #cccccc; margin-bottom: 24px;">
-      If you did not request this verification code, please ignore this email. Your GreenO account remains fully secure.
+      Enter this 6-digit code in the verification screen. If you did not initiate this request, you can safely ignore this email.
     </p>
 
     <div class="security-note" style="font-size: 11px; color: #777777; line-height: 1.5; border-top: 1px solid #222222; padding-top: 20px; margin-top: 30px;">
-      <strong>Security Notice:</strong> GreenO representatives will never ask you for your passcode or password via phone call, SMS, or social media.
+      <strong>Security Notice:</strong> GreenO staff will never ask you for your passcode or password under any circumstance.
     </div>
 
     <div class="footer" style="text-align: center; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #555555; margin-top: 30px;">
@@ -81,6 +81,8 @@ function buildBrandedEmailHtml(otpCode: string, recipientName?: string): string 
 
 /**
  * Dispatch real verification email with 6-digit OTP code to recipient's email address.
+ * Dispatches ONLY the 6-digit code via configured mail servers (Gmail SMTP, Custom SMTP, Brevo, Resend).
+ * NEVER dispatches any sign-in or magic links.
  */
 export async function sendRealEmail(
   targetEmail: string,
@@ -165,19 +167,13 @@ export async function sendRealEmail(
     if (brevoResult.sent) return brevoResult;
   }
 
-  // 5. Tertiary fallback: Supabase signInWithOtp
-  const supabaseResult = await dispatchSupabaseOtp(cleanEmail, recipientName);
-  if (supabaseResult.sent) {
-    return supabaseResult;
-  }
-
   console.log(`\n======================================================`);
   console.log(`[REAL EMAIL GATEWAY NOTICE]`);
   console.log(`No active Email SMTP or API Key configured.`);
   console.log(`Recipient: ${cleanEmail}`);
   console.log(`Generated OTP: ${otpCode}`);
-  console.log(`To receive real emails in your Gmail / inbox:`);
-  console.log(`1. Enter your Gmail & App Password in /admin -> Settings`);
+  console.log(`To receive the 6-digit code in your Gmail / email inbox:`);
+  console.log(`1. Enter your Gmail & App Password in /admin -> EMAIL GATEWAY`);
   console.log(`   or in .env.local as SMTP_USER=... and SMTP_PASS=...`);
   console.log(`2. Or enter a free Brevo / Resend API key.`);
   console.log(`======================================================\n`);
@@ -186,15 +182,13 @@ export async function sendRealEmail(
     sent: false,
     provider: "none",
     message:
-      supabaseResult.error?.includes("rate limit")
-        ? "Supabase shared email pool is currently rate-limited. Use the emergency passcode shown on screen or configure Gmail SMTP in /admin."
-        : "Email SMTP not yet configured. Please configure in /admin -> EMAIL GATEWAY or use the on-screen passcode.",
-    error: supabaseResult.error,
+      "Email SMTP not configured. Please enter your Gmail App Password or Brevo API Key in /admin -> EMAIL GATEWAY or .env.local to receive 6-digit codes in your inbox.",
   };
 }
 
 /**
  * Dispatch email via Nodemailer SMTP (Gmail, Brevo SMTP, Outlook, Custom SMTP).
+ * Sends pure 6-digit code - zero sign-in links.
  */
 async function dispatchNodemailerSmtp(
   config: {
@@ -224,22 +218,22 @@ async function dispatchNodemailerSmtp(
     });
 
     const htmlContent = buildBrandedEmailHtml(otpCode, recipientName);
-    const textContent = `Your GreenO security passcode is: ${otpCode}. Valid for 10 minutes.`;
+    const textContent = `Your GreenO security verification code is: ${otpCode}. Valid for 10 minutes. Enter this code on the verification screen.`;
 
     const info = await transporter.sendMail({
       from: config.from,
       to: toEmail,
-      subject: `GreenO Security Passcode: [${otpCode}]`,
+      subject: `GreenO Verification Passcode: [${otpCode}]`,
       text: textContent,
       html: htmlContent,
     });
 
-    console.log(`[REAL EMAIL DELIVERED via SMTP] Sent to ${toEmail}. Message ID: ${info.messageId}`);
+    console.log(`[REAL EMAIL DELIVERED via SMTP] 6-digit code sent to ${toEmail}. Message ID: ${info.messageId}`);
 
     return {
       sent: true,
       provider: config.host.includes("gmail") ? "gmail" : "smtp",
-      message: `Real verification email with passcode delivered to ${toEmail} via SMTP!`,
+      message: `Real verification email with 6-digit passcode delivered to ${toEmail} via SMTP!`,
       details: { messageId: info.messageId },
     };
   } catch (err: any) {
@@ -255,7 +249,7 @@ async function dispatchNodemailerSmtp(
 
 /**
  * Dispatch email via Brevo (Sendinblue) REST API.
- * Free tier provides 300 emails/day without credit card.
+ * Sends pure 6-digit code - zero sign-in links.
  */
 async function dispatchBrevoApi(
   apiKey: string,
@@ -277,7 +271,7 @@ async function dispatchBrevoApi(
     }
 
     const htmlContent = buildBrandedEmailHtml(otpCode, recipientName);
-    const textContent = `Your GreenO security passcode is: ${otpCode}. Valid for 10 minutes.`;
+    const textContent = `Your GreenO security verification code is: ${otpCode}. Valid for 10 minutes. Enter this code on the verification screen.`;
 
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
@@ -289,7 +283,7 @@ async function dispatchBrevoApi(
       body: JSON.stringify({
         sender: { name: fromName, email: fromEmail },
         to: [{ email: toEmail, name: recipientName || toEmail }],
-        subject: `GreenO Security Passcode: [${otpCode}]`,
+        subject: `GreenO Verification Passcode: [${otpCode}]`,
         htmlContent,
         textContent,
       }),
@@ -298,7 +292,7 @@ async function dispatchBrevoApi(
     const json = await res.json();
 
     if (res.ok && json.messageId) {
-      console.log(`[REAL EMAIL DELIVERED via Brevo] Sent to ${toEmail}. ID: ${json.messageId}`);
+      console.log(`[REAL EMAIL DELIVERED via Brevo] 6-digit code sent to ${toEmail}. ID: ${json.messageId}`);
       return {
         sent: true,
         provider: "brevo",
@@ -326,6 +320,7 @@ async function dispatchBrevoApi(
 
 /**
  * Dispatch email via Resend REST API.
+ * Sends pure 6-digit code - zero sign-in links.
  */
 async function dispatchResendApi(
   apiKey: string,
@@ -337,7 +332,7 @@ async function dispatchResendApi(
   try {
     const fromAddress = fromHeader || "GreenO Security <onboarding@resend.dev>";
     const htmlContent = buildBrandedEmailHtml(otpCode, recipientName);
-    const textContent = `Your GreenO security passcode is: ${otpCode}. Valid for 10 minutes.`;
+    const textContent = `Your GreenO security verification code is: ${otpCode}. Valid for 10 minutes. Enter this code on the verification screen.`;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -348,7 +343,7 @@ async function dispatchResendApi(
       body: JSON.stringify({
         from: fromAddress,
         to: [toEmail],
-        subject: `GreenO Security Passcode: [${otpCode}]`,
+        subject: `GreenO Verification Passcode: [${otpCode}]`,
         html: htmlContent,
         text: textContent,
       }),
@@ -357,7 +352,7 @@ async function dispatchResendApi(
     const json = await res.json();
 
     if (res.ok && json.id) {
-      console.log(`[REAL EMAIL DELIVERED via Resend] Sent to ${toEmail}. ID: ${json.id}`);
+      console.log(`[REAL EMAIL DELIVERED via Resend] 6-digit code sent to ${toEmail}. ID: ${json.id}`);
       return {
         sent: true,
         provider: "resend",
@@ -378,49 +373,6 @@ async function dispatchResendApi(
       sent: false,
       provider: "resend",
       message: `Resend network error: ${err.message}`,
-      error: err.message,
-    };
-  }
-}
-
-/**
- * Fallback to Supabase built-in signInWithOtp.
- */
-async function dispatchSupabaseOtp(
-  toEmail: string,
-  recipientName?: string
-): Promise<EmailDispatchResult> {
-  try {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email: toEmail,
-      options: {
-        data: {
-          full_name: recipientName || undefined,
-        },
-      },
-    });
-
-    if (error) {
-      console.warn("Supabase signInWithOtp notice:", error.message);
-      return {
-        sent: false,
-        provider: "supabase",
-        message: error.message,
-        error: error.message,
-      };
-    }
-
-    return {
-      sent: true,
-      provider: "supabase",
-      message: `Verification link dispatched via Supabase to ${toEmail}.`,
-    };
-  } catch (err: any) {
-    return {
-      sent: false,
-      provider: "supabase",
-      message: err.message,
       error: err.message,
     };
   }
