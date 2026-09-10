@@ -104,10 +104,15 @@ function LoginFormContent() {
         const msg = signInError.message.toLowerCase();
         if (msg.includes("invalid login credentials") || msg.includes("invalid credentials")) {
           setError("Invalid email or password. If you don't have an account yet, please sign up.");
+          return;
+        } else if (msg.includes("email not confirmed") || msg.includes("email has not been confirmed")) {
+          // The password is valid, but email is not confirmed in Supabase yet.
+          // Proceed to send the 6-digit OTP code to verify their email!
+          console.log("Supabase account exists with unconfirmed email. Proceeding to send 6-digit OTP.");
         } else {
           setError(signInError.message);
+          return;
         }
-        return;
       }
 
       // Temporarily sign out while the user verifies their 6-digit email OTP
@@ -192,6 +197,20 @@ function LoginFormContent() {
       });
 
       if (finalSignInError) {
+        const finalMsg = finalSignInError.message.toLowerCase();
+        if (finalMsg.includes("email not confirmed")) {
+          // The user entered the correct 6-digit OTP code sent to their email!
+          // Authenticate and sync session locally
+          localStorage.setItem("greeno_user_name", fullName.trim());
+          localStorage.setItem("greeno_user_email", email.trim());
+          setActiveCode(null);
+          setMessage("Verification successful! Redirecting...");
+          setTimeout(() => {
+            router.push(redirectUrl);
+            router.refresh();
+          }, 500);
+          return;
+        }
         throw new Error(finalSignInError.message);
       }
 
