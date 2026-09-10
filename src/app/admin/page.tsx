@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import styles from "./admin.module.css";
 import { Product, Category } from "@/lib/catalog";
-import { StoreOrder, StoreCoupon, StoreSettings } from "@/lib/store-data";
+import { StoreOrder, StoreCoupon, StoreSettings, ReturnExchangeRequest } from "@/lib/store-data";
 
 export default function AdminPage() {
   // Authentication State
@@ -14,7 +14,7 @@ export default function AdminPage() {
 
   // Navigation
   const [activeTab, setActiveTab] = useState<
-    "overview" | "products" | "categories" | "orders" | "coupons" | "settings" | "sms" | "email"
+    "overview" | "products" | "categories" | "orders" | "returns" | "coupons" | "settings" | "sms" | "email"
   >("overview");
 
   // SMS Testing State
@@ -45,6 +45,7 @@ export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [orders, setOrders] = useState<StoreOrder[]>([]);
+  const [returnRequests, setReturnRequests] = useState<ReturnExchangeRequest[]>([]);
   const [coupons, setCoupons] = useState<StoreCoupon[]>([]);
   const [settings, setSettings] = useState<StoreSettings>({
     announcementText: "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE",
@@ -77,11 +78,17 @@ export default function AdminPage() {
   // Order Details Modal
   const [selectedOrder, setSelectedOrder] = useState<StoreOrder | null>(null);
 
+  // Return Details Modal
+  const [selectedReturn, setSelectedReturn] = useState<ReturnExchangeRequest | null>(null);
+  const [returnStatusNotes, setReturnStatusNotes] = useState<string>("");
+
   // Filter & Search
   const [productSearch, setProductSearch] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState("ALL");
   const [orderSearch, setOrderSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("ALL");
+  const [returnSearch, setReturnSearch] = useState("");
+  const [returnFilter, setReturnFilter] = useState("ALL");
 
   // Helper Toast
   function triggerToast(msg: string) {
@@ -103,10 +110,11 @@ export default function AdminPage() {
   async function fetchAllData() {
     setLoading(true);
     try {
-      const [prodRes, catRes, orderRes, coupRes, setRes] = await Promise.all([
+      const [prodRes, catRes, orderRes, retRes, coupRes, setRes] = await Promise.all([
         fetch("/api/admin/products"),
         fetch("/api/admin/categories"),
         fetch("/api/admin/orders"),
+        fetch("/api/returns"),
         fetch("/api/admin/coupons"),
         fetch("/api/admin/settings"),
       ]);
@@ -163,6 +171,48 @@ export default function AdminPage() {
           }).catch(() => {});
         }
       }
+
+      // Fetch & Merge Returns / Exchanges
+      if (retRes.ok) {
+        const retData = await retRes.json();
+        const serverReturns: ReturnExchangeRequest[] = retData.returns || [];
+
+        let localReturns: ReturnExchangeRequest[] = [];
+        try {
+          const rawRet = localStorage.getItem("greeno_returns");
+          localReturns = rawRet ? JSON.parse(rawRet) : [];
+        } catch {}
+
+        const returnMap = new Map<string, ReturnExchangeRequest>();
+        for (const r of serverReturns) {
+          if (r?.id) returnMap.set(r.id, r);
+        }
+
+        let hadMissingReturns = false;
+        const missingReturnsToSync: ReturnExchangeRequest[] = [];
+        for (const lr of localReturns) {
+          if (lr?.id && !returnMap.has(lr.id)) {
+            returnMap.set(lr.id, lr);
+            missingReturnsToSync.push(lr);
+            hadMissingReturns = true;
+          }
+        }
+
+        const mergedReturns = Array.from(returnMap.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        setReturnRequests(mergedReturns);
+
+        if (hadMissingReturns && missingReturnsToSync.length > 0) {
+          fetch("/api/returns/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ returns: missingReturnsToSync }),
+          }).catch(() => {});
+        }
+      }
+
       if (coupRes.ok) {
         const coupData = await coupRes.json();
         if (coupData.coupons) setCoupons(coupData.coupons);
@@ -530,6 +580,95 @@ export default function AdminPage() {
     }
   }
 
+  // ----------------- Returns & Exchanges Status Update -----------------
+  async function handleUpdateReturnStatus(
+    returnId: string,
+    newStatus: ReturnExchangeRequest["status"],
+    adminNotes?: string
+  ) {
+    try {
+      const res = await fetch("/api/returns", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: returnId, status: newStatus, admin_notes: adminNotes }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setReturnRequests((prev) =>
+          prev.map((r) =>
+            r.id === returnId
+              ? { ...r, status: newStatus, admin_notes: adminNotes ?? r.admin_notes }
+              : r
+          )
+        );
+
+        if (selectedReturn && selectedReturn.id === returnId) {
+          setSelectedReturn((prev) =>
+            prev
+              ? { ...prev, status: newStatus, admin_notes: adminNotes ?? prev.admin_notes }
+              : null
+          );
+        }
+
+        // Update in localStorage
+        try {
+          const raw = localStorage.getItem("greeno_returns");
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const updated = list.map((r: any) =>
+                r.id === returnId
+                  ? { ...r, status: newStatus, admin_notes: adminNotes ?? r.admin_notes }
+                  : r
+              );
+              localStorage.setItem("greeno_returns", JSON.stringify(updated));
+            }
+          }
+          window.dispatchEvent(new Event("storage"));
+          window.dispatchEvent(
+            new CustomEvent("greeno_order_updated", {
+              detail: { returnId, status: newStatus },
+            })
+          );
+        } catch {}
+
+        triggerToast(`Request ${returnId} updated to ${newStatus.toUpperCase()}`);
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to update return status.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to update return status.");
+    }
+  }
+
+  async function handleDeleteReturn(id: string) {
+    if (!confirm(`Remove return/exchange request '${id}' from records?`)) return;
+
+    try {
+      const res = await fetch(`/api/returns?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setReturnRequests((prev) => prev.filter((r) => r.id !== id));
+        try {
+          const raw = localStorage.getItem("greeno_returns");
+          if (raw) {
+            const list = JSON.parse(raw);
+            const filtered = list.filter((r: any) => r.id !== id);
+            localStorage.setItem("greeno_returns", JSON.stringify(filtered));
+          }
+          window.dispatchEvent(new Event("storage"));
+        } catch {}
+        triggerToast(`Request '${id}' removed.`);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   // ----------------- Coupons CRUD -----------------
   async function handleSaveCoupon(e: React.FormEvent) {
     e.preventDefault();
@@ -759,10 +898,34 @@ export default function AdminPage() {
     });
   }, [orders, orderSearch, orderStatusFilter]);
 
+  const filteredReturns = useMemo(() => {
+    return returnRequests.filter((r) => {
+      const q = returnSearch.toLowerCase();
+      const matchesSearch =
+        r.id.toLowerCase().includes(q) ||
+        r.order_id.toLowerCase().includes(q) ||
+        r.customer.fullName.toLowerCase().includes(q) ||
+        (r.customer.email && r.customer.email.toLowerCase().includes(q)) ||
+        r.customer.phone.includes(returnSearch) ||
+        r.customer.city?.toLowerCase().includes(q);
+
+      const matchesFilter =
+        returnFilter === "ALL" ||
+        (returnFilter === "EXCHANGES" && r.type === "exchange") ||
+        (returnFilter === "RETURNS" && r.type === "return") ||
+        r.status.toLowerCase() === returnFilter.toLowerCase();
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [returnRequests, returnSearch, returnFilter]);
+
   // Metrics
   const metrics = useMemo(() => {
     const totalSales = orders.reduce((sum, o) => (o.status !== "cancelled" ? sum + o.total : sum), 0);
     const pendingOrders = orders.filter((o) => o.status === "confirmed" || o.status === "processing").length;
+    const pendingReturns = returnRequests.filter(
+      (r) => r.status === "pending" || r.status === "approved" || r.status === "pickup_scheduled"
+    ).length;
     const lowStockCount = products.filter((p) => (p.stock || 0) < 10).length;
     const activeCoupons = coupons.filter((c) => c.active).length;
 
@@ -770,11 +933,13 @@ export default function AdminPage() {
       totalSales,
       totalOrders: orders.length,
       pendingOrders,
+      pendingReturns,
+      totalReturns: returnRequests.length,
       totalProducts: products.length,
       lowStockCount,
       activeCoupons,
     };
-  }, [orders, products, coupons]);
+  }, [orders, returnRequests, products, coupons]);
 
   // If locked, render luxury PIN gate
   if (!isAuthenticated) {
@@ -881,6 +1046,26 @@ export default function AdminPage() {
                 }}
               >
                 {metrics.pendingOrders}
+              </span>
+            )}
+          </button>
+          <button
+            className={`${styles.tabBtn} ${activeTab === "returns" ? styles.activeTab : ""}`}
+            onClick={() => setActiveTab("returns")}
+          >
+            RETURNS &amp; EXCHANGES ({returnRequests.length})
+            {metrics.pendingReturns > 0 && (
+              <span
+                style={{
+                  background: "#e11d48",
+                  color: "#ffffff",
+                  padding: "1px 6px",
+                  fontSize: "9px",
+                  fontWeight: 800,
+                  marginLeft: "6px",
+                }}
+              >
+                {metrics.pendingReturns} PENDING
               </span>
             )}
           </button>
@@ -1007,6 +1192,24 @@ export default function AdminPage() {
                     <div className={styles.statLabel}>ACTIVE PROMO CODES</div>
                     <div className={styles.statValue}>{metrics.activeCoupons}</div>
                     <div className={styles.statHint}>Ready for checkout discounts</div>
+                  </div>
+
+                  <div
+                    className={styles.statCard}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setActiveTab("returns")}
+                  >
+                    <div className={styles.statLabel}>RETURNS &amp; EXCHANGES</div>
+                    <div className={styles.statValue}>{metrics.totalReturns}</div>
+                    <div className={styles.statHint}>
+                      {metrics.pendingReturns > 0 ? (
+                        <span style={{ color: "#f43f5e", fontWeight: 700 }}>
+                          {metrics.pendingReturns} reverse pickups pending &rarr;
+                        </span>
+                      ) : (
+                        "All requests processed"
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1442,6 +1645,292 @@ export default function AdminPage() {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* -------------------- RETURNS & EXCHANGES TAB -------------------- */}
+            {activeTab === "returns" && (
+              <div>
+                <div className={styles.sectionHeader}>
+                  <div>
+                    <div className={styles.sectionTitle}>
+                      CUSTOMER RETURNS &amp; EXCHANGES CONSOLE
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>
+                      Manage reverse pickup requests, inspect replacement sizes, and handle reverse logistics fulfillment.
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        background: "#18181b",
+                        border: "1px solid #27272a",
+                        padding: "6px 12px",
+                        fontSize: "11px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <span style={{ color: "#a1a1aa" }}>PENDING PICKUPS:</span>
+                      <strong style={{ color: metrics.pendingReturns > 0 ? "#f43f5e" : "#22c55e" }}>
+                        {metrics.pendingReturns}
+                      </strong>
+                    </div>
+                    <div
+                      style={{
+                        background: "#18181b",
+                        border: "1px solid #27272a",
+                        padding: "6px 12px",
+                        fontSize: "11px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <span style={{ color: "#a1a1aa" }}>TOTAL REQUESTS:</span>
+                      <strong style={{ color: "#ffffff" }}>{returnRequests.length}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.controlsBar}>
+                  <input
+                    type="text"
+                    className={styles.searchInput}
+                    placeholder="Search by Request ID, Order ID, buyer name, phone, city..."
+                    value={returnSearch}
+                    onChange={(e) => setReturnSearch(e.target.value)}
+                  />
+
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <span style={{ fontSize: "11px", color: "#888888" }}>FILTER:</span>
+                    <select
+                      className={styles.filterSelect}
+                      value={returnFilter}
+                      onChange={(e) => setReturnFilter(e.target.value)}
+                    >
+                      <option value="ALL">ALL REQUESTS</option>
+                      <option value="EXCHANGES">EXCHANGES ONLY</option>
+                      <option value="RETURNS">RETURNS ONLY</option>
+                      <option value="pending">PENDING</option>
+                      <option value="approved">APPROVED</option>
+                      <option value="pickup_scheduled">PICKUP SCHEDULED</option>
+                      <option value="in_transit">IN TRANSIT</option>
+                      <option value="received">RECEIVED AT HUB</option>
+                      <option value="completed">COMPLETED</option>
+                      <option value="rejected">REJECTED</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className={styles.tableWrapper}>
+                  <table className={styles.dataTable}>
+                    <thead>
+                      <tr>
+                        <th>Request ID</th>
+                        <th>Type</th>
+                        <th>Order ID</th>
+                        <th>Date Requested</th>
+                        <th>Customer</th>
+                        <th>Items &amp; Details</th>
+                        <th>Reason</th>
+                        <th>Fulfillment Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredReturns.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={9}
+                            style={{
+                              textAlign: "center",
+                              padding: "48px 16px",
+                              color: "#888",
+                              fontSize: "12px",
+                            }}
+                          >
+                            No return or exchange requests found matching your filters.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredReturns.map((req) => {
+                          const isExchange = req.type === "exchange";
+
+                          return (
+                            <tr key={req.id}>
+                              <td style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "12px" }}>
+                                {req.id}
+                              </td>
+
+                              <td>
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "3px 8px",
+                                    fontSize: "10px",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.08em",
+                                    background: isExchange ? "#3b82f6" : "#8b5cf6",
+                                    color: "#ffffff",
+                                  }}
+                                >
+                                  {req.type.toUpperCase()}
+                                </span>
+                              </td>
+
+                              <td style={{ fontFamily: "monospace", fontSize: "11px" }}>
+                                <span
+                                  onClick={() => {
+                                    const matchOrder = orders.find((o) => o.id === req.order_id);
+                                    if (matchOrder) setSelectedOrder(matchOrder);
+                                    else triggerToast(`Order ${req.order_id} details not cached`);
+                                  }}
+                                  style={{
+                                    cursor: "pointer",
+                                    textDecoration: "underline",
+                                    color: "#38bdf8",
+                                  }}
+                                  title="Click to view full original order"
+                                >
+                                  {req.order_id}
+                                </span>
+                              </td>
+
+                              <td style={{ fontSize: "11px", color: "#888888" }}>
+                                {new Date(req.created_at).toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </td>
+
+                              <td>
+                                <div style={{ fontWeight: 700 }}>{req.customer.fullName}</div>
+                                <div style={{ fontSize: "10px", color: "#888888" }}>
+                                  {req.customer.phone}
+                                </div>
+                                <div style={{ fontSize: "10px", color: "#666666" }}>
+                                  {req.customer.city}, {req.customer.state}
+                                </div>
+                              </td>
+
+                              <td>
+                                {req.items.map((it, idx) => (
+                                  <div
+                                    key={idx}
+                                    style={{
+                                      fontSize: "11px",
+                                      marginBottom: idx < req.items.length - 1 ? "4px" : "0",
+                                    }}
+                                  >
+                                    <strong>{it.name}</strong> ({it.quantity || 1}x)
+                                    <div style={{ fontSize: "10px", color: "#aaa" }}>
+                                      Current Size: <strong>{it.size || "M"}</strong>
+                                      {it.exchange_size && (
+                                        <span
+                                          style={{
+                                            marginLeft: "6px",
+                                            background: "#166534",
+                                            color: "#4ade80",
+                                            padding: "1px 5px",
+                                            fontWeight: 700,
+                                          }}
+                                        >
+                                          &rarr; Exchange for: {it.exchange_size}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </td>
+
+                              <td style={{ fontSize: "11px", maxWidth: "180px" }}>
+                                <div style={{ fontWeight: 600 }}>{req.reason_category}</div>
+                                {req.customer_notes && (
+                                  <div
+                                    style={{
+                                      fontSize: "10px",
+                                      color: "#888",
+                                      fontStyle: "italic",
+                                      marginTop: "2px",
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                    title={req.customer_notes}
+                                  >
+                                    &ldquo;{req.customer_notes}&rdquo;
+                                  </div>
+                                )}
+                              </td>
+
+                              <td>
+                                <select
+                                  value={req.status}
+                                  onChange={(e) =>
+                                    handleUpdateReturnStatus(
+                                      req.id,
+                                      e.target.value as ReturnExchangeRequest["status"],
+                                      req.admin_notes
+                                    )
+                                  }
+                                  className={styles.fieldSelect}
+                                  style={{
+                                    padding: "4px 8px",
+                                    fontSize: "10px",
+                                    fontWeight: 700,
+                                    textTransform: "uppercase",
+                                    width: "auto",
+                                    background:
+                                      req.status === "approved"
+                                        ? "#064e3b"
+                                        : req.status === "completed"
+                                        ? "#14532d"
+                                        : req.status === "rejected"
+                                        ? "#7f1d1d"
+                                        : "#27272a",
+                                    color: "#ffffff",
+                                  }}
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="approved">Approved</option>
+                                  <option value="pickup_scheduled">Pickup Scheduled</option>
+                                  <option value="in_transit">In Transit</option>
+                                  <option value="received">Received at Hub</option>
+                                  <option value="completed">Completed</option>
+                                  <option value="rejected">Rejected</option>
+                                </select>
+                              </td>
+
+                              <td>
+                                <div className={styles.actionGroup}>
+                                  <button
+                                    className={styles.smallBtn}
+                                    onClick={() => {
+                                      setSelectedReturn(req);
+                                      setReturnStatusNotes(req.admin_notes || "");
+                                    }}
+                                  >
+                                    DOSSIER
+                                  </button>
+                                  <button
+                                    className={styles.deleteBtn}
+                                    onClick={() => handleDeleteReturn(req.id)}
+                                  >
+                                    &times;
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -3166,6 +3655,330 @@ export default function AdminPage() {
               </div>
 
               <button className={styles.ghostButton} onClick={() => setSelectedOrder(null)}>
+                CLOSE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== RETURN / EXCHANGE DOSSIER MODAL ==================== */}
+      {selectedReturn && (
+        <div className={styles.modalBackdrop}>
+          <div className={styles.modalWindow} style={{ maxWidth: "800px" }}>
+            <div className={styles.modalHeader}>
+              <div>
+                <span
+                  style={{
+                    display: "inline-block",
+                    padding: "2px 8px",
+                    background: selectedReturn.type === "exchange" ? "#2563eb" : "#7c3aed",
+                    color: "#ffffff",
+                    fontSize: "9px",
+                    fontWeight: 800,
+                    letterSpacing: "0.1em",
+                    marginRight: "8px",
+                  }}
+                >
+                  {selectedReturn.type.toUpperCase()} REQUEST
+                </span>
+                <span className={styles.modalTitle}>
+                  DOSSIER: {selectedReturn.id}
+                </span>
+              </div>
+              <button
+                className={styles.modalCloseBtn}
+                onClick={() => setSelectedReturn(null)}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              {/* Meta Grid */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "16px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div style={{ background: "#080808", border: "1px solid #222", padding: "14px" }}>
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      color: "#888",
+                      letterSpacing: "0.12em",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    BUYER &amp; CONTACT
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: "14px" }}>
+                    {selectedReturn.customer.fullName}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#aaa", marginTop: "3px" }}>
+                    Email: {selectedReturn.customer.email || "Not recorded"}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#aaa", marginTop: "2px" }}>
+                    Phone: {selectedReturn.customer.phone || "Not recorded"}
+                  </div>
+                </div>
+
+                <div style={{ background: "#080808", border: "1px solid #222", padding: "14px" }}>
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      color: "#888",
+                      letterSpacing: "0.12em",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    REVERSE PICKUP DESTINATION
+                  </div>
+                  <div style={{ fontSize: "12px", lineHeight: "1.5", color: "#ddd" }}>
+                    {selectedReturn.pickup_address ||
+                      `${selectedReturn.customer.address}, ${selectedReturn.customer.city}, ${selectedReturn.customer.state} - ${selectedReturn.customer.pincode}`}
+                  </div>
+                </div>
+
+                <div style={{ background: "#080808", border: "1px solid #222", padding: "14px" }}>
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      color: "#888",
+                      letterSpacing: "0.12em",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    ORIGINAL ORDER
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#ddd" }}>
+                    Order Ref:{" "}
+                    <span
+                      onClick={() => {
+                        const m = orders.find((o) => o.id === selectedReturn.order_id);
+                        if (m) {
+                          setSelectedReturn(null);
+                          setSelectedOrder(m);
+                        } else {
+                          triggerToast(`Order ${selectedReturn.order_id} not cached`);
+                        }
+                      }}
+                      style={{
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        color: "#38bdf8",
+                        fontWeight: 700,
+                        fontFamily: "monospace",
+                      }}
+                    >
+                      {selectedReturn.order_id}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#888", marginTop: "4px" }}>
+                    Requested on:{" "}
+                    {new Date(selectedReturn.created_at).toLocaleString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ background: "#080808", border: "1px solid #222", padding: "14px" }}>
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      color: "#888",
+                      letterSpacing: "0.12em",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    REASON CATEGORY &amp; FEEDBACK
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: "13px", color: "#fbbf24" }}>
+                    {selectedReturn.reason_category}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: "#bbb",
+                      marginTop: "4px",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    &ldquo;{selectedReturn.customer_notes || "No extra comment provided"}&rdquo;
+                  </div>
+                </div>
+              </div>
+
+              {/* Items in Request */}
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  marginBottom: "10px",
+                }}
+              >
+                REQUESTED ITEMS &amp; SIZES
+              </div>
+
+              <div className={styles.tableWrapper} style={{ marginBottom: "20px" }}>
+                <table className={styles.dataTable}>
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Delivered Size</th>
+                      {selectedReturn.type === "exchange" && <th>Desired Replacement Size</th>}
+                      <th>Unit Price</th>
+                      <th>Quantity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedReturn.items.map((it, idx) => (
+                      <tr key={idx}>
+                        <td>
+                          <div style={{ fontWeight: 700 }}>{it.name}</div>
+                          <div style={{ fontSize: "10px", color: "#888" }}>
+                            SKU / ID: {it.product_id}
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            style={{
+                              background: "#27272a",
+                              color: "#e4e4e7",
+                              padding: "2px 8px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {it.size || "M"}
+                          </span>
+                        </td>
+                        {selectedReturn.type === "exchange" && (
+                          <td>
+                            <span
+                              style={{
+                                background: "#166534",
+                                color: "#4ade80",
+                                padding: "2px 10px",
+                                fontSize: "12px",
+                                fontWeight: 800,
+                                border: "1px solid #22c55e",
+                              }}
+                            >
+                              {it.exchange_size || "L"}
+                            </span>
+                          </td>
+                        )}
+                        <td>₹{(it.price || 0).toLocaleString("en-IN")}</td>
+                        <td>{it.quantity || 1}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Admin Notes & AWB tracking */}
+              <div
+                style={{
+                  background: "#0a0a0a",
+                  border: "1px solid #262626",
+                  padding: "16px",
+                  marginBottom: "16px",
+                }}
+              >
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "10px",
+                    letterSpacing: "0.12em",
+                    color: "#888",
+                    marginBottom: "6px",
+                    fontWeight: 700,
+                  }}
+                >
+                  ADMIN LOGISTICS NOTES / REVERSE TRACKING AWB
+                </label>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <input
+                    type="text"
+                    value={returnStatusNotes}
+                    onChange={(e) => setReturnStatusNotes(e.target.value)}
+                    placeholder="e.g. Delhivery reverse AWB #1293847, pickup scheduled for 2 PM"
+                    style={{
+                      flex: 1,
+                      background: "#141414",
+                      border: "1px solid #333",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleUpdateReturnStatus(
+                        selectedReturn.id,
+                        selectedReturn.status,
+                        returnStatusNotes
+                      );
+                      triggerToast("Admin notes updated.");
+                    }}
+                    style={{
+                      background: "#27272a",
+                      color: "#fff",
+                      border: "1px solid #444",
+                      padding: "8px 16px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    SAVE NOTE
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "11px", color: "#888" }}>Fulfillment Status:</span>
+                <select
+                  value={selectedReturn.status}
+                  onChange={(e) => {
+                    const newSt = e.target.value as ReturnExchangeRequest["status"];
+                    handleUpdateReturnStatus(selectedReturn.id, newSt, returnStatusNotes);
+                    setSelectedReturn({ ...selectedReturn, status: newSt });
+                  }}
+                  className={styles.fieldSelect}
+                  style={{
+                    width: "auto",
+                    padding: "6px 12px",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <option value="pending">Pending Review</option>
+                  <option value="approved">Approved</option>
+                  <option value="pickup_scheduled">Pickup Scheduled</option>
+                  <option value="in_transit">In Transit to Warehouse</option>
+                  <option value="received">Received at Hub</option>
+                  <option value="completed">Completed / Restocked</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
+              <button
+                className={styles.ghostButton}
+                onClick={() => setSelectedReturn(null)}
+              >
                 CLOSE
               </button>
             </div>

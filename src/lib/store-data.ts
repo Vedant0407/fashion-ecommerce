@@ -36,6 +36,42 @@ export type StoreOrder = {
   notes?: string;
 };
 
+export type ReturnExchangeItem = {
+  product_id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  size?: string;
+  color?: string;
+  image?: string;
+  exchange_size?: string;
+  exchange_color?: string;
+  reason?: string;
+};
+
+export type ReturnExchangeRequest = {
+  id: string;
+  order_id: string;
+  created_at: string;
+  type: "return" | "exchange";
+  status: "pending" | "approved" | "pickup_scheduled" | "received" | "completed" | "rejected";
+  customer: {
+    fullName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+  };
+  items: ReturnExchangeItem[];
+  reason_category: string;
+  customer_notes?: string;
+  admin_notes?: string;
+  pickup_address?: string;
+  resolved_at?: string;
+};
+
 export type StoreCoupon = {
   code: string;
   type: "percentage" | "fixed" | "free_shipping";
@@ -74,6 +110,7 @@ export type StoreData = {
   products: Product[];
   categories: Category[];
   orders: StoreOrder[];
+  returns: ReturnExchangeRequest[];
   coupons: StoreCoupon[];
   settings: StoreSettings;
 };
@@ -240,6 +277,41 @@ const DEFAULT_ORDERS: StoreOrder[] = [
   },
 ];
 
+const DEFAULT_RETURNS: ReturnExchangeRequest[] = [
+  {
+    id: "EXC-9482-1",
+    order_id: "GO-9482-A1",
+    created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+    type: "exchange",
+    status: "pending",
+    customer: {
+      fullName: "Arjun Sharma",
+      email: "arjun.sharma@example.com",
+      phone: "+91 98201 12345",
+      address: "Flat 402, Signature Heights, Bandra West",
+      city: "Mumbai",
+      state: "Maharashtra",
+      pincode: "400050",
+    },
+    items: [
+      {
+        product_id: "oversized-black-tee",
+        name: "Oversized Black Tee",
+        price: 2499,
+        quantity: 1,
+        size: "L",
+        color: "BLACK",
+        image: "/black-tee.jfif",
+        exchange_size: "XL",
+        reason: "Need a looser fit in the chest",
+      },
+    ],
+    reason_category: "Size too small / tight",
+    customer_notes: "Please arrange an exchange for size XL. Tee is unworn with original tags intact.",
+    pickup_address: "Flat 402, Signature Heights, Bandra West, Mumbai, Maharashtra - 400050",
+  },
+];
+
 let memoryData: StoreData | null = null;
 
 export function getInitialData(): StoreData {
@@ -247,6 +319,7 @@ export function getInitialData(): StoreData {
     products: FALLBACK_PRODUCTS,
     categories: FALLBACK_CATEGORIES,
     orders: DEFAULT_ORDERS,
+    returns: DEFAULT_RETURNS,
     coupons: DEFAULT_COUPONS,
     settings: DEFAULT_SETTINGS,
   };
@@ -295,11 +368,30 @@ export async function readStoreData(): Promise<StoreData> {
     }
   }
 
+  // Merge return/exchange requests so no request is ever lost
+  const returnMap = new Map<string, ReturnExchangeRequest>();
+  for (const r of initial.returns) {
+    returnMap.set(r.id, r);
+  }
+  if (fileData?.returns && Array.isArray(fileData.returns)) {
+    for (const r of fileData.returns) {
+      returnMap.set(r.id, r);
+    }
+  }
+  if (tmpData?.returns && Array.isArray(tmpData.returns)) {
+    for (const r of tmpData.returns) {
+      returnMap.set(r.id, r);
+    }
+  }
+
   const base = tmpData || fileData || {};
   memoryData = {
     products: base.products && base.products.length ? base.products : (fileData?.products || initial.products),
     categories: base.categories && base.categories.length ? base.categories : (fileData?.categories || initial.categories),
     orders: Array.from(orderMap.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ),
+    returns: Array.from(returnMap.values()).sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     ),
     coupons: base.coupons || fileData?.coupons || initial.coupons,
@@ -546,4 +638,96 @@ export async function saveStoreSettings(settings: Partial<StoreSettings>): Promi
   data.settings = { ...data.settings, ...settings };
   await writeStoreData(data);
   return data.settings;
+}
+
+// ----------------- Return & Exchange Helpers -----------------
+
+export async function getStoreReturns(): Promise<ReturnExchangeRequest[]> {
+  const data = await readStoreData();
+  return (data.returns || []).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+}
+
+export async function addStoreReturn(
+  returnReq: ReturnExchangeRequest
+): Promise<ReturnExchangeRequest> {
+  const data = await readStoreData();
+  if (!data.returns) data.returns = [];
+  const existingIdx = data.returns.findIndex((r) => r.id === returnReq.id);
+  if (existingIdx >= 0) {
+    data.returns[existingIdx] = { ...data.returns[existingIdx], ...returnReq };
+  } else {
+    data.returns.unshift(returnReq);
+  }
+  await writeStoreData(data);
+  return returnReq;
+}
+
+export async function updateStoreReturnStatus(
+  id: string,
+  status: ReturnExchangeRequest["status"],
+  admin_notes?: string
+): Promise<ReturnExchangeRequest | null> {
+  const data = await readStoreData();
+  if (!data.returns) data.returns = [];
+  const returnReq = data.returns.find((r) => r.id === id);
+  if (!returnReq) return null;
+
+  returnReq.status = status;
+  if (admin_notes !== undefined) {
+    returnReq.admin_notes = admin_notes;
+  }
+  if (status === "completed" || status === "rejected") {
+    returnReq.resolved_at = new Date().toISOString();
+  }
+
+  await writeStoreData(data);
+  return returnReq;
+}
+
+export async function syncStoreReturns(
+  clientReturns: ReturnExchangeRequest[]
+): Promise<ReturnExchangeRequest[]> {
+  if (!Array.isArray(clientReturns) || clientReturns.length === 0) {
+    return getStoreReturns();
+  }
+
+  const data = await readStoreData();
+  if (!data.returns) data.returns = [];
+  const existingMap = new Map(data.returns.map((r) => [r.id, r]));
+
+  for (const cr of clientReturns) {
+    if (!cr.id) continue;
+    const existing = existingMap.get(cr.id);
+    if (!existing) {
+      existingMap.set(cr.id, cr);
+    } else {
+      existingMap.set(cr.id, {
+        ...existing,
+        ...cr,
+        status: cr.status || existing.status,
+        admin_notes: cr.admin_notes || existing.admin_notes,
+      });
+    }
+  }
+
+  data.returns = Array.from(existingMap.values()).sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  await writeStoreData(data);
+  return data.returns;
+}
+
+export async function deleteStoreReturn(id: string): Promise<boolean> {
+  const data = await readStoreData();
+  if (!data.returns) return false;
+  const initialLen = data.returns.length;
+  data.returns = data.returns.filter((r) => r.id !== id);
+  if (data.returns.length !== initialLen) {
+    await writeStoreData(data);
+    return true;
+  }
+  return false;
 }
