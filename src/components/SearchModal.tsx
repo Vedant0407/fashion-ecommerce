@@ -397,9 +397,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     {results.map((product) => (
                       <Link
                         key={product.id}
-                        href={`/products/${product.id}?from=${
-                          product.is_new ? "newin" : product.is_trending ? "trending" : "products"
-                        }`}
+                        href={`/products/${product.id}?from=search`}
                         onClick={onClose}
                         style={{
                           display: "flex",

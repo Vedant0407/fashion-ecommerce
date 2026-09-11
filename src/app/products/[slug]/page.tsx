@@ -10,6 +10,70 @@ import AboutSection from "@/components/ui/AboutSection";
 import { ImageSwiper } from "@/components/ui/image-swiper";
 import { Product, getProductByIdOrSlug, getAllProducts } from "@/lib/catalog";
 
+function getCategoryGroup(item?: Product | null): string {
+  if (!item) return "other";
+  const slug = item.category_slug?.toLowerCase().trim() || "";
+  const name = item.category_name?.toLowerCase().trim() || "";
+  const id = item.id?.toLowerCase().trim() || "";
+  const title = item.name?.toLowerCase().trim() || "";
+  const text = `${slug} ${name} ${id} ${title}`;
+
+  if (slug === "t-shirts" || text.includes("tee") || text.includes("t-shirt") || text.includes("tshirt")) {
+    return "t-shirts";
+  }
+  if (slug === "hoodies" || text.includes("hoodie") || text.includes("fleece") || text.includes("sweatshirt")) {
+    return "hoodies";
+  }
+  if (slug === "pants" || text.includes("pant") || text.includes("cargo") || text.includes("trouser")) {
+    return "pants";
+  }
+  if (slug === "caps" || text.includes("cap") || text.includes("hat") || text.includes("beanie")) {
+    return "caps";
+  }
+  if (slug === "bags" || text.includes("bag") || text.includes("tote") || text.includes("crossbody")) {
+    return "bags";
+  }
+  if (slug === "accessories" || text.includes("chain") || text.includes("accessory") || text.includes("jewelry") || text.includes("sock")) {
+    return "accessories";
+  }
+
+  return slug || name || "other";
+}
+
+function isSameCategory(a?: Product | null, b?: Product | null): boolean {
+  if (!a || !b) return false;
+  const groupA = getCategoryGroup(a);
+  const groupB = getCategoryGroup(b);
+  if (groupA !== "other" && groupB !== "other") {
+    return groupA === groupB;
+  }
+  return (
+    (Boolean(a.category_slug) && a.category_slug?.toLowerCase() === b.category_slug?.toLowerCase()) ||
+    (Boolean(a.category_name) && a.category_name?.toLowerCase() === b.category_name?.toLowerCase())
+  );
+}
+
+function getCategoryDisplayName(item?: Product | null): string {
+  if (!item) return "PIECES";
+  const group = getCategoryGroup(item);
+  switch (group) {
+    case "t-shirts":
+      return "T-SHIRTS";
+    case "hoodies":
+      return "HOODIES";
+    case "pants":
+      return "PANTS & CARGOS";
+    case "caps":
+      return "CAPS & HEADWEAR";
+    case "bags":
+      return "BAGS & TOTES";
+    case "accessories":
+      return "ACCESSORIES";
+    default:
+      return item.category_name?.toUpperCase() || "SIMILAR PIECES";
+  }
+}
+
 export default function ProductPage() {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -121,8 +185,9 @@ export default function ProductPage() {
     };
   }, []);
 
-  // Determine effective context: "newin" | "trending" | "products"
-  const activeContext: "newin" | "trending" | "products" = useMemo(() => {
+  // Determine effective context: "search" | "newin" | "trending" | "products"
+  const activeContext: "search" | "newin" | "trending" | "products" = useMemo(() => {
+    if (browseContext === "search") return "search";
     if (browseContext === "newin" || browseContext === "new") return "newin";
     if (browseContext === "trending") return "trending";
     if (browseContext === "products" || browseContext === "catalogue" || browseContext === "category") return "products";
@@ -136,6 +201,13 @@ export default function ProductPage() {
   // Under-the-product items tailored exclusively to the context
   const underProducts = useMemo(() => {
     if (!product) return [];
+
+    if (activeContext === "search") {
+      // ONLY pieces from the exact same category as the opened product (e.g. only T-Shirts under T-Shirts)
+      return allProducts.filter(
+        (item) => item.id !== product.id && isSameCategory(product, item)
+      );
+    }
 
     if (activeContext === "newin") {
       // ONLY New In products, excluding current product
@@ -153,30 +225,28 @@ export default function ProductPage() {
       return trends.length > 0 ? trends : allProducts.filter((item) => item.id !== product.id).slice(0, 4);
     }
 
-    // Standard product/collection: pieces from same category, excluding current product
-    const catSlug = product.category_slug?.toLowerCase();
-    const catName = product.category_name?.toLowerCase();
-
-    const sameCat = allProducts.filter((item) => {
-      if (item.id === product.id) return false;
-      if (catSlug && item.category_slug?.toLowerCase() === catSlug) return true;
-      if (catName && item.category_name?.toLowerCase() === catName) return true;
-      return false;
-    });
-
-    if (sameCat.length >= 4) {
-      return sameCat.slice(0, 8);
+    // Standard product/collection: pieces from the exact same category
+    const sameCategory = allProducts.filter(
+      (item) => item.id !== product.id && isSameCategory(product, item)
+    );
+    if (sameCategory.length > 0) {
+      return sameCategory;
     }
 
-    // Supplement with other pieces if category has few items
-    const remaining = allProducts.filter(
-      (item) => item.id !== product.id && !sameCat.some((c) => c.id === item.id)
-    );
-    return [...sameCat, ...remaining].slice(0, 8);
+    return allProducts.filter((item) => item.id !== product.id).slice(0, 4);
   }, [allProducts, product, activeContext]);
 
   // Section header for recommended pieces under the product
   const sectionHeaderInfo = useMemo(() => {
+    const catDisplayName = getCategoryDisplayName(product);
+
+    if (activeContext === "search") {
+      return {
+        kicker: `SEARCH RESULTS // ${catDisplayName}`,
+        title: `MORE ${catDisplayName}`,
+        subtitle: `Explore other ${catDisplayName.toLowerCase()} matching your selection.`,
+      };
+    }
     if (activeContext === "newin") {
       return {
         kicker: "SPRING / SUMMER 2026 // NEW ARRIVALS",
@@ -192,11 +262,9 @@ export default function ProductPage() {
       };
     }
     return {
-      kicker: `GREENO // ${product?.category_name?.toUpperCase() || "CURATED CATALOGUE"}`,
-      title: product?.category_name
-        ? `MORE ${product.category_name.toUpperCase()}`
-        : "MORE FROM THIS COLLECTION",
-      subtitle: "Curated streetwear pieces designed to complete the look.",
+      kicker: `GREENO // ${catDisplayName}`,
+      title: `MORE ${catDisplayName}`,
+      subtitle: `Curated streetwear pieces designed to complete the look.`,
     };
   }, [activeContext, product]);
 
