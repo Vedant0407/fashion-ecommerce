@@ -3,9 +3,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import Link from "next/link";
-import { useCart } from "@/context/CartContext";
-
 import { Product, getAllProducts } from "@/lib/catalog";
 
 const DEFAULT_FALLBACK_TRENDING: Partial<Product>[] = [
@@ -47,8 +44,6 @@ export default function TrendingProducts() {
   const [trendingList, setTrendingList] = useState<Partial<Product>[]>(DEFAULT_FALLBACK_TRENDING);
   const [current, setCurrent] = useState(0);
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [isAdded, setIsAdded] = useState(false);
-  const { addToCart, openCart } = useCart();
 
   useEffect(() => {
     async function loadTrending() {
@@ -128,33 +123,13 @@ export default function TrendingProducts() {
     }
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (activeItem.id) {
-      addToCart(
-        {
-          id: activeItem.id,
-          name: activeItem.name || "Trending Piece",
-          price: Number(activeItem.price) || 2499,
-          image: currentPhoto,
-          size: "M",
-          color: activeItem.color || "BLACK",
-        },
-        1
-      );
-      setIsAdded(true);
-      openCart();
-      setTimeout(() => setIsAdded(false), 1500);
-    }
-  };
-
   return (
     <section className="trending-section" id="trending">
       <div className="trending-container">
         <AnimatePresence mode="wait">
-          <motion.div
+          <motion.a
             key={`${activeItem.id || activeIndex}-${photoIndex}`}
+            href={itemLink}
             className="trending-slide"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -171,21 +146,9 @@ export default function TrendingProducts() {
                 {activeItem.category_name || "EXCLUSIVE DROP"}
               </span>
               <h2>{activeItem.name}</h2>
-
-              <div className="trending-actions">
-                <button
-                  type="button"
-                  className={`trending-cart-btn ${isAdded ? "added" : ""}`}
-                  onClick={handleAddToCart}
-                >
-                  {isAdded ? "ADDED TO CART ✓" : "ADD TO CART"}
-                </button>
-                <Link href={itemLink} className="trending-cta">
-                  EXPLORE PIECE &rarr;
-                </Link>
-              </div>
+              <span className="trending-cta">SHOP NOW &rarr;</span>
             </div>
-          </motion.div>
+          </motion.a>
         </AnimatePresence>
 
         {/* LEFT ARROW (Appears on hover) */}
