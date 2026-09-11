@@ -104,7 +104,7 @@ export default function ProductPage() {
 
   // Navigation context: 'newin' | 'trending' | 'products'
   const [browseContext, setBrowseContext] = useState<string | null>(null);
-  const [openAccordion, setOpenAccordion] = useState<string | null>("details");
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -390,22 +390,123 @@ export default function ProductPage() {
               </p>
             </div>
 
-            <div className="product-left-section">
-              <h3>MATERIAL &amp; FABRIC</h3>
-              <p>
-                {product.material
-                  ? product.fabric
-                    ? `${product.material} • ${product.fabric}`
-                    : product.material
-                  : product.fabric || "Heavyweight Premium Combed Cotton"}
-              </p>
-            </div>
+            {/* DETAILS ACCORDIONS */}
+            <div className="product-accordions">
 
-            <div className="product-left-section">
-              <h3>FIT SPECIFICATION</h3>
-              <p>
-                {product.fit || "Relaxed Boxy Fit"}
-              </p>
+              {/* 1. PRODUCT DETAILS */}
+              <div className="product-accordion">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenAccordion(openAccordion === "details" ? null : "details")
+                  }
+                >
+                  <span>PRODUCT DETAILS &amp; SPECIFICATIONS</span>
+                  <span>{openAccordion === "details" ? "−" : "+"}</span>
+                </button>
+
+                <div
+                  className="accordion-content"
+                  style={{
+                    display: openAccordion === "details" ? "block" : "none",
+                    paddingBottom: "18px",
+                  }}
+                >
+                  <ul
+                    style={{
+                      margin: "6px 0 0 0",
+                      paddingLeft: "18px",
+                      fontSize: "12px",
+                      color: "#666666",
+                      lineHeight: "1.7",
+                    }}
+                  >
+                    <li>
+                      <strong>Material / Composition:</strong>{" "}
+                      {product.material || "100% Combed Cotton"}
+                    </li>
+                    <li>
+                      <strong>Fabric Construction:</strong>{" "}
+                      {product.fabric || "Heavyweight Premium Knit"}
+                    </li>
+                    <li>
+                      <strong>Fit Silhouette:</strong>{" "}
+                      {product.fit || "Relaxed Boxy Streetwear Fit"}
+                    </li>
+                    <li>
+                      <strong>Colorway:</strong> {product.color || "Black"}
+                    </li>
+                    <li>
+                      <strong>Product Code / SKU:</strong>{" "}
+                      {product.product_no || product.id}
+                    </li>
+                    {product.is_new && (
+                      <li style={{ color: "#000000", fontWeight: 700 }}>
+                        ✦ Spring / Summer 2026 New Arrival
+                      </li>
+                    )}
+                    {product.is_trending && (
+                      <li style={{ color: "#000000", fontWeight: 700 }}>
+                        ★ Trending Season Essential
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+
+              {/* 2. DELIVERY & RETURNS */}
+              <div className="product-accordion">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenAccordion(openAccordion === "delivery" ? null : "delivery")
+                  }
+                >
+                  <span>DELIVERY &amp; 3-DAY RETURNS</span>
+                  <span>{openAccordion === "delivery" ? "−" : "+"}</span>
+                </button>
+
+                <div
+                  className="accordion-content"
+                  style={{
+                    display: openAccordion === "delivery" ? "block" : "none",
+                    paddingBottom: "18px",
+                  }}
+                >
+                  <p style={{ marginBottom: "8px", lineHeight: "1.5" }}>
+                    <strong>Complimentary Express Shipping:</strong> Dispatched within 24 hours. Delivered across India within 2–4 business days with live courier tracking.
+                  </p>
+                  <p style={{ margin: 0, lineHeight: "1.5" }}>
+                    <strong>3-Day Exchange &amp; Return Guarantee:</strong> Items are eligible for complimentary size exchanges or returns within 3 days (72 hours) of delivery directly from your Account Orders dashboard.
+                  </p>
+                </div>
+              </div>
+
+              {/* 3. CARE INSTRUCTIONS */}
+              <div className="product-accordion">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenAccordion(openAccordion === "care" ? null : "care")
+                  }
+                >
+                  <span>CARE INSTRUCTIONS</span>
+                  <span>{openAccordion === "care" ? "−" : "+"}</span>
+                </button>
+
+                <div
+                  className="accordion-content"
+                  style={{
+                    display: openAccordion === "care" ? "block" : "none",
+                    paddingBottom: "18px",
+                  }}
+                >
+                  <p style={{ lineHeight: "1.6" }}>
+                    Machine wash cold (30°C) inside out with similar colors. Use mild detergent. Do not bleach. Tumble dry on low or line dry in the shade to preserve garment shape and longevity. Cool iron inside out.
+                  </p>
+                </div>
+              </div>
+
             </div>
 
           </div>
@@ -644,130 +745,6 @@ export default function ProductPage() {
               >
                 {isInWishlist(product.id) ? "♥" : "♡"}
               </button>
-
-            </div>
-
-            {/* DETAILS ACCORDIONS */}
-            <div className="product-accordions">
-
-              {/* 1. PRODUCT DETAILS */}
-              <div className="product-accordion">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenAccordion(openAccordion === "details" ? null : "details")
-                  }
-                >
-                  <span>PRODUCT DETAILS &amp; SPECIFICATIONS</span>
-                  <span>{openAccordion === "details" ? "−" : "+"}</span>
-                </button>
-
-                <div
-                  className="accordion-content"
-                  style={{
-                    display: openAccordion === "details" ? "block" : "none",
-                    paddingBottom: "18px",
-                  }}
-                >
-                  <p style={{ marginBottom: "10px", lineHeight: "1.6" }}>
-                    {product.description ||
-                      `Exclusive ${product.name} tailored for everyday luxury streetwear presence.`}
-                  </p>
-
-                  <ul
-                    style={{
-                      margin: "6px 0 0 0",
-                      paddingLeft: "18px",
-                      fontSize: "12px",
-                      color: "#666666",
-                      lineHeight: "1.7",
-                    }}
-                  >
-                    <li>
-                      <strong>Material / Composition:</strong>{" "}
-                      {product.material || "100% Combed Cotton"}
-                    </li>
-                    <li>
-                      <strong>Fabric Construction:</strong>{" "}
-                      {product.fabric || "Heavyweight Premium Knit"}
-                    </li>
-                    <li>
-                      <strong>Fit Silhouette:</strong>{" "}
-                      {product.fit || "Relaxed Boxy Streetwear Fit"}
-                    </li>
-                    <li>
-                      <strong>Colorway:</strong> {product.color || "Black"}
-                    </li>
-                    <li>
-                      <strong>Product Code / SKU:</strong>{" "}
-                      {product.product_no || product.id}
-                    </li>
-                    {product.is_new && (
-                      <li style={{ color: "#000000", fontWeight: 700 }}>
-                        ✦ Spring / Summer 2026 New Arrival
-                      </li>
-                    )}
-                    {product.is_trending && (
-                      <li style={{ color: "#000000", fontWeight: 700 }}>
-                        ★ Trending Season Essential
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              </div>
-
-              {/* 2. DELIVERY & RETURNS */}
-              <div className="product-accordion">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenAccordion(openAccordion === "delivery" ? null : "delivery")
-                  }
-                >
-                  <span>DELIVERY &amp; 3-DAY RETURNS</span>
-                  <span>{openAccordion === "delivery" ? "−" : "+"}</span>
-                </button>
-
-                <div
-                  className="accordion-content"
-                  style={{
-                    display: openAccordion === "delivery" ? "block" : "none",
-                    paddingBottom: "18px",
-                  }}
-                >
-                  <p style={{ marginBottom: "8px", lineHeight: "1.5" }}>
-                    <strong>Complimentary Express Shipping:</strong> Dispatched within 24 hours. Delivered across India within 2–4 business days with live courier tracking.
-                  </p>
-                  <p style={{ margin: 0, lineHeight: "1.5" }}>
-                    <strong>3-Day Exchange &amp; Return Guarantee:</strong> Items are eligible for complimentary size exchanges or returns within 3 days (72 hours) of delivery directly from your Account Orders dashboard.
-                  </p>
-                </div>
-              </div>
-
-              {/* 3. CARE INSTRUCTIONS */}
-              <div className="product-accordion">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenAccordion(openAccordion === "care" ? null : "care")
-                  }
-                >
-                  <span>CARE INSTRUCTIONS</span>
-                  <span>{openAccordion === "care" ? "−" : "+"}</span>
-                </button>
-
-                <div
-                  className="accordion-content"
-                  style={{
-                    display: openAccordion === "care" ? "block" : "none",
-                    paddingBottom: "18px",
-                  }}
-                >
-                  <p style={{ lineHeight: "1.6" }}>
-                    Machine wash cold (30°C) inside out with similar colors. Use mild detergent. Do not bleach. Tumble dry on low or line dry in the shade to preserve garment shape and longevity. Cool iron inside out.
-                  </p>
-                </div>
-              </div>
 
             </div>
 
