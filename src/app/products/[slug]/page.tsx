@@ -8,6 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import AboutSection from "@/components/ui/AboutSection";
 import { ImageSwiper } from "@/components/ui/image-swiper";
+import ProductImageLightbox from "@/components/ProductImageLightbox";
 import { Product, getProductByIdOrSlug, getAllProducts } from "@/lib/catalog";
 
 function getCategoryGroup(item?: Product | null): string {
@@ -98,6 +99,8 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
   const [selectedColor, setSelectedColor] = useState<string>("BLACK");
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Navigation context: 'newin' | 'trending' | 'products'
   const [browseContext, setBrowseContext] = useState<string | null>(null);
@@ -414,6 +417,10 @@ export default function ProductPage() {
               images={productImages.join(",")}
               cardWidth={420}
               cardHeight={560}
+              onImageClick={(idx) => {
+                setLightboxIndex(idx);
+                setLightboxOpen(true);
+              }}
             />
 
           </div>
@@ -892,6 +899,14 @@ export default function ProductPage() {
         </section>
 
       </main>
+
+      <ProductImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        images={productImages}
+        initialIndex={lightboxIndex}
+        productName={product.name}
+      />
 
       <AboutSection />
     </>

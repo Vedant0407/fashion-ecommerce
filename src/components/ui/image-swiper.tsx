@@ -7,6 +7,7 @@ interface ImageSwiperProps {
   cardWidth?: number;
   cardHeight?: number;
   className?: string;
+  onImageClick?: (index: number) => void;
 }
 
 export const ImageSwiper: React.FC<ImageSwiperProps> = ({
@@ -14,6 +15,7 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
   cardWidth = 420,
   cardHeight = 560,
   className = "",
+  onImageClick,
 }) => {
   const imageList = images
     .split(",")
@@ -82,6 +84,9 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
         previousImage();
       }
     } else {
+      if (Math.abs(distance) < 8) {
+        onImageClick?.(currentIndex);
+      }
       setDragX(0);
     }
   };
@@ -197,6 +202,54 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
             pointerEvents: "none",
           }}
         />
+
+        {onImageClick && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onImageClick(currentIndex);
+            }}
+            title="Click to view full box & zoom"
+            aria-label="Expand image"
+            style={{
+              position: "absolute",
+              bottom: "16px",
+              right: "16px",
+              width: "36px",
+              height: "36px",
+              borderRadius: "50%",
+              background: "rgba(255, 255, 255, 0.92)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+              border: "1px solid rgba(0, 0, 0, 0.08)",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.12)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#111111",
+              cursor: "pointer",
+              zIndex: 10,
+              transition: "all 0.2s ease",
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              <line x1="11" y1="8" x2="11" y2="14" />
+              <line x1="8" y1="11" x2="14" y2="11" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* IMAGE COUNTER */}
