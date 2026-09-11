@@ -62,9 +62,6 @@ export default function ProductCard({
 
   return (
     <div className="product-card">
-      {/* Red Save Badge */}
-      <span className="product-save-badge">SAVE 14%</span>
-
       {/* Wishlist Button */}
       <button
         type="button"

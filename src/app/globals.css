@@ -829,22 +829,6 @@ select {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
 }
 
-.product-save-badge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 4;
-  background: #dc2626;
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  padding: 4px 10px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  pointer-events: none;
-}
-
 .product-wishlist-btn {
   position: absolute;
   top: 12px;
