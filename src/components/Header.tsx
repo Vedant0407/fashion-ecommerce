@@ -8,11 +8,12 @@ import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { createClient } from "@/lib/supabase/client";
 import SearchModal from "@/components/SearchModal";
+import CartDrawer from "@/components/CartDrawer";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { cartCount } = useCart();
+  const { cartCount, openCart } = useCart();
   const { wishlistCount } = useWishlist();
 
   const [isScrolled, setIsScrolled] = useState(false);
@@ -242,7 +243,29 @@ export default function Header() {
                       <Link href="/account" onClick={() => setAccountOpen(false)}>ACCOUNT DETAILS</Link>
                       <Link href="/account/orders" onClick={() => setAccountOpen(false)}>MY ORDERS</Link>
                       <Link href="/wishlist" onClick={() => setAccountOpen(false)}>MY WISHLIST</Link>
-                      <Link href="/cart" onClick={() => setAccountOpen(false)}>SHOPPING BAG</Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAccountOpen(false);
+                          openCart();
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          textAlign: "left",
+                          padding: "8px 12px",
+                          font: "inherit",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          letterSpacing: "0.12em",
+                          cursor: "pointer",
+                          color: "inherit",
+                          width: "100%",
+                          display: "block",
+                        }}
+                      >
+                        SHOPPING BAG
+                      </button>
                       <button onClick={handleLogout}>LOG OUT</button>
                     </>
                   ) : (
@@ -264,8 +287,9 @@ export default function Header() {
               )}
             </div>
 
-            <Link
-              href="/cart"
+            <button
+              type="button"
+              onClick={openCart}
               className="header-icon cart-icon"
               aria-label="Shopping bag"
               title="Shopping bag"
@@ -283,7 +307,7 @@ export default function Header() {
               {cartCount > 0 && (
                 <span className="cart-count">{cartCount}</span>
               )}
-            </Link>
+            </button>
           </div>
         </nav>
       </header>
@@ -292,6 +316,8 @@ export default function Header() {
         isOpen={searchOpen}
         onClose={() => setSearchOpen(false)}
       />
+
+      <CartDrawer />
     </>
   );
 }

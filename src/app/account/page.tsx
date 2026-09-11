@@ -5,10 +5,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { useCart } from "@/context/CartContext";
 import styles from "./account.module.css";
 
 export default function AccountPage() {
   const router = useRouter();
+  const { openCart } = useCart();
 
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -103,9 +105,9 @@ export default function AccountPage() {
             <Link href="/account/orders" className={styles.sideLink}>
               ORDER HISTORY
             </Link>
-            <Link href="/cart" className={styles.sideLink}>
+            <button type="button" onClick={openCart} className={styles.sideLink} style={{ background: "none", border: "none", textAlign: "left", cursor: "pointer", width: "100%", font: "inherit" }}>
               SHOPPING BAG
-            </Link>
+            </button>
             <button className={styles.sideButton} onClick={handleLogout}>
               LOG OUT
             </button>
@@ -134,13 +136,13 @@ export default function AccountPage() {
                 </p>
               </Link>
 
-              <Link href="/cart" className={styles.card}>
+              <div role="button" tabIndex={0} onClick={openCart} className={styles.card} style={{ cursor: "pointer" }}>
                 <span className={styles.cardLabel}>SHOPPING</span>
                 <h2 className={styles.cardTitle}>SHOPPING BAG</h2>
                 <p className={styles.cardText}>
                   Review your selected pieces before checkout.
                 </p>
-              </Link>
+              </div>
 
               <div className={styles.card}>
                 <span className={styles.cardLabel}>PAYMENT</span>

@@ -43,6 +43,10 @@ type CartContextType = {
   appliedCoupon: AppliedCoupon | null;
   applyCoupon: (code: string) => Promise<{ success: boolean; message: string }>;
   removeCoupon: () => void;
+  isCartOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
+  toggleCart: () => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -51,6 +55,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartProduct[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const openCart = () => setIsCartOpen(true);
+  const closeCart = () => setIsCartOpen(false);
+  const toggleCart = () => setIsCartOpen((prev) => !prev);
+
+  // Global open/close cart events
+  useEffect(() => {
+    const handleOpen = () => setIsCartOpen(true);
+    const handleClose = () => setIsCartOpen(false);
+    window.addEventListener("greeno_open_cart", handleOpen);
+    window.addEventListener("greeno_close_cart", handleClose);
+    return () => {
+      window.removeEventListener("greeno_open_cart", handleOpen);
+      window.removeEventListener("greeno_close_cart", handleClose);
+    };
+  }, []);
 
   // Load saved cart and coupon
   useEffect(() => {
@@ -161,6 +182,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         },
       ];
     });
+    setIsCartOpen(true);
   };
 
   const removeFromCart = (id: string) => {
@@ -256,6 +278,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         appliedCoupon,
         applyCoupon,
         removeCoupon,
+        isCartOpen,
+        openCart,
+        closeCart,
+        toggleCart,
       }}
     >
       {children}
