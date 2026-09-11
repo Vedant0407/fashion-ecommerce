@@ -186,59 +186,44 @@ function LoginFormContent() {
   return (
     <main className="premium-auth-wrapper">
       <div className="premium-auth-card">
-        {/* Left Column: Perks & Offers Showcase */}
-        <div className="premium-auth-perks-side">
-          <div className="premium-perks-logo-box">
-            <span className="premium-perks-logo-text">G</span>
-          </div>
+        {/* Left Column: Visual Showcase */}
+        <div className="premium-auth-visual">
+          <div className="premium-auth-visual-inner">
+            <img
+              src="/hero.jfif"
+              alt="GreenO Luxury Streetwear"
+              className="premium-auth-visual-img"
+            />
+            <div className="premium-auth-visual-overlay" />
 
-          <div className="premium-perks-header">
-            <h2 className="premium-perks-title">Hello again, snoozer!</h2>
-            <p className="premium-perks-subtitle">Exciting offer waiting for you</p>
-          </div>
-
-          <div className="premium-perks-list">
-            <div className="premium-perk-item">
-              <div className="premium-perk-icon-wrap">
-                <span className="premium-perk-icon">🎉</span>
-              </div>
-              <p className="premium-perk-text">
-                Enjoy hassle free shopping with the best offers applied for you
-              </p>
+            {/* Emblem at Top Center */}
+            <div className="premium-auth-emblem">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="m4.93 4.93 4.24 4.24M14.83 14.83l4.24 4.24M14.83 9.17l4.24-4.24M4.93 19.07l4.24-4.24" />
+              </svg>
             </div>
 
-            <div className="premium-perk-item">
-              <div className="premium-perk-icon-wrap">
-                <span className="premium-perk-icon">🤩</span>
-              </div>
-              <p className="premium-perk-text">
-                Explore unbeatable prices and unmatchable value
-              </p>
-            </div>
-
-            <div className="premium-perk-item">
-              <div className="premium-perk-icon-wrap">
-                <span className="premium-perk-icon">🛡️</span>
-              </div>
-              <p className="premium-perk-text">
-                100% secure &amp; spam free, we will not annoy you, pinky promise!
-              </p>
+            {/* Footer on Visual */}
+            <div className="premium-auth-visual-footer">
+              <p className="premium-visual-tag">SPRING / SUMMER 2026</p>
+              <h2 className="premium-visual-title">GREENO STREETWEAR</h2>
             </div>
           </div>
         </div>
 
         {/* Right Column: Form */}
         <div className="premium-auth-form-side">
-          {/* Close 'X' Button at top-right */}
-          <Link href="/" className="premium-auth-close-btn" title="Close" aria-label="Close">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
+          {/* Back Arrow */}
+          <Link href="/" className="premium-auth-back-btn" title="Back to home">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
             </svg>
           </Link>
 
           {/* Heading */}
-          <h1 className="premium-auth-heading">Login with Email</h1>
+          <h1 className="premium-auth-heading">Log in</h1>
           <p className="premium-auth-sub">
             Don&apos;t have an account? <Link href="/signup">Create an Account</Link>
           </p>
