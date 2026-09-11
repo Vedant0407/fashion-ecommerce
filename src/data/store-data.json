@@ -10,7 +10,8 @@
       "category_slug": "pants",
       "image": "/black-tee.jfif",
       "images": [
-        "/black-tee.jfif"
+        "/black-tee.jfif",
+        "/cargo-pants.jfif"
       ],
       "stock": 15,
       "is_featured": true,
@@ -31,6 +32,11 @@
       "category_slug": "t-shirts",
       "category_name": "T-SHIRTS",
       "image": "/black-tee.jfif",
+      "images": [
+        "/black-tee.jfif",
+        "/white-tee.jfif",
+        "/grey-hoodie.jfif"
+      ],
       "stock": 50,
       "is_featured": true,
       "is_new": false,
@@ -50,6 +56,11 @@
       "category_slug": "hoodies",
       "category_name": "HOODIES",
       "image": "/grey-hoodie.jfif",
+      "images": [
+        "/grey-hoodie.jfif",
+        "/black-tee.jfif",
+        "/hero.jfif"
+      ],
       "stock": 45,
       "is_featured": true,
       "is_new": true,
@@ -69,6 +80,11 @@
       "category_slug": "pants",
       "category_name": "PANTS",
       "image": "/cargo-pants.jfif",
+      "images": [
+        "/cargo-pants.jfif",
+        "/grey-hoodie.jfif",
+        "/black-tee.jfif"
+      ],
       "stock": 35,
       "is_featured": true,
       "is_new": true,
@@ -88,6 +104,11 @@
       "category_slug": "t-shirts",
       "category_name": "T-SHIRTS",
       "image": "/white-tee.jfif",
+      "images": [
+        "/white-tee.jfif",
+        "/black-tee.jfif",
+        "/hero.jfif"
+      ],
       "stock": 60,
       "is_featured": false,
       "is_new": true,
@@ -107,6 +128,11 @@
       "category_slug": "caps",
       "category_name": "CAPS",
       "image": "/hero.jfif",
+      "images": [
+        "/hero.jfif",
+        "/black-tee.jfif",
+        "/white-tee.jfif"
+      ],
       "stock": 25,
       "is_featured": false,
       "is_new": true,
@@ -126,6 +152,11 @@
       "category_slug": "bags",
       "category_name": "BAGS",
       "image": "/cargo-pants.jfif",
+      "images": [
+        "/cargo-pants.jfif",
+        "/black-tee.jfif",
+        "/grey-hoodie.jfif"
+      ],
       "stock": 30,
       "is_featured": true,
       "is_new": true,
@@ -145,6 +176,10 @@
       "category_slug": "accessories",
       "category_name": "ACCESSORIES",
       "image": "/white-tee.jfif",
+      "images": [
+        "/white-tee.jfif",
+        "/hero.jfif"
+      ],
       "stock": 40,
       "is_featured": false,
       "is_new": false,

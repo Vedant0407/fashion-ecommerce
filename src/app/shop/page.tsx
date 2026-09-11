@@ -4,12 +4,11 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { useWishlist } from "@/context/WishlistContext";
 import { Product, getAllProducts, FALLBACK_CATEGORIES } from "@/lib/catalog";
+import ProductCard from "@/components/ui/ProductCard";
 
 export default function ShopPage() {
   const router = useRouter();
-  const { isInWishlist, toggleWishlist } = useWishlist();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -284,157 +283,23 @@ export default function ShopPage() {
               gap: "35px 20px",
             }}
           >
-            {filteredProducts.map((product) => {
-              const inWishlist = isInWishlist(product.id);
-              return (
-                <article
-                  key={product.id}
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    flexDirection: "column",
-                    background: "#ffffff",
-                    border: "1px solid #e5e5e5",
-                    borderRadius: "0px",
-                    padding: "0px",
-                    overflow: "hidden",
-                    transition: "border-color 0.25s ease",
-                  }}
-                  className="shop-card"
-                >
-                  {/* Wishlist Button */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleWishlist({
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        image: product.image,
-                        category: product.category_name,
-                      });
-                    }}
-                    aria-label="Toggle wishlist"
-                    title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-                    style={{
-                      position: "absolute",
-                      top: "14px",
-                      right: "14px",
-                      zIndex: 3,
-                      background: "rgba(255, 255, 255, 0.92)",
-                      border: "1px solid rgba(0, 0, 0, 0.08)",
-                      width: "34px",
-                      height: "34px",
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      transition: "transform 0.15s ease",
-                    }}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill={inWishlist ? "#000000" : "none"}
-                      stroke="#000000"
-                      strokeWidth="1.6"
-                      style={{ width: "16px", height: "16px" }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                      />
-                    </svg>
-                  </button>
-
-                  <Link
-                    href={`/products/${product.id}?from=${
-                      selectedCategory === "NEW IN"
-                        ? "newin"
-                        : selectedCategory === "TRENDING"
-                        ? "trending"
-                        : product.is_new
-                        ? "newin"
-                        : product.is_trending
-                        ? "trending"
-                        : "products"
-                    }`}
-                    style={{
-                      textDecoration: "none",
-                      color: "inherit",
-                      display: "flex",
-                      flexDirection: "column",
-                      height: "100%",
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: "relative",
-                        width: "100%",
-                        paddingBottom: "125%",
-                        background: "#f7f7f7",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          transition: "transform 0.5s ease",
-                        }}
-                        onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.04)")}
-                        onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                      />
-                    </div>
-
-                    <div style={{ padding: "16px 14px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <span
-                        style={{
-                          fontSize: "9px",
-                          letterSpacing: "0.18em",
-                          color: "#888888",
-                          fontWeight: 600,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {product.category_name || "GREENO"}
-                      </span>
-                      <h2
-                        style={{
-                          margin: 0,
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          letterSpacing: "0.04em",
-                          lineHeight: 1.35,
-                          color: "#000000",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {product.name}
-                      </h2>
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          color: "#000000",
-                          letterSpacing: "0.02em",
-                          marginTop: "2px",
-                        }}
-                      >
-                        ₹{Number(product.price).toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                  </Link>
-                </article>
-              );
-            })}
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                source={
+                  selectedCategory === "NEW IN"
+                    ? "newin"
+                    : selectedCategory === "TRENDING"
+                    ? "trending"
+                    : product.is_new
+                    ? "newin"
+                    : product.is_trending
+                    ? "trending"
+                    : "shop"
+                }
+              />
+            ))}
           </div>
         ) : (
           <div

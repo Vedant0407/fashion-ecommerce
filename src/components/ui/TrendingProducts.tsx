@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { useCart } from "@/context/CartContext";
+
 import { Product, getAllProducts } from "@/lib/catalog";
 
 const DEFAULT_FALLBACK_TRENDING: Partial<Product>[] = [
@@ -11,6 +14,7 @@ const DEFAULT_FALLBACK_TRENDING: Partial<Product>[] = [
     name: "OVERSIZED BLACK TEE",
     category_name: "SIGNATURE TEES",
     image: "/black-tee.jfif",
+    images: ["/black-tee.jfif", "/white-tee.jfif", "/grey-hoodie.jfif"],
     price: 2499,
   },
   {
@@ -18,6 +22,7 @@ const DEFAULT_FALLBACK_TRENDING: Partial<Product>[] = [
     name: "URBAN GREY HOODIE",
     category_name: "HEAVY FLEECE",
     image: "/grey-hoodie.jfif",
+    images: ["/grey-hoodie.jfif", "/black-tee.jfif", "/hero.jfif"],
     price: 3999,
   },
   {
@@ -25,6 +30,7 @@ const DEFAULT_FALLBACK_TRENDING: Partial<Product>[] = [
     name: "CARGO STREET PANTS",
     category_name: "UTILITY TAILORING",
     image: "/cargo-pants.jfif",
+    images: ["/cargo-pants.jfif", "/grey-hoodie.jfif", "/black-tee.jfif"],
     price: 3499,
   },
   {
@@ -32,6 +38,7 @@ const DEFAULT_FALLBACK_TRENDING: Partial<Product>[] = [
     name: "CLASSIC WHITE TEE",
     category_name: "ESSENTIAL SERIES",
     image: "/white-tee.jfif",
+    images: ["/white-tee.jfif", "/black-tee.jfif", "/hero.jfif"],
     price: 1999,
   },
 ];
@@ -39,6 +46,9 @@ const DEFAULT_FALLBACK_TRENDING: Partial<Product>[] = [
 export default function TrendingProducts() {
   const [trendingList, setTrendingList] = useState<Partial<Product>[]>(DEFAULT_FALLBACK_TRENDING);
   const [current, setCurrent] = useState(0);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [isAdded, setIsAdded] = useState(false);
+  const { addToCart, openCart } = useCart();
 
   useEffect(() => {
     async function loadTrending() {
@@ -72,11 +82,11 @@ export default function TrendingProducts() {
 
   useEffect(() => {
     if (total <= 1) return;
-    const timer = setInterval(() => {
+    const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % total);
-    }, 4500);
-
-    return () => clearInterval(timer);
+      setPhotoIndex(0);
+    }, 8000);
+    return () => clearInterval(interval);
   }, [total]);
 
   if (total === 0) return null;
@@ -85,33 +95,74 @@ export default function TrendingProducts() {
   const activeItem = trendingList[activeIndex];
   const itemLink = `/products/${activeItem.id}?from=trending`;
 
-  const previousSlide = () => {
-    setCurrent((prev) => (prev === 0 ? total - 1 : prev - 1));
+  const photos =
+    Array.isArray(activeItem.images) && activeItem.images.length > 0
+      ? activeItem.images
+      : [activeItem.image || "/black-tee.jfif"];
+
+  const currentPhoto = photos[photoIndex] || photos[0] || "/black-tee.jfif";
+
+  const previousSlide = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (photos.length > 1 && photoIndex > 0) {
+      setPhotoIndex((prev) => prev - 1);
+    } else {
+      setCurrent((prev) => (prev === 0 ? total - 1 : prev - 1));
+      setPhotoIndex(0);
+    }
   };
 
-  const nextSlide = () => {
-    setCurrent((prev) => (prev + 1) % total);
+  const nextSlide = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (photos.length > 1 && photoIndex < photos.length - 1) {
+      setPhotoIndex((prev) => prev + 1);
+    } else {
+      setCurrent((prev) => (prev + 1) % total);
+      setPhotoIndex(0);
+    }
   };
 
-  const goToSlide = (index: number) => {
-    setCurrent(index);
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (activeItem.id) {
+      addToCart(
+        {
+          id: activeItem.id,
+          name: activeItem.name || "Trending Piece",
+          price: Number(activeItem.price) || 2499,
+          image: currentPhoto,
+          size: "M",
+          color: activeItem.color || "BLACK",
+        },
+        1
+      );
+      setIsAdded(true);
+      openCart();
+      setTimeout(() => setIsAdded(false), 1500);
+    }
   };
 
   return (
-    <section className="trending-section">
+    <section className="trending-section" id="trending">
       <div className="trending-container">
         <AnimatePresence mode="wait">
-          <motion.a
-            key={activeItem.id || activeIndex}
-            href={itemLink}
+          <motion.div
+            key={`${activeItem.id || activeIndex}-${photoIndex}`}
             className="trending-slide"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
           >
             <img
-              src={activeItem.image || "/black-tee.jfif"}
+              src={currentPhoto}
               alt={activeItem.name || "Trending piece"}
             />
 
@@ -120,46 +171,42 @@ export default function TrendingProducts() {
                 {activeItem.category_name || "EXCLUSIVE DROP"}
               </span>
               <h2>{activeItem.name}</h2>
-              <span className="trending-cta">SHOP NOW &rarr;</span>
+
+              <div className="trending-actions">
+                <button
+                  type="button"
+                  className={`trending-cart-btn ${isAdded ? "added" : ""}`}
+                  onClick={handleAddToCart}
+                >
+                  {isAdded ? "ADDED TO CART ✓" : "ADD TO CART"}
+                </button>
+                <Link href={itemLink} className="trending-cta">
+                  EXPLORE PIECE &rarr;
+                </Link>
+              </div>
             </div>
-          </motion.a>
+          </motion.div>
         </AnimatePresence>
 
-        {/* LEFT ARROW */}
-        {total > 1 && (
-          <button
-            className="trending-arrow trending-arrow-left"
-            onClick={previousSlide}
-            aria-label="Previous product"
-          >
-            <ChevronLeft size={20} />
-          </button>
-        )}
+        {/* LEFT ARROW (Appears on hover) */}
+        <button
+          type="button"
+          className="trending-arrow trending-arrow-left"
+          onClick={previousSlide}
+          aria-label="Previous photo or piece"
+        >
+          <ChevronLeft size={22} />
+        </button>
 
-        {/* RIGHT ARROW */}
-        {total > 1 && (
-          <button
-            className="trending-arrow trending-arrow-right"
-            onClick={nextSlide}
-            aria-label="Next product"
-          >
-            <ChevronRight size={20} />
-          </button>
-        )}
-
-        {/* DOTS */}
-        {total > 1 && (
-          <div className="trending-dots">
-            {trendingList.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={activeIndex === index ? "active" : ""}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
+        {/* RIGHT ARROW (Appears on hover) */}
+        <button
+          type="button"
+          className="trending-arrow trending-arrow-right"
+          onClick={nextSlide}
+          aria-label="Next photo or piece"
+        >
+          <ChevronRight size={22} />
+        </button>
       </div>
     </section>
   );
