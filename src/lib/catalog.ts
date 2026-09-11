@@ -220,6 +220,49 @@ export const FALLBACK_PRODUCTS: Product[] = [
   },
 ];
 
+export function ensureProductImages(product: Product): Product {
+  const fallback = FALLBACK_PRODUCTS.find((p) => p.id === product.id);
+  if (fallback?.images && fallback.images.length > 1) {
+    return {
+      ...product,
+      images: fallback.images,
+    };
+  }
+
+  if (Array.isArray(product.images) && product.images.length > 1) {
+    return product;
+  }
+
+  const baseImg = product.image || "/black-tee.jfif";
+  const cat = (
+    product.category_name ||
+    product.category_slug ||
+    product.name ||
+    ""
+  ).toLowerCase();
+
+  let pool: string[];
+  if (cat.includes("tee") || cat.includes("t-shirt") || cat.includes("shirt")) {
+    pool = [baseImg, "/white-tee.jfif", "/grey-hoodie.jfif", "/hero.jfif"];
+  } else if (cat.includes("hoodie") || cat.includes("sweat")) {
+    pool = [baseImg, "/black-tee.jfif", "/hero.jfif", "/white-tee.jfif"];
+  } else if (cat.includes("pant") || cat.includes("cargo") || cat.includes("trouser")) {
+    pool = [baseImg, "/grey-hoodie.jfif", "/black-tee.jfif"];
+  } else if (cat.includes("cap") || cat.includes("hat")) {
+    pool = [baseImg, "/black-tee.jfif", "/white-tee.jfif"];
+  } else if (cat.includes("bag") || cat.includes("crossbody")) {
+    pool = [baseImg, "/cargo-pants.jfif", "/black-tee.jfif"];
+  } else {
+    pool = [baseImg, "/white-tee.jfif", "/black-tee.jfif", "/grey-hoodie.jfif"];
+  }
+
+  const unique = pool.filter((img, idx, arr) => arr.indexOf(img) === idx);
+  return {
+    ...product,
+    images: unique.length > 1 ? unique : [baseImg, "/black-tee.jfif", "/white-tee.jfif"],
+  };
+}
+
 export async function getAllProducts(): Promise<Product[]> {
   try {
     if (typeof window !== "undefined") {
@@ -228,7 +271,7 @@ export async function getAllProducts(): Promise<Product[]> {
         const raw = localStorage.getItem("greeno_store_products");
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) localProducts = parsed;
+          if (Array.isArray(parsed)) localProducts = parsed.map(ensureProductImages);
         }
       } catch (localErr) {
         console.warn("Error reading local products:", localErr);
@@ -285,18 +328,18 @@ export async function getAllProducts(): Promise<Product[]> {
           }
 
           if (merged.length > 0) {
-            return merged;
+            return merged.map(ensureProductImages);
           }
         }
       } catch (clientFetchErr) {
         console.warn("Client fetch /api/products warning, using local cache:", clientFetchErr);
         if (localProducts.length > 0) {
-          return localProducts;
+          return localProducts.map(ensureProductImages);
         }
       }
 
       if (localProducts.length > 0) {
-        return localProducts;
+        return localProducts.map(ensureProductImages);
       }
     }
 
@@ -305,7 +348,7 @@ export async function getAllProducts(): Promise<Product[]> {
         const { getStoreProducts } = await import("./store-data");
         const storeProducts = await getStoreProducts();
         if (storeProducts && storeProducts.length > 0) {
-          return storeProducts;
+          return storeProducts.map(ensureProductImages);
         }
       } catch (serverImportErr) {
         // Continue to Supabase / fallback below
@@ -359,7 +402,7 @@ export async function getAllProducts(): Promise<Product[]> {
       }
     });
 
-    return merged;
+    return merged.map(ensureProductImages);
   } catch (e) {
     console.error("Error in getAllProducts:", e);
     return FALLBACK_PRODUCTS;

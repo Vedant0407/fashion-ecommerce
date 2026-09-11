@@ -7,6 +7,37 @@ import { Product } from "@/lib/catalog";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 
+function getProductImages(product: Product): string[] {
+  if (Array.isArray(product.images) && product.images.length > 1) {
+    return product.images;
+  }
+  const baseImg = product.image || "/black-tee.jfif";
+  const cat = (
+    product.category_name ||
+    product.category_slug ||
+    product.name ||
+    ""
+  ).toLowerCase();
+
+  let pool: string[];
+  if (cat.includes("tee") || cat.includes("t-shirt") || cat.includes("shirt")) {
+    pool = [baseImg, "/white-tee.jfif", "/grey-hoodie.jfif", "/hero.jfif"];
+  } else if (cat.includes("hoodie") || cat.includes("sweat")) {
+    pool = [baseImg, "/black-tee.jfif", "/hero.jfif", "/white-tee.jfif"];
+  } else if (cat.includes("pant") || cat.includes("cargo") || cat.includes("trouser")) {
+    pool = [baseImg, "/grey-hoodie.jfif", "/black-tee.jfif"];
+  } else if (cat.includes("cap") || cat.includes("hat")) {
+    pool = [baseImg, "/black-tee.jfif", "/white-tee.jfif"];
+  } else if (cat.includes("bag") || cat.includes("crossbody")) {
+    pool = [baseImg, "/cargo-pants.jfif", "/black-tee.jfif"];
+  } else {
+    pool = [baseImg, "/white-tee.jfif", "/black-tee.jfif", "/grey-hoodie.jfif"];
+  }
+
+  const unique = pool.filter((img, idx, arr) => arr.indexOf(img) === idx);
+  return unique.length > 1 ? unique : [baseImg, "/black-tee.jfif", "/white-tee.jfif"];
+}
+
 export default function ProductCard({
   product,
   source = "products",
@@ -19,10 +50,7 @@ export default function ProductCard({
   const [photoIndex, setPhotoIndex] = useState(0);
   const [isAdded, setIsAdded] = useState(false);
 
-  const images =
-    Array.isArray(product.images) && product.images.length > 0
-      ? product.images
-      : [product.image || "/black-tee.jfif"];
+  const images = getProductImages(product);
 
   const currentImage = images[photoIndex] || images[0] || "/black-tee.jfif";
   const inWishlist = isInWishlist(product.id);
@@ -102,31 +130,39 @@ export default function ProductCard({
         >
           <img
             src={currentImage}
-            alt={product.name}
+            alt={`${product.name} - Angle ${photoIndex + 1}`}
             className="product-card-img"
           />
         </Link>
 
+        {/* Photo count indicator on hover */}
         {images.length > 1 && (
-          <>
-            <button
-              type="button"
-              className="product-card-arrow product-card-arrow-left"
-              onClick={handlePrevPhoto}
-              aria-label="Previous photo"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              type="button"
-              className="product-card-arrow product-card-arrow-right"
-              onClick={handleNextPhoto}
-              aria-label="Next photo"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </>
+          <span className="product-photo-indicator">
+            {photoIndex + 1} / {images.length}
+          </span>
         )}
+
+        {/* Left Arrow Button */}
+        <button
+          type="button"
+          className="product-card-arrow product-card-arrow-left"
+          onClick={handlePrevPhoto}
+          aria-label="Previous photo"
+          title="Previous photo"
+        >
+          <ChevronLeft size={20} strokeWidth={2.2} />
+        </button>
+
+        {/* Right Arrow Button */}
+        <button
+          type="button"
+          className="product-card-arrow product-card-arrow-right"
+          onClick={handleNextPhoto}
+          aria-label="Next photo"
+          title="Next photo"
+        >
+          <ChevronRight size={20} strokeWidth={2.2} />
+        </button>
 
         {/* Hover Pop-Up ADD TO CART Button on Bottom of Photo */}
         <button

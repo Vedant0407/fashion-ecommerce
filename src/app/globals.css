@@ -885,43 +885,94 @@ select {
   transform: scale(1.04);
 }
 
+.product-photo-indicator {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  background: rgba(18, 18, 18, 0.72);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 4px 9px;
+  border-radius: 20px;
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: opacity 0.25s ease;
+}
+
+.product-card:hover .product-photo-indicator,
+.product-image-container:hover .product-photo-indicator {
+  opacity: 1;
+}
+
 .product-card-arrow {
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: rgba(35, 35, 35, 0.78);
+  background: rgba(18, 18, 18, 0.85);
   color: #ffffff;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 5;
+  z-index: 7;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease, background 0.2s ease, transform 0.15s ease;
-  backdrop-filter: blur(4px);
-}
-
-.product-card:hover .product-card-arrow {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.product-card-arrow:hover {
-  background: rgba(0, 0, 0, 0.95);
-  transform: translateY(-50%) scale(1.1);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease;
 }
 
 .product-card-arrow-left {
   left: 10px;
+  transform: translateY(-50%) translateX(-8px);
 }
 
 .product-card-arrow-right {
   right: 10px;
+  transform: translateY(-50%) translateX(8px);
+}
+
+.product-card:hover .product-card-arrow-left,
+.product-image-container:hover .product-card-arrow-left {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+
+.product-card:hover .product-card-arrow-right,
+.product-image-container:hover .product-card-arrow-right {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+
+.product-card-arrow-left:hover {
+  background: #000000;
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-50%) translateX(0) scale(1.12);
+}
+
+.product-card-arrow-right:hover {
+  background: #000000;
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-50%) translateX(0) scale(1.12);
+}
+
+@media (hover: none) {
+  .product-photo-indicator,
+  .product-card-arrow {
+    opacity: 0.88;
+    pointer-events: auto;
+    transform: translateY(-50%) translateX(0);
+  }
 }
 
 .product-info-link {
