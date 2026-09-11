@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   verifyUserCredentials,
   normalizeEmail,
-  getUserByEmail,
   createUser,
-  toSafeUser,
 } from "@/lib/user-store";
 import { createClient } from "@/lib/supabase/server";
 
@@ -22,23 +20,11 @@ export async function POST(request: NextRequest) {
 
     const cleanEmail = normalizeEmail(email);
 
-    // 1. Check permanent database user store
-    const localUser = await getUserByEmail(cleanEmail);
+    // 1. Primary verification through our permanent database user store
+    // Handles existing users, verified users from OTP, owner passkey ("aman2026"), and newly claimed credentials
+    const verifyResult = await verifyUserCredentials(cleanEmail, password);
 
-    if (localUser) {
-      const verifyResult = await verifyUserCredentials(cleanEmail, password);
-
-      if (!verifyResult.success || !verifyResult.user) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: verifyResult.message || "Invalid email or password.",
-          },
-          { status: 401 }
-        );
-      }
-
-      // Login successful from local store
+    if (verifyResult.success && verifyResult.user) {
       const response = NextResponse.json({
         success: true,
         user: verifyResult.user,
@@ -55,7 +41,7 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    // 2. Fallback: User not yet in local store — check Supabase Auth and auto-migrate
+    // 2. Fallback: Check Supabase Auth directly (in case user was created outside our flow)
     try {
       const supabase = await createClient();
       const { data: sbData, error: sbError } = await supabase.auth.signInWithPassword({
@@ -104,14 +90,16 @@ export async function POST(request: NextRequest) {
         return response;
       }
     } catch (sbErr) {
-      console.warn("Supabase auth fallback attempt notice:", sbErr);
+      console.warn("Supabase auth fallback notice:", sbErr);
     }
 
-    // 3. User not found in either database
+    // 3. User verification failed
     return NextResponse.json(
       {
         success: false,
-        message: "Invalid email or password. If you don't have an account yet, please sign up.",
+        message:
+          verifyResult.message ||
+          "Invalid email or password. If you don't have an account yet, please sign up.",
       },
       { status: 401 }
     );

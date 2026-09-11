@@ -160,20 +160,24 @@ function LoginFormContent() {
 
     try {
       setResetting(true);
-      const supabase = createClient();
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
       });
-
-      if (resetError) {
-        setError(resetError.message);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.message || "Failed to process password reset.");
         return;
       }
 
-      setMessage("Password reset instructions have been sent to your email.");
-    } catch (err) {
+      setMessage("A 6-digit verification code has been sent to your email! Redirecting...");
+      setTimeout(() => {
+        router.push(`/reset-password?email=${encodeURIComponent(email.trim())}`);
+      }, 1000);
+    } catch (err: any) {
       console.error("PASSWORD RESET ERROR:", err);
-      setError("Something went wrong while sending the reset link.");
+      setError("Something went wrong while sending the reset code.");
     } finally {
       setResetting(false);
     }
