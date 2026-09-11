@@ -511,12 +511,6 @@ export default function ProductPage() {
               </div>
             </div>
 
-            {/* PRODUCT NUMBER */}
-            <div className="right-info">
-              <h3>PRODUCT NUMBER</h3>
-              <p>{product.id}</p>
-            </div>
-
             {/* SIZE */}
             <div className="right-option">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
