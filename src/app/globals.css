@@ -357,7 +357,7 @@ select {
   display: flex;
   align-items: flex-start;
   gap: 20px;
-  animation: newInMove 35s linear infinite;
+  animation: newInMove 70s linear infinite;
   will-change: transform;
 }
 
