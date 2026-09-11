@@ -171,51 +171,43 @@ function SignupFormContent() {
     try {
       setLoading(true);
 
-      // 1. Verify 6-digit OTP
-      const verifyRes = await fetch("/api/auth/verify-otp", {
+      // 1. Call secure server register endpoint (verifies OTP + permanently saves in user database)
+      const registerRes = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          target: email.trim(),
+          name: name.trim(),
+          email: email.trim(),
+          password,
           code: finalCode,
-          type: "email",
         }),
       });
 
-      const verifyData = await verifyRes.json();
+      const registerData = await registerRes.json();
 
-      if (!verifyRes.ok || !verifyData.success) {
-        throw new Error(
-          verifyData.message || "Invalid or expired verification code."
+      if (!registerRes.ok || !registerData.success) {
+        setError(
+          registerData.message ||
+            "Registration failed. Please check the code and try again."
         );
+        return;
       }
 
-      // 2. Finalize account creation in Supabase
-      const supabase = createClient();
-      const { data, error: signupError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            full_name: name.trim(),
-            name: name.trim(),
+      // 2. Client-side Supabase sync (non-blocking)
+      try {
+        const supabase = createClient();
+        await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              full_name: name.trim(),
+              name: name.trim(),
+            },
           },
-        },
-      });
-
-      if (signupError) {
-        const msg = signupError.message.toLowerCase();
-        if (
-          msg.includes("already registered") ||
-          msg.includes("already exists") ||
-          msg.includes("already in use") ||
-          msg.includes("identity already exists")
-        ) {
-          setError(
-            "An account with this email already exists. Please log in instead."
-          );
-          return;
-        }
+        });
+      } catch (sbErr) {
+        console.warn("Client-side Supabase sync notice:", sbErr);
       }
 
       // 3. Initialize clean cart for new account
@@ -227,7 +219,8 @@ function SignupFormContent() {
       window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
 
       // 4. Store user session locally
-      localStorage.setItem("greeno_user_name", name.trim());
+      const savedName = registerData.user?.name || name.trim();
+      localStorage.setItem("greeno_user_name", savedName);
       localStorage.setItem("greeno_user_email", email.trim());
       document.cookie = `greeno_session=${encodeURIComponent(
         email.trim()

@@ -60,6 +60,7 @@ export default function AccountPage() {
 
   async function handleLogout() {
     try {
+      await fetch("/api/auth/logout", { method: "POST" });
       const supabase = createClient();
       await supabase.auth.signOut();
     } catch {

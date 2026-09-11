@@ -61,6 +61,17 @@ export default function GoogleSignInModal({
         window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
       }
 
+      // Record user in persistent database
+      try {
+        await fetch("/api/auth/google", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: normalizedEmail, name: displayName }),
+        });
+      } catch (dbErr) {
+        console.warn("Notice: Google user db sync:", dbErr);
+      }
+
       // Synchronize session to localStorage and cookies
       localStorage.setItem("greeno_user_email", normalizedEmail);
       localStorage.setItem("greeno_user_name", displayName);

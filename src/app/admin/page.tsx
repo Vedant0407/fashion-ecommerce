@@ -58,6 +58,7 @@ export default function AdminPage() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string>("");
+  const [totalUsers, setTotalUsers] = useState<number>(0);
 
   // Product Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -111,13 +112,14 @@ export default function AdminPage() {
   async function fetchAllData() {
     setLoading(true);
     try {
-      const [prodRes, catRes, orderRes, retRes, coupRes, setRes] = await Promise.all([
+      const [prodRes, catRes, orderRes, retRes, coupRes, setRes, userRes] = await Promise.all([
         fetch("/api/admin/products"),
         fetch("/api/admin/categories"),
         fetch("/api/admin/orders"),
         fetch("/api/returns"),
         fetch("/api/admin/coupons"),
         fetch("/api/admin/settings"),
+        fetch("/api/admin/users"),
       ]);
 
       if (prodRes.ok) {
@@ -276,6 +278,10 @@ export default function AdminPage() {
       if (setRes.ok) {
         const setData = await setRes.json();
         if (setData.settings) setSettings(setData.settings);
+      }
+      if (userRes && userRes.ok) {
+        const userData = await userRes.json();
+        if (typeof userData.count === "number") setTotalUsers(userData.count);
       }
     } catch (err) {
       console.error("Error fetching admin data:", err);
@@ -1415,6 +1421,12 @@ export default function AdminPage() {
                         "All requests processed"
                       )}
                     </div>
+                  </div>
+
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>REGISTERED CUSTOMERS</div>
+                    <div className={styles.statValue}>{totalUsers}</div>
+                    <div className={styles.statHint}>Verified database user accounts</div>
                   </div>
                 </div>
 

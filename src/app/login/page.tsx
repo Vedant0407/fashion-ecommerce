@@ -84,55 +84,39 @@ function LoginFormContent() {
     try {
       setLoading(true);
 
-      const supabase = createClient();
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      // 1. Authenticate with secure permanent database endpoint
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
       });
 
-      if (signInError) {
-        const msg = signInError.message.toLowerCase();
+      const data = await res.json();
 
-        if (msg.includes("invalid login credentials") || msg.includes("invalid credentials")) {
-          setError("Invalid email or password. If you don't have an account yet, please sign up.");
-          return;
-        }
-
-        // If Supabase flags unconfirmed email but password is valid, log user in seamlessly
-        if (msg.includes("email not confirmed") || msg.includes("email has not been confirmed")) {
-          const fallbackName = email.split("@")[0].toUpperCase();
-          const normalizedEmail = email.trim().toLowerCase();
-          const firstLoginKey = `greeno_cart_cleared_for_${normalizedEmail}`;
-
-          if (!localStorage.getItem(firstLoginKey)) {
-            localStorage.removeItem("greeno_cart");
-            localStorage.removeItem("greeno_coupon");
-            localStorage.setItem(firstLoginKey, "true");
-            window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
-          }
-
-          localStorage.setItem("greeno_user_name", fallbackName);
-          localStorage.setItem("greeno_user_email", email.trim());
-          document.cookie = `greeno_session=${encodeURIComponent(email.trim())}; path=/; max-age=2592000; SameSite=Lax`;
-          window.dispatchEvent(new Event("storage"));
-          setMessage("Login successful! Redirecting...");
-          setTimeout(() => {
-            router.push(redirectUrl);
-            router.refresh();
-          }, 300);
-          return;
-        }
-
-        setError(signInError.message);
+      if (!res.ok || !data.success) {
+        setError(
+          data.message ||
+            "Invalid email or password. If you don't have an account yet, please sign up."
+        );
         return;
       }
 
-      // Extract full name from Supabase user metadata
-      const userName =
-        data.user?.user_metadata?.full_name ||
-        data.user?.user_metadata?.name ||
-        email.split("@")[0].toUpperCase();
+      // 2. Client-side Supabase sync (non-blocking)
+      try {
+        const supabase = createClient();
+        await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+      } catch (sbErr) {
+        console.warn("Client-side Supabase signin notice:", sbErr);
+      }
 
+      // 3. User session setup
+      const userName = data.user?.name || email.split("@")[0].toUpperCase();
       const normalizedEmail = email.trim().toLowerCase();
       const firstLoginKey = `greeno_cart_cleared_for_${normalizedEmail}`;
 
@@ -145,7 +129,9 @@ function LoginFormContent() {
 
       localStorage.setItem("greeno_user_name", userName);
       localStorage.setItem("greeno_user_email", email.trim());
-      document.cookie = `greeno_session=${encodeURIComponent(email.trim())}; path=/; max-age=2592000; SameSite=Lax`;
+      document.cookie = `greeno_session=${encodeURIComponent(
+        email.trim()
+      )}; path=/; max-age=2592000; SameSite=Lax`;
       window.dispatchEvent(new Event("storage"));
 
       setMessage("Login successful! Redirecting...");
