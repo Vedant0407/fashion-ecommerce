@@ -21,8 +21,11 @@ export default function ProductImageLightbox({
   const [zoomScale, setZoomScale] = useState(1);
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+
   const panStartRef = useRef({ x: 0, y: 0, startPanX: 0, startPanY: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
+  const hasDraggedRef = useRef(false);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
 
   // Sync index when initialIndex changes or modal opens
   useEffect(() => {
@@ -53,28 +56,7 @@ export default function ProductImageLightbox({
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
-  const handleZoomIn = () => {
-    setZoomScale((prev) => Math.min(prev + 0.5, 3));
-  };
-
-  const handleZoomOut = () => {
-    setZoomScale((prev) => {
-      const next = Math.max(prev - 0.5, 1);
-      if (next === 1) setPanPosition({ x: 0, y: 0 });
-      return next;
-    });
-  };
-
-  const handleToggleZoom = () => {
-    if (zoomScale > 1) {
-      setZoomScale(1);
-      setPanPosition({ x: 0, y: 0 });
-    } else {
-      setZoomScale(2);
-    }
-  };
-
-  // Keyboard navigation & Esc
+  // Keyboard navigation (Esc, Left, Right)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -85,10 +67,6 @@ export default function ProductImageLightbox({
         handleNext();
       } else if (e.key === "ArrowLeft") {
         handlePrev();
-      } else if (e.key === "+" || e.key === "=") {
-        handleZoomIn();
-      } else if (e.key === "-") {
-        handleZoomOut();
       }
     };
 
@@ -96,23 +74,85 @@ export default function ProductImageLightbox({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose, handleNext, handlePrev]);
 
-  // Wheel zoom
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    if (e.deltaY < 0) {
-      setZoomScale((prev) => Math.min(prev + 0.25, 3));
-    } else {
+  // PREVENT BROWSER ZOOM & BACKGROUND SCROLLING
+  // Native non-passive listener intercepts Ctrl+wheel / pinch gestures so only the image zooms and never the website
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePreventBrowserCtrlZoom = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener("wheel", handlePreventBrowserCtrlZoom, { passive: false });
+    return () => {
+      window.removeEventListener("wheel", handlePreventBrowserCtrlZoom);
+    };
+  }, [isOpen]);
+
+  // Attach non-passive wheel handler directly to the stage for smooth image-only zoom
+  useEffect(() => {
+    const stageEl = stageRef.current;
+    if (!stageEl || !isOpen) return;
+
+    const onStageWheel = (e: WheelEvent) => {
+      // Strictly prevent browser page zoom and page scroll
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Damped, gentle zoom sensitivity (prevents fast jumps)
+      const rawDelta = -e.deltaY;
+      const step = Math.min(Math.max(rawDelta * 0.0008, -0.08), 0.08);
+
       setZoomScale((prev) => {
-        const next = Math.max(prev - 0.25, 1);
-        if (next === 1) setPanPosition({ x: 0, y: 0 });
-        return next;
+        const next = Math.min(Math.max(prev + step, 1), 2.8);
+        if (next <= 1.02) {
+          setPanPosition({ x: 0, y: 0 });
+          return 1;
+        }
+        return Number(next.toFixed(3));
       });
+    };
+
+    stageEl.addEventListener("wheel", onStageWheel, { passive: false });
+    return () => {
+      stageEl.removeEventListener("wheel", onStageWheel);
+    };
+  }, [isOpen]);
+
+  // Prevent background scroll when scrolling over backdrop
+  useEffect(() => {
+    const backdropEl = backdropRef.current;
+    if (!backdropEl || !isOpen) return;
+
+    const onBackdropWheel = (e: WheelEvent) => {
+      e.preventDefault();
+    };
+
+    backdropEl.addEventListener("wheel", onBackdropWheel, { passive: false });
+    return () => {
+      backdropEl.removeEventListener("wheel", onBackdropWheel);
+    };
+  }, [isOpen]);
+
+  // Click image to toggle 1x / 2x zoom (only if user didn't drag)
+  const handleImageClick = () => {
+    if (hasDraggedRef.current) return;
+
+    if (zoomScale > 1) {
+      setZoomScale(1);
+      setPanPosition({ x: 0, y: 0 });
+    } else {
+      setZoomScale(2);
     }
   };
 
-  // Pan when zoomed in
+  // Pan / drag when zoomed in
   const handleMouseDown = (e: React.MouseEvent) => {
+    hasDraggedRef.current = false;
     if (zoomScale <= 1) return;
+
     setIsPanning(true);
     panStartRef.current = {
       x: e.clientX,
@@ -124,8 +164,14 @@ export default function ProductImageLightbox({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isPanning || zoomScale <= 1) return;
+
     const dx = e.clientX - panStartRef.current.x;
     const dy = e.clientY - panStartRef.current.y;
+
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      hasDraggedRef.current = true;
+    }
+
     setPanPosition({
       x: panStartRef.current.startPanX + dx,
       y: panStartRef.current.startPanY + dy,
@@ -141,7 +187,11 @@ export default function ProductImageLightbox({
   const currentImage = images[currentIndex] || images[0];
 
   return (
-    <div className="product-lightbox-backdrop" onClick={onClose}>
+    <div
+      ref={backdropRef}
+      className="product-lightbox-backdrop"
+      onClick={onClose}
+    >
       {/* Floating Small Box Modal */}
       <div
         className="product-lightbox-box"
@@ -149,57 +199,15 @@ export default function ProductImageLightbox({
         role="dialog"
         aria-modal="true"
       >
-        {/* Top Control Bar */}
+        {/* Top Header Bar: Clean & Minimal (NO zoom control bar widget) */}
         <div className="product-lightbox-topbar">
           <div className="product-lightbox-title-area">
-            <span className="product-lightbox-tag">PRODUCT VIEW</span>
+            <span className="product-lightbox-tag">
+              {productName || "PRODUCT VIEW"}
+            </span>
             <span className="product-lightbox-counter">
               {currentIndex + 1} / {images.length}
             </span>
-          </div>
-
-          {/* Zoom Controls */}
-          <div className="product-lightbox-zoom-bar">
-            <button
-              type="button"
-              onClick={handleZoomOut}
-              disabled={zoomScale <= 1}
-              className="lightbox-zoom-btn"
-              title="Zoom out (-)"
-              aria-label="Zoom out"
-            >
-              &minus;
-            </button>
-            <span
-              className="lightbox-zoom-val"
-              onClick={handleToggleZoom}
-              title="Click to toggle 2x zoom"
-            >
-              {Math.round(zoomScale * 100)}%
-            </span>
-            <button
-              type="button"
-              onClick={handleZoomIn}
-              disabled={zoomScale >= 3}
-              className="lightbox-zoom-btn"
-              title="Zoom in (+)"
-              aria-label="Zoom in"
-            >
-              &#43;
-            </button>
-            {zoomScale > 1 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setZoomScale(1);
-                  setPanPosition({ x: 0, y: 0 });
-                }}
-                className="lightbox-reset-btn"
-                title="Reset zoom"
-              >
-                Reset
-              </button>
-            )}
           </div>
 
           {/* Close Button */}
@@ -208,6 +216,7 @@ export default function ProductImageLightbox({
             onClick={onClose}
             className="product-lightbox-close-btn"
             aria-label="Close image preview"
+            title="Close (Esc)"
           >
             <svg
               width="18"
@@ -227,9 +236,8 @@ export default function ProductImageLightbox({
 
         {/* Main Image Stage */}
         <div
-          ref={containerRef}
+          ref={stageRef}
           className="product-lightbox-stage"
-          onWheel={handleWheel}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -267,14 +275,14 @@ export default function ProductImageLightbox({
             </button>
           )}
 
-          {/* Centered Image */}
+          {/* Centered Image - Scales and Pans ONLY within this container */}
           <div
             className="product-lightbox-img-wrapper"
             style={{
               transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomScale})`,
-              transition: isPanning ? "none" : "transform 0.22s ease-out",
+              transition: isPanning ? "none" : "transform 0.18s ease-out",
             }}
-            onClick={handleToggleZoom}
+            onClick={handleImageClick}
           >
             <img
               src={currentImage}
@@ -308,9 +316,11 @@ export default function ProductImageLightbox({
             </button>
           )}
 
-          {/* Hint Overlay */}
+          {/* Minimal Subtle Floating Hint */}
           <div className="product-lightbox-hint">
-            {zoomScale > 1 ? "Drag to pan • Click to reset" : "Click to zoom 2x • Scroll to zoom"}
+            {zoomScale > 1
+              ? "Drag to explore • Click to reset"
+              : "Click to zoom • Scroll to adjust"}
           </div>
         </div>
 

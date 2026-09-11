@@ -4100,6 +4100,8 @@ select {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: contain;
   animation: searchCardPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -4138,68 +4140,6 @@ select {
   border-radius: 9999px;
 }
 
-.product-lightbox-zoom-bar {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: #f5f5f5;
-  border-radius: 9999px;
-  padding: 3px 8px;
-  border: 1px solid #e5e5e5;
-}
-
-.lightbox-zoom-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: #111111;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease;
-}
-
-.lightbox-zoom-btn:hover:not(:disabled) {
-  background: #e5e5e5;
-}
-
-.lightbox-zoom-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.lightbox-zoom-val {
-  font-size: 11px;
-  font-weight: 700;
-  color: #222222;
-  min-width: 38px;
-  text-align: center;
-  cursor: pointer;
-  user-select: none;
-}
-
-.lightbox-reset-btn {
-  border: none;
-  background: #000000;
-  color: #ffffff;
-  border-radius: 9999px;
-  padding: 3px 8px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.lightbox-reset-btn:hover {
-  background: #333333;
-}
-
 .product-lightbox-close-btn {
   width: 34px;
   height: 34px;
@@ -4231,6 +4171,8 @@ select {
   max-height: calc(86vh - 140px);
   background: #f7f7f7;
   user-select: none;
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 .product-lightbox-img-wrapper {
