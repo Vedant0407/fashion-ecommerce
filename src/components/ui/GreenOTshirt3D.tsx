@@ -2,6 +2,7 @@
 
 import { Canvas } from "@react-three/fiber";
 import {
+  Center,
   Environment,
   OrbitControls,
   useGLTF,
@@ -11,11 +12,12 @@ function TshirtModel() {
   const { scene } = useGLTF("/greeno.tshirt.glb");
 
   return (
-    <primitive
-  object={scene}
-  scale={1.1}
-  position={[0, -1.0, 0]}
-/>
+    <Center>
+      <primitive
+        object={scene}
+        scale={0.72}
+      />
+    </Center>
   );
 }
 

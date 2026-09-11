@@ -1130,16 +1130,29 @@ select {
   position: absolute;
   z-index: 5;
 
-  width: 600px;
-  height: 700px;
+  width: 440px;
+  height: 460px;
+  max-width: 90vw;
+  max-height: 52vh;
 
   left: 50%;
-  top: 52%;
+  top: calc(50% - 10px);
 
   transform: translate(-50%, -50%);
 
   background: transparent;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .greeno-3d {
+    width: 320px;
+    height: 340px;
+    top: calc(48% - 10px);
+  }
 }
 .hero-follow-brand {
   position: fixed;
