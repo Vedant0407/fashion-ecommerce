@@ -390,6 +390,24 @@ export default function ProductPage() {
               </p>
             </div>
 
+            <div className="product-left-section">
+              <h3>MATERIAL &amp; FABRIC</h3>
+              <p>
+                {product.material
+                  ? product.fabric
+                    ? `${product.material} • ${product.fabric}`
+                    : product.material
+                  : product.fabric || "Heavyweight Premium Combed Cotton"}
+              </p>
+            </div>
+
+            <div className="product-left-section">
+              <h3>FIT SPECIFICATION</h3>
+              <p>
+                {product.fit || "Relaxed Boxy Fit"}
+              </p>
+            </div>
+
             {/* DETAILS ACCORDIONS */}
             <div className="product-accordions">
 
