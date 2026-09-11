@@ -21,7 +21,9 @@ export default function ProductImageLightbox({
   const [zoomScale, setZoomScale] = useState(1);
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [isWheeling, setIsWheeling] = useState(false);
 
+  const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const panStartRef = useRef({ x: 0, y: 0, startPanX: 0, startPanY: 0 });
   const hasDraggedRef = useRef(false);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -39,6 +41,7 @@ export default function ProductImageLightbox({
     }
     return () => {
       document.body.style.overflow = "";
+      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
     };
   }, [isOpen, initialIndex]);
 
@@ -91,7 +94,7 @@ export default function ProductImageLightbox({
     };
   }, [isOpen]);
 
-  // Attach non-passive wheel handler directly to the stage for smooth image-only zoom
+  // Attach non-passive wheel handler directly to the stage for responsive, natural zoom
   useEffect(() => {
     const stageEl = stageRef.current;
     if (!stageEl || !isOpen) return;
@@ -101,17 +104,26 @@ export default function ProductImageLightbox({
       e.preventDefault();
       e.stopPropagation();
 
-      // Damped, gentle zoom sensitivity (prevents fast jumps)
+      // Enable instant tracking without transition lag while wheeling
+      setIsWheeling(true);
+      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+      wheelTimeoutRef.current = setTimeout(() => {
+        setIsWheeling(false);
+      }, 120);
+
+      // Multiplicative natural zoom rate:
+      // Delta is usually ~100 to 120 per notch on mouse wheel.
+      // Math.exp(delta * 0.0018) gives ~20% scale change per notch (effortless, responsive, not jumpy)
       const rawDelta = -e.deltaY;
-      const step = Math.min(Math.max(rawDelta * 0.0008, -0.08), 0.08);
+      const zoomFactor = Math.exp(rawDelta * 0.0018);
 
       setZoomScale((prev) => {
-        const next = Math.min(Math.max(prev + step, 1), 2.8);
-        if (next <= 1.02) {
+        const next = Math.min(Math.max(prev * zoomFactor, 1), 3);
+        if (next <= 1.05) {
           setPanPosition({ x: 0, y: 0 });
           return 1;
         }
-        return Number(next.toFixed(3));
+        return Number(next.toFixed(2));
       });
     };
 
@@ -280,7 +292,10 @@ export default function ProductImageLightbox({
             className="product-lightbox-img-wrapper"
             style={{
               transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomScale})`,
-              transition: isPanning ? "none" : "transform 0.18s ease-out",
+              transition:
+                isPanning || isWheeling
+                  ? "none"
+                  : "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
             onClick={handleImageClick}
           >
