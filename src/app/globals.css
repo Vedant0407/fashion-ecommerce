@@ -452,7 +452,7 @@ select {
 
 .category-section {
   width: 100%;
-  padding: 20px clamp(16px, 2vw, 32px) 24px;
+  padding: 20px 8px 24px;
   background: #ffffff;
   overflow: hidden;
 }
@@ -460,6 +460,10 @@ select {
 .category-wrapper {
   width: 100%;
   margin: 0 auto;
+}
+
+.category-heading {
+  padding: 0 4px;
 }
 
 .category-kicker {
@@ -484,7 +488,7 @@ select {
   display: grid;
   grid-template-columns: 1.35fr 0.65fr 0.65fr;
   grid-auto-rows: clamp(260px, 22vw, 340px);
-  gap: 12px;
+  gap: 8px;
 }
 
 .category-card {
@@ -1103,7 +1107,10 @@ select {
     padding-left: 0;
     padding-right: 0;
   }
-  .category-section,
+  .category-section {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
   .trending-section,
   .products-section,
   .about-section {
