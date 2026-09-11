@@ -15,7 +15,7 @@ function TshirtModel() {
     <Center>
       <primitive
         object={scene}
-        scale={0.72}
+        scale={0.90}
       />
     </Center>
   );
