@@ -1130,10 +1130,10 @@ select {
   position: absolute;
   z-index: 5;
 
-  width: 520px;
-  height: 540px;
+  width: 560px;
+  height: 580px;
   max-width: 92vw;
-  max-height: 58vh;
+  max-height: 62vh;
 
   left: 50%;
   top: calc(50% - 10px);
@@ -1149,8 +1149,8 @@ select {
 
 @media (max-width: 768px) {
   .greeno-3d {
-    width: 360px;
-    height: 380px;
+    width: 380px;
+    height: 400px;
     top: calc(48% - 10px);
   }
 }
