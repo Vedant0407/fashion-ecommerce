@@ -21,9 +21,7 @@ export default function ProductImageLightbox({
   const [zoomScale, setZoomScale] = useState(1);
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
-  const [isWheeling, setIsWheeling] = useState(false);
 
-  const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const panStartRef = useRef({ x: 0, y: 0, startPanX: 0, startPanY: 0 });
   const hasDraggedRef = useRef(false);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -41,7 +39,6 @@ export default function ProductImageLightbox({
     }
     return () => {
       document.body.style.overflow = "";
-      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
     };
   }, [isOpen, initialIndex]);
 
@@ -78,7 +75,7 @@ export default function ProductImageLightbox({
   }, [isOpen, onClose, handleNext, handlePrev]);
 
   // PREVENT BROWSER ZOOM & BACKGROUND SCROLLING
-  // Native non-passive listener intercepts Ctrl+wheel / pinch gestures so only the image zooms and never the website
+  // Native non-passive listener intercepts Ctrl+wheel gestures so the website never zooms
   useEffect(() => {
     if (!isOpen) return;
 
@@ -94,7 +91,7 @@ export default function ProductImageLightbox({
     };
   }, [isOpen]);
 
-  // Attach non-passive wheel handler directly to the stage for responsive, natural zoom
+  // Attach non-passive wheel handler directly to the stage for smooth, reliable image zoom
   useEffect(() => {
     const stageEl = stageRef.current;
     if (!stageEl || !isOpen) return;
@@ -104,22 +101,22 @@ export default function ProductImageLightbox({
       e.preventDefault();
       e.stopPropagation();
 
-      // Enable instant tracking without transition lag while wheeling
-      setIsWheeling(true);
-      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
-      wheelTimeoutRef.current = setTimeout(() => {
-        setIsWheeling(false);
-      }, 120);
+      // Normalize delta across browsers and devices (Firefox lines mode)
+      let dy = e.deltaY;
+      if (e.deltaMode === 1) {
+        dy *= 33;
+      } else if (e.deltaMode === 2) {
+        dy *= 100;
+      }
 
-      // Multiplicative natural zoom rate:
-      // Delta is usually ~100 to 120 per notch on mouse wheel.
-      // Math.exp(delta * 0.0018) gives ~20% scale change per notch (effortless, responsive, not jumpy)
-      const rawDelta = -e.deltaY;
-      const zoomFactor = Math.exp(rawDelta * 0.0018);
+      // Linear responsive zoom: 1 notch (~100px) changes scale by ~0.16
+      // Trackpads and touchpads accumulate smoothly
+      const zoomChange = -dy * 0.0016;
+      const clampedChange = Math.max(-0.25, Math.min(0.25, zoomChange));
 
       setZoomScale((prev) => {
-        const next = Math.min(Math.max(prev * zoomFactor, 1), 3);
-        if (next <= 1.05) {
+        const next = Math.max(1, Math.min(3, prev + clampedChange));
+        if (next <= 1) {
           setPanPosition({ x: 0, y: 0 });
           return 1;
         }
@@ -133,13 +130,15 @@ export default function ProductImageLightbox({
     };
   }, [isOpen]);
 
-  // Prevent background scroll when scrolling over backdrop
+  // Prevent background scroll only when scrolling directly on the blurred backdrop outside the box
   useEffect(() => {
     const backdropEl = backdropRef.current;
     if (!backdropEl || !isOpen) return;
 
     const onBackdropWheel = (e: WheelEvent) => {
-      e.preventDefault();
+      if (e.target === backdropEl) {
+        e.preventDefault();
+      }
     };
 
     backdropEl.addEventListener("wheel", onBackdropWheel, { passive: false });
@@ -211,7 +210,7 @@ export default function ProductImageLightbox({
         role="dialog"
         aria-modal="true"
       >
-        {/* Top Header Bar: Clean & Minimal (NO zoom control bar widget) */}
+        {/* Top Header Bar: Clean & Minimal */}
         <div className="product-lightbox-topbar">
           <div className="product-lightbox-title-area">
             <span className="product-lightbox-tag">
@@ -292,10 +291,7 @@ export default function ProductImageLightbox({
             className="product-lightbox-img-wrapper"
             style={{
               transform: `translate(${panPosition.x}px, ${panPosition.y}px) scale(${zoomScale})`,
-              transition:
-                isPanning || isWheeling
-                  ? "none"
-                  : "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)",
+              transition: isPanning ? "none" : "transform 0.08s ease-out",
             }}
             onClick={handleImageClick}
           >
