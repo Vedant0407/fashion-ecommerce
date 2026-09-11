@@ -127,6 +127,22 @@ export default function ProductCard({
             </button>
           </>
         )}
+
+        {/* Hover Pop-Up ADD TO CART Button on Bottom of Photo */}
+        <button
+          type="button"
+          className={`product-add-to-cart-btn ${isAdded ? "added" : ""}`}
+          onClick={handleAddToCart}
+          aria-label={isAdded ? "Added to cart" : `Add ${product.name} to cart`}
+        >
+          {isAdded ? (
+            <>
+              <Check size={14} /> ADDED TO CART
+            </>
+          ) : (
+            "ADD TO CART"
+          )}
+        </button>
       </div>
 
       {/* Product Info */}
@@ -141,21 +157,6 @@ export default function ProductCard({
           </span>
         </div>
       </Link>
-
-      {/* Full width ADD TO CART Button */}
-      <button
-        type="button"
-        className={`product-add-to-cart-btn ${isAdded ? "added" : ""}`}
-        onClick={handleAddToCart}
-      >
-        {isAdded ? (
-          <>
-            <Check size={14} /> ADDED TO CART
-          </>
-        ) : (
-          "ADD TO CART"
-        )}
-      </button>
     </div>
   );
 }
