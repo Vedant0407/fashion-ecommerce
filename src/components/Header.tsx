@@ -59,6 +59,16 @@ export default function Header() {
     const supabase = createClient();
 
     function updateLoginState(sessionUser?: any) {
+      if (sessionUser?.email) {
+        localStorage.setItem("greeno_user_email", sessionUser.email);
+        if (!localStorage.getItem("greeno_user_name")) {
+          const name =
+            sessionUser.user_metadata?.full_name ||
+            sessionUser.user_metadata?.name ||
+            sessionUser.email.split("@")[0].toUpperCase();
+          localStorage.setItem("greeno_user_name", name);
+        }
+      }
       const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
       setIsLoggedIn(!!sessionUser || !!storedEmail);
     }
