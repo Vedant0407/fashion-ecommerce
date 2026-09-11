@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import GoogleSignInModal from "@/components/GoogleSignInModal";
 
 function SignupFormContent() {
   const router = useRouter();
@@ -16,6 +17,9 @@ function SignupFormContent() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(true);
+
+  // Modal State
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
 
   // Feedback States
   const [error, setError] = useState("");
@@ -49,38 +53,11 @@ function SignupFormContent() {
     checkSession();
   }, [router, redirectUrl]);
 
-  // Handle Direct Google Sign Up / Login without password
-  async function handleGoogleLogin() {
+  // Open Direct Passwordless Google Sign Up Modal
+  function handleGoogleLogin() {
     setError("");
     setMessage("");
-
-    try {
-      setGoogleLoading(true);
-      const supabase = createClient();
-
-      const callbackUrl = `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectUrl)}`;
-
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: callbackUrl,
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
-      });
-
-      if (oauthError) {
-        console.error("GOOGLE OAUTH SIGNUP ERROR:", oauthError);
-        setError(oauthError.message || "Could not connect to Google. Please try again.");
-      }
-    } catch (err: any) {
-      console.error("GOOGLE SIGNUP EXCEPTION:", err);
-      setError(err.message || "Failed to initiate Google sign up.");
-    } finally {
-      setGoogleLoading(false);
-    }
+    setShowGoogleModal(true);
   }
 
   // Handle Email & Password Signup
@@ -340,10 +317,16 @@ function SignupFormContent() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            <span>{googleLoading ? "Connecting to Google..." : "Continue with Google"}</span>
+            <span>Continue with Google</span>
           </button>
         </div>
       </div>
+
+      <GoogleSignInModal
+        isOpen={showGoogleModal}
+        onClose={() => setShowGoogleModal(false)}
+        redirectUrl={redirectUrl}
+      />
     </main>
   );
 }
