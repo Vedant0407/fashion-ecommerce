@@ -73,7 +73,7 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, status, payment_status } = body;
+    const { id, status, payment_status, order: clientOrder } = body;
 
     if (!id || !status) {
       return NextResponse.json(
@@ -83,20 +83,23 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 1. Update in persistent store data
-    const updated = await updateStoreOrderStatus(id, status, payment_status);
+    const updated = await updateStoreOrderStatus(id, status, payment_status, clientOrder);
 
-    // 2. Also update in Supabase orders table
-    try {
-      const supabase = await createClient();
-      await supabase
-        .from("orders")
-        .update({
-          status,
-          ...(payment_status ? { payment_status } : {}),
-        })
-        .eq("id", id);
-    } catch (dbErr) {
-      console.warn("Supabase status sync notice:", dbErr);
+    // 2. Also update in Supabase orders table if id is a UUID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUuid) {
+      try {
+        const supabase = await createClient();
+        await supabase
+          .from("orders")
+          .update({
+            status,
+            ...(payment_status ? { payment_status } : {}),
+          })
+          .eq("id", id);
+      } catch (dbErr) {
+        console.warn("Supabase status sync notice:", dbErr);
+      }
     }
 
     if (!updated) {

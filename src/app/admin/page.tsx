@@ -704,10 +704,15 @@ export default function AdminPage() {
   // ----------------- Orders Status Update -----------------
   async function handleUpdateOrderStatus(orderId: string, newStatus: StoreOrder["status"]) {
     try {
+      const existingOrder = orders.find((o) => o.id === orderId);
       const res = await fetch("/api/admin/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: orderId, status: newStatus }),
+        body: JSON.stringify({
+          id: orderId,
+          status: newStatus,
+          order: existingOrder ? { ...existingOrder, status: newStatus } : undefined,
+        }),
       });
 
       if (res.ok) {

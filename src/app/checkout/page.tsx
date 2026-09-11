@@ -278,8 +278,8 @@ export default function CheckoutPage() {
 
       setOrderPlaced(true);
 
-      const placedOrder = data.order || {
-        id: data.orderId,
+      const completeOrderFallback = {
+        id: data.orderId || data.order?.id,
         created_at: new Date().toISOString(),
         customer: {
           fullName: fullName.trim(),
@@ -319,6 +319,25 @@ export default function CheckoutPage() {
         payment_status: "pending",
       };
 
+      const placedOrder = {
+        ...completeOrderFallback,
+        ...(data.order || {}),
+        items:
+          Array.isArray(data.order?.items) && data.order.items.length > 0
+            ? data.order.items
+            : completeOrderFallback.items,
+        customer: {
+          ...completeOrderFallback.customer,
+          ...(data.order?.customer || {}),
+          fullName:
+            data.order?.customer?.fullName && data.order.customer.fullName !== "Customer"
+              ? data.order.customer.fullName
+              : completeOrderFallback.customer.fullName,
+        },
+        subtotal: data.order?.subtotal || completeOrderFallback.subtotal,
+        total: data.order?.total || completeOrderFallback.total,
+      };
+
       // 1. Save single latest order
       localStorage.setItem("greeno_last_order", JSON.stringify(placedOrder));
 
@@ -355,6 +374,14 @@ export default function CheckoutPage() {
       }
       document.cookie = `greeno_session=${encodeURIComponent(email.trim())}; path=/; max-age=2592000; SameSite=Lax`;
       window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("greeno_order_updated"));
+
+      // 5. Redundantly ensure backend store has full order saved
+      fetch("/api/orders/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orders: [placedOrder] }),
+      }).catch(() => {});
 
       clearCart();
 

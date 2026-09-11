@@ -63,42 +63,80 @@ export async function GET(
       });
     }
 
-    let query = supabase
-      .from("orders")
-      .select(
-        "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, address_id, addresses(*)"
-      )
-      .eq("id", id);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-    if (authenticatedUser) {
-      query = query.eq("user_id", authenticatedUser.id);
+    if (isUuid) {
+      let query = supabase
+        .from("orders")
+        .select(
+          "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, address_id, addresses(*)"
+        )
+        .eq("id", id);
+
+      if (authenticatedUser) {
+        query = query.eq("user_id", authenticatedUser.id);
+      }
+
+      const { data: order, error: orderError } = await query.maybeSingle();
+
+      if (!orderError && order) {
+        const { data: items } = await supabase
+          .from("order_items")
+          .select("id, product_id, product_name, product_price, quantity")
+          .eq("order_id", id);
+
+        return NextResponse.json({
+          success: true,
+          order: {
+            ...order,
+            items: items || [],
+          },
+        });
+      }
     }
 
-    const { data: order, error: orderError } = await query.maybeSingle();
-
-    if (orderError || !order) {
-      return NextResponse.json(
-        { success: false, message: "Order not found" },
-        { status: 404 }
-      );
-    }
-
-    const { data: items, error: itemsError } = await supabase
-      .from("order_items")
-      .select("id, product_id, product_name, product_price, quantity")
-      .eq("order_id", id);
-
-    return NextResponse.json({
-      success: true,
-      order: {
-        ...order,
-        items: items || [],
-      },
-    });
+    return NextResponse.json(
+      { success: false, message: "Order not found" },
+      { status: 404 }
+    );
   } catch (error: any) {
     console.error("GET /api/orders/[id] error:", error);
     return NextResponse.json(
       { success: false, message: error.message || "Failed to fetch order" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const clientOrder = body.order;
+
+    if (!clientOrder || clientOrder.id !== id) {
+      return NextResponse.json(
+        { success: false, message: "Valid order object matching ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const { syncStoreOrders } = await import("@/lib/store-data");
+    const updated = await syncStoreOrders([clientOrder]);
+    const matched = updated.find((o) => o.id === id) || clientOrder;
+
+    return NextResponse.json({
+      success: true,
+      order: matched,
+    });
+  } catch (error: any) {
+    console.error("POST /api/orders/[id] error:", error);
+    return NextResponse.json(
+      { success: false, message: error.message || "Failed to sync order" },
       { status: 500 }
     );
   }

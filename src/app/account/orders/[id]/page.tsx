@@ -75,21 +75,26 @@ export default function OrderDetailsPage() {
   function findLocalOrder(id: string): any | null {
     if (typeof window === "undefined") return null;
     try {
+      const cleanId = (id || "").trim().toLowerCase();
       const rawLast = localStorage.getItem("greeno_last_order");
       if (rawLast) {
         const parsed = JSON.parse(rawLast);
-        if (parsed?.id === id) return parsed;
+        if (parsed?.id && parsed.id.trim().toLowerCase() === cleanId) return parsed;
       }
       const rawCustomer = localStorage.getItem("greeno_customer_orders");
       if (rawCustomer) {
         const list = JSON.parse(rawCustomer);
-        const match = Array.isArray(list) ? list.find((o: any) => o.id === id) : null;
+        const match = Array.isArray(list)
+          ? list.find((o: any) => o?.id && o.id.trim().toLowerCase() === cleanId)
+          : null;
         if (match) return match;
       }
       const rawAll = localStorage.getItem("greeno_all_orders");
       if (rawAll) {
         const list = JSON.parse(rawAll);
-        const match = Array.isArray(list) ? list.find((o: any) => o.id === id) : null;
+        const match = Array.isArray(list)
+          ? list.find((o: any) => o?.id && o.id.trim().toLowerCase() === cleanId)
+          : null;
         if (match) return match;
       }
     } catch {}
@@ -120,7 +125,10 @@ export default function OrderDetailsPage() {
           // Supabase getUser failed
         }
 
-        const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
+        const storedEmail =
+          typeof window !== "undefined"
+            ? localStorage.getItem("greeno_user_email")
+            : null;
 
         if (!user && !storedEmail && !cachedOrder) {
           router.push("/login");
@@ -133,17 +141,93 @@ export default function OrderDetailsPage() {
           if (res.ok) {
             const data = await res.json();
             if (data.success && data.order) {
-              setOrder(data.order);
-              setItems(data.order.items || []);
+              const currentCached = findLocalOrder(orderId) || cachedOrder;
+
+              // Ensure real items are never wiped out by a hollow server order
+              const resolvedItems =
+                Array.isArray(data.order.items) && data.order.items.length > 0
+                  ? data.order.items
+                  : Array.isArray(currentCached?.items) && currentCached.items.length > 0
+                  ? currentCached.items
+                  : [];
+
+              const resolvedCustomer =
+                data.order.customer?.address ||
+                (data.order.customer?.fullName &&
+                  data.order.customer.fullName !== "Customer")
+                  ? data.order.customer
+                  : currentCached?.customer || data.order.customer;
+
+              const resolvedAddresses =
+                data.order.addresses?.address_line1 ||
+                (data.order.addresses?.full_name &&
+                  data.order.addresses.full_name !== "Customer")
+                  ? data.order.addresses
+                  : currentCached?.addresses ||
+                    currentCached?.customer ||
+                    data.order.addresses;
+
+              const resolvedSubtotal =
+                data.order.subtotal > 0
+                  ? data.order.subtotal
+                  : currentCached?.subtotal || 0;
+
+              const resolvedTotal =
+                data.order.total > 0
+                  ? data.order.total
+                  : currentCached?.total || 0;
+
+              const mergedOrder = {
+                ...currentCached,
+                ...data.order,
+                items: resolvedItems,
+                customer: resolvedCustomer,
+                addresses: resolvedAddresses,
+                subtotal: resolvedSubtotal,
+                total: resolvedTotal,
+              };
+
+              setOrder(mergedOrder);
+              setItems(resolvedItems);
               setLoading(false);
 
-              // Update local cache with latest status
+              // If server was missing items but client has them, heal server immediately
+              if (
+                (!data.order.items || data.order.items.length === 0) &&
+                resolvedItems.length > 0
+              ) {
+                fetch(`/api/orders/${orderId}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ order: mergedOrder }),
+                }).catch(() => {});
+              }
+
+              // Update local cache
               try {
-                const rawCustomer = localStorage.getItem("greeno_customer_orders");
-                if (rawCustomer) {
-                  const list = JSON.parse(rawCustomer);
-                  const updated = list.map((o: any) => (o.id === data.order.id ? { ...o, ...data.order } : o));
-                  localStorage.setItem("greeno_customer_orders", JSON.stringify(updated));
+                const updateLocalList = (key: string) => {
+                  const raw = localStorage.getItem(key);
+                  if (raw) {
+                    const list = JSON.parse(raw);
+                    if (Array.isArray(list)) {
+                      const updated = list.map((o: any) =>
+                        o.id === data.order.id ? { ...o, ...mergedOrder } : o
+                      );
+                      localStorage.setItem(key, JSON.stringify(updated));
+                    }
+                  }
+                };
+                updateLocalList("greeno_customer_orders");
+                updateLocalList("greeno_all_orders");
+                const rawLast = localStorage.getItem("greeno_last_order");
+                if (rawLast) {
+                  const last = JSON.parse(rawLast);
+                  if (last?.id === data.order.id) {
+                    localStorage.setItem(
+                      "greeno_last_order",
+                      JSON.stringify({ ...last, ...mergedOrder })
+                    );
+                  }
                 }
               } catch {}
               return;
@@ -154,7 +238,11 @@ export default function OrderDetailsPage() {
         }
 
         // 2. Direct Supabase fallback
-        if (user) {
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            orderId
+          );
+        if (user && isUuid) {
           try {
             const supabase = createClient();
             const { data: orderData } = await supabase
@@ -167,26 +255,47 @@ export default function OrderDetailsPage() {
               .maybeSingle();
 
             if (orderData) {
-              setOrder(orderData);
-
               const { data: itemsData } = await supabase
                 .from("order_items")
                 .select("id, product_id, product_name, product_price, quantity")
                 .eq("order_id", orderId);
 
-              setItems(itemsData || []);
+              const mergedOrder = {
+                ...cachedOrder,
+                ...orderData,
+                items:
+                  itemsData && itemsData.length > 0
+                    ? itemsData
+                    : cachedOrder?.items || [],
+              };
+              setOrder(mergedOrder);
+              setItems(mergedOrder.items || []);
               setLoading(false);
               return;
             }
           } catch {}
         }
 
-        if (!cachedOrder) {
-          setError("Order not found.");
+        if (cachedOrder) {
+          setOrder(cachedOrder);
+          setItems(cachedOrder.items || []);
+          setLoading(false);
+
+          fetch(`/api/orders/${orderId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: cachedOrder }),
+          }).catch(() => {});
+          return;
         }
+
+        setError("Order not found.");
       } catch (err) {
         console.error("ORDER DETAILS ERROR:", err);
-        if (!cachedOrder) {
+        if (cachedOrder) {
+          setOrder(cachedOrder);
+          setItems(cachedOrder.items || []);
+        } else {
           setError("Something went wrong while loading the order.");
         }
       } finally {
@@ -431,8 +540,8 @@ export default function OrderDetailsPage() {
   }
 
   const activeStep = getStepActiveIndex(order.status);
-  const rawAddress = order.addresses;
-  const address: Address | null = Array.isArray(rawAddress) ? rawAddress[0] : rawAddress;
+  const rawAddress = order.addresses || (order as any).customer;
+  const address: any = Array.isArray(rawAddress) ? rawAddress[0] : rawAddress;
 
   // 3-Day Return & Exchange Eligibility Calculation
   const isDelivered =
@@ -759,73 +868,134 @@ export default function OrderDetailsPage() {
                 ORDERED ITEMS ({items.length})
               </h2>
 
-              {items.map((item, idx) => {
-                const itName = (item as any).name || item.product_name || "Streetwear Piece";
-                let unitPrice = parsePrice((item as any).price ?? item.product_price);
-                const itemQty = Number(item.quantity) || 1;
-
-                // If unitPrice is missing or 0, fallback from order subtotal
-                if (unitPrice === 0 && order?.subtotal) {
-                  const totalUnits = items.reduce(
-                    (sum, it) => sum + (Number(it.quantity) || 1),
-                    0
+              {items.length === 0 ? (
+                <div
+                  style={{
+                    padding: "24px",
+                    background: "#f9f9f9",
+                    border: "1px dashed #ddd",
+                    textAlign: "center",
+                    color: "#666",
+                  }}
+                >
+                  <p style={{ margin: "0 0 6px", fontWeight: 600, fontSize: "13px", letterSpacing: "0.08em" }}>
+                    PIECE DETAILS SYNCHRONIZING
+                  </p>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#888" }}>
+                    Your streetwear drop is confirmed with warehouse fulfillment.
+                  </p>
+                </div>
+              ) : (
+                items.map((item, idx) => {
+                  const itName =
+                    (item as any).name || item.product_name || "Streetwear Piece";
+                  let unitPrice = parsePrice(
+                    (item as any).price ?? item.product_price
                   );
-                  unitPrice = Math.round(parsePrice(order.subtotal) / (totalUnits || 1));
-                }
+                  const itemQty = Number(item.quantity) || 1;
 
-                const itemTotal = unitPrice * itemQty;
+                  // If unitPrice is missing or 0, fallback from order subtotal
+                  if (unitPrice === 0 && order?.subtotal) {
+                    const totalUnits = items.reduce(
+                      (sum, it) => sum + (Number(it.quantity) || 1),
+                      0
+                    );
+                    unitPrice = Math.round(
+                      parsePrice(order.subtotal) / (totalUnits || 1)
+                    );
+                  }
 
-                return (
-                  <div className={styles.orderItem} key={item.id || idx}>
-                    <img
-                      src={(item as any).image || "/black-tee.jfif"}
-                      alt={itName}
-                      className={styles.itemImage}
-                    />
+                  const itemTotal = unitPrice * itemQty;
 
-                    <div className={styles.itemInfo}>
-                      <p className={styles.itemName}>{itName}</p>
-                      <p className={styles.itemMeta}>
-                        Quantity: {itemQty}
-                        {(item as any).size ? ` · Size: ${(item as any).size}` : ""}
-                        {(item as any).color ? ` · Color: ${(item as any).color}` : ""}
-                      </p>
+                  return (
+                    <div className={styles.orderItem} key={item.id || idx}>
+                      <img
+                        src={(item as any).image || "/black-tee.jfif"}
+                        alt={itName}
+                        className={styles.itemImage}
+                      />
+
+                      <div className={styles.itemInfo}>
+                        <p className={styles.itemName}>{itName}</p>
+                        <p className={styles.itemMeta}>
+                          Quantity: {itemQty}
+                          {(item as any).size ? ` · Size: ${(item as any).size}` : ""}
+                          {(item as any).color
+                            ? ` · Color: ${(item as any).color}`
+                            : ""}
+                        </p>
+                      </div>
+
+                      <div style={{ textAlign: "right" }}>
+                        <span className={styles.itemPrice}>
+                          ₹{itemTotal.toLocaleString("en-IN")}
+                        </span>
+                        {itemQty > 1 && (
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#888",
+                              marginTop: "2px",
+                            }}
+                          >
+                            ₹{unitPrice.toLocaleString("en-IN")} each
+                          </div>
+                        )}
+                      </div>
                     </div>
-
-                    <div style={{ textAlign: "right" }}>
-                      <span className={styles.itemPrice}>
-                        ₹{itemTotal.toLocaleString("en-IN")}
-                      </span>
-                      {itemQty > 1 && (
-                        <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
-                          ₹{unitPrice.toLocaleString("en-IN")} each
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
 
             {/* Shipping Address Box */}
             {address && (
               <div className={styles.sectionBox}>
                 <h2 className={styles.sectionTitle}>SHIPPING ADDRESS</h2>
-                <p style={{ margin: "0 0 6px", fontWeight: 600, fontSize: "14px" }}>
-                  {address.full_name || (address as any).name || "Customer"}
+                <p
+                  style={{
+                    margin: "0 0 6px",
+                    fontWeight: 600,
+                    fontSize: "14px",
+                  }}
+                >
+                  {address.full_name ||
+                    address.fullName ||
+                    address.name ||
+                    "Valued Customer"}
                 </p>
-                <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}>
-                  {address.address_line1 || (address as any).address}
-                </p>
-                <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}>
-                  {address.city}, {address.state} - {address.postal_code || (address as any).pincode}
-                </p>
-                <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}>
+                {(address.address_line1 || address.address) && (
+                  <p
+                    style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}
+                  >
+                    {address.address_line1 || address.address}
+                  </p>
+                )}
+                {[address.city, address.state].filter(Boolean).length > 0 && (
+                  <p
+                    style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}
+                  >
+                    {[address.city, address.state].filter(Boolean).join(", ")}
+                    {address.postal_code || address.pincode
+                      ? ` - ${address.postal_code || address.pincode}`
+                      : ""}
+                  </p>
+                )}
+                <p
+                  style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}
+                >
                   {address.country || "India"}
                 </p>
                 {(address.phone || (order as any).customer?.phone) && (
-                  <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#777" }}>
-                    Contact Phone: {address.phone || (order as any).customer?.phone}
+                  <p
+                    style={{
+                      margin: "10px 0 0",
+                      fontSize: "12px",
+                      color: "#777",
+                    }}
+                  >
+                    Contact Phone:{" "}
+                    {address.phone || (order as any).customer?.phone}
                   </p>
                 )}
               </div>

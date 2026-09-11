@@ -5,6 +5,29 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./orders.module.css";
 
+type OrderItem = {
+  id?: string;
+  product_id?: string;
+  name?: string;
+  product_name?: string;
+  price?: number;
+  product_price?: number;
+  quantity?: number;
+  image?: string;
+  size?: string;
+  color?: string;
+};
+
+type OrderCustomer = {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+};
+
 type Order = {
   id: string;
   status: string;
@@ -14,6 +37,9 @@ type Order = {
   payment_status: string;
   payment_method: string;
   created_at: string;
+  items?: OrderItem[];
+  customer?: OrderCustomer;
+  addresses?: any;
 };
 
 export default function OrdersPage() {
@@ -106,7 +132,7 @@ export default function OrdersPage() {
           }
         }
 
-        // Merge server and local orders: server status wins, but local orders are never lost
+        // Merge server and local orders: server status wins, but local items and customer details are never lost
         const orderMap = new Map<string, Order>();
 
         // Add local orders first
@@ -114,11 +140,45 @@ export default function OrdersPage() {
           if (loc?.id) orderMap.set(loc.id, loc);
         }
 
-        // Merge with server orders (server status updates e.g. "shipped", "reached" take precedence)
+        // Merge with server orders non-destructively
         for (const srv of serverOrders) {
           if (srv?.id) {
             const existing = orderMap.get(srv.id);
-            orderMap.set(srv.id, { ...(existing || {}), ...srv });
+            if (!existing) {
+              orderMap.set(srv.id, srv);
+            } else {
+              const mergedItems =
+                Array.isArray(srv.items) && srv.items.length > 0
+                  ? srv.items
+                  : Array.isArray(existing.items) && existing.items.length > 0
+                  ? existing.items
+                  : [];
+
+              const mergedCustomer = {
+                fullName:
+                  srv.customer?.fullName && srv.customer.fullName !== "Customer"
+                    ? srv.customer.fullName
+                    : existing.customer?.fullName || srv.customer?.fullName || "Customer",
+                address: srv.customer?.address || existing.customer?.address || "",
+                city: srv.customer?.city || existing.customer?.city || "",
+                state: srv.customer?.state || existing.customer?.state || "",
+                pincode: srv.customer?.pincode || existing.customer?.pincode || "",
+                phone: srv.customer?.phone || existing.customer?.phone || "",
+                email: srv.customer?.email || existing.customer?.email || "",
+              };
+
+              orderMap.set(srv.id, {
+                ...existing,
+                ...srv,
+                items: mergedItems,
+                customer: mergedCustomer,
+                subtotal: srv.subtotal && srv.subtotal > 0 ? srv.subtotal : existing.subtotal || 0,
+                total: srv.total && srv.total > 0 ? srv.total : existing.total || 0,
+                status: srv.status || existing.status,
+                payment_status: srv.payment_status || existing.payment_status,
+                payment_method: srv.payment_method || existing.payment_method,
+              });
+            }
           }
         }
 
@@ -135,16 +195,21 @@ export default function OrdersPage() {
           } catch {}
         }
 
-        // If local had orders not on server (e.g. serverless cold start), sync them back to server
+        // If local had orders missing or hollow on server, heal them back to server
         if (currentLocal.length > 0) {
-          const missingOnServer = currentLocal.filter(
-            (lo) => !serverOrders.some((so) => so.id === lo.id)
-          );
-          if (missingOnServer.length > 0) {
+          const needsHealingOnServer = currentLocal.filter((lo) => {
+            const srv = serverOrders.find((so) => so.id === lo.id);
+            if (!srv) return true;
+            if ((!srv.items || srv.items.length === 0) && lo.items && lo.items.length > 0) return true;
+            if ((!srv.total || srv.total === 0) && lo.total && lo.total > 0) return true;
+            return false;
+          });
+
+          if (needsHealingOnServer.length > 0) {
             fetch("/api/orders/sync", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ orders: missingOnServer }),
+              body: JSON.stringify({ orders: needsHealingOnServer }),
             }).catch(() => {});
           }
         }

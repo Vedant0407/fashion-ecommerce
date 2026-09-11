@@ -395,20 +395,50 @@ export async function readStoreData(): Promise<StoreData> {
     }
   }
 
-  // Merge orders from both sources so no order is ever lost
+  // Merge orders from all sources non-destructively so no order details or items are lost
   const orderMap = new Map<string, StoreOrder>();
-  for (const o of initial.orders) {
-    orderMap.set(o.id, o);
-  }
-  if (fileData?.orders && Array.isArray(fileData.orders)) {
-    for (const o of fileData.orders) {
+  const mergeOrderIntoMap = (o: StoreOrder) => {
+    if (!o || !o.id) return;
+    const existing = orderMap.get(o.id);
+    if (!existing) {
       orderMap.set(o.id, o);
+    } else {
+      const items =
+        Array.isArray(o.items) && o.items.length > 0
+          ? o.items
+          : Array.isArray(existing.items) && existing.items.length > 0
+          ? existing.items
+          : [];
+      const customer = {
+        fullName:
+          o.customer?.fullName && o.customer.fullName !== "Customer"
+            ? o.customer.fullName
+            : existing.customer?.fullName || o.customer?.fullName || "Customer",
+        address: o.customer?.address || existing.customer?.address || "",
+        city: o.customer?.city || existing.customer?.city || "",
+        state: o.customer?.state || existing.customer?.state || "",
+        pincode: o.customer?.pincode || existing.customer?.pincode || "",
+        phone: o.customer?.phone || existing.customer?.phone || "",
+        email: o.customer?.email || existing.customer?.email || "",
+      };
+      orderMap.set(o.id, {
+        ...existing,
+        ...o,
+        items,
+        customer,
+        subtotal: o.subtotal > 0 ? o.subtotal : existing.subtotal || 0,
+        total: o.total > 0 ? o.total : existing.total || 0,
+        status: o.status || existing.status,
+      });
     }
+  };
+
+  for (const o of initial.orders) mergeOrderIntoMap(o);
+  if (fileData?.orders && Array.isArray(fileData.orders)) {
+    for (const o of fileData.orders) mergeOrderIntoMap(o);
   }
   if (tmpData?.orders && Array.isArray(tmpData.orders)) {
-    for (const o of tmpData.orders) {
-      orderMap.set(o.id, o);
-    }
+    for (const o of tmpData.orders) mergeOrderIntoMap(o);
   }
 
   // Merge return/exchange requests so no request is ever lost
@@ -596,38 +626,58 @@ export async function addStoreOrder(order: StoreOrder): Promise<StoreOrder> {
 export async function updateStoreOrderStatus(
   orderId: string,
   status: StoreOrder["status"],
-  payment_status?: StoreOrder["payment_status"]
+  payment_status?: StoreOrder["payment_status"],
+  fallbackOrder?: Partial<StoreOrder>
 ): Promise<StoreOrder | null> {
   const data = await readStoreData();
   let order = data.orders.find((o) => o.id === orderId);
 
   if (!order) {
-    order = {
-      id: orderId,
-      created_at: new Date().toISOString(),
-      customer: {
-        fullName: "Customer",
-        email: "customer@example.com",
-        phone: "",
-        address: "",
-        city: "",
-        state: "",
-        pincode: "",
-      },
-      items: [],
-      subtotal: 0,
-      shipping: 0,
-      discount: 0,
-      total: 0,
-      status,
-      payment_method: "COD",
-      payment_status: payment_status || "pending",
-    };
-    data.orders.unshift(order);
+    if (
+      fallbackOrder &&
+      fallbackOrder.customer &&
+      fallbackOrder.items &&
+      fallbackOrder.items.length > 0
+    ) {
+      order = {
+        id: orderId,
+        created_at: fallbackOrder.created_at || new Date().toISOString(),
+        customer: fallbackOrder.customer as any,
+        items: fallbackOrder.items as any,
+        subtotal: fallbackOrder.subtotal || 0,
+        shipping: fallbackOrder.shipping !== undefined ? fallbackOrder.shipping : 0,
+        discount: fallbackOrder.discount || 0,
+        total: fallbackOrder.total || 0,
+        status,
+        payment_method: fallbackOrder.payment_method || "COD",
+        payment_status: payment_status || fallbackOrder.payment_status || "pending",
+      };
+      data.orders.unshift(order);
+    } else {
+      // Never create a hollow 0-item stub order that destroys real order records
+      return null;
+    }
   } else {
     order.status = status;
     if (payment_status) {
       order.payment_status = payment_status;
+    }
+
+    // If order was previously missing items or customer details, heal it from fallbackOrder
+    if (
+      (!order.items || order.items.length === 0) &&
+      fallbackOrder?.items &&
+      fallbackOrder.items.length > 0
+    ) {
+      order.items = fallbackOrder.items as any;
+      if (fallbackOrder.subtotal) order.subtotal = fallbackOrder.subtotal;
+      if (fallbackOrder.total) order.total = fallbackOrder.total;
+    }
+    if (
+      (!order.customer || order.customer.fullName === "Customer") &&
+      fallbackOrder?.customer
+    ) {
+      order.customer = fallbackOrder.customer as any;
     }
   }
 
@@ -649,11 +699,28 @@ export async function syncStoreOrders(clientOrders: StoreOrder[]): Promise<Store
     if (!existing) {
       existingMap.set(co.id, co);
     } else {
+      // Intelligently merge: NEVER let empty items replace real items!
+      const resolvedItems =
+        Array.isArray(co.items) && co.items.length > 0
+          ? co.items
+          : Array.isArray(existing.items) && existing.items.length > 0
+          ? existing.items
+          : [];
+
+      const resolvedCustomer =
+        co.customer?.address || (co.customer?.fullName && co.customer.fullName !== "Customer")
+          ? co.customer
+          : existing.customer || co.customer;
+
       existingMap.set(co.id, {
         ...existing,
         ...co,
-        status: co.status || existing.status,
-        payment_status: co.payment_status || existing.payment_status,
+        items: resolvedItems,
+        customer: resolvedCustomer,
+        subtotal: co.subtotal > 0 ? co.subtotal : existing.subtotal || 0,
+        total: co.total > 0 ? co.total : existing.total || 0,
+        status: existing.status || co.status,
+        payment_status: existing.payment_status || co.payment_status,
       });
     }
   }
