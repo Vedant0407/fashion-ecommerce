@@ -452,7 +452,7 @@ select {
 
 .category-section {
   width: 100%;
-  padding: 20px 8px 24px;
+  padding: 20px 2px 24px;
   background: #ffffff;
   overflow: hidden;
 }
@@ -463,7 +463,7 @@ select {
 }
 
 .category-heading {
-  padding: 0 4px;
+  padding: 0 10px;
 }
 
 .category-kicker {
@@ -488,7 +488,7 @@ select {
   display: grid;
   grid-template-columns: 1.35fr 0.65fr 0.65fr;
   grid-auto-rows: clamp(260px, 22vw, 340px);
-  gap: 8px;
+  gap: 4px;
 }
 
 .category-card {
@@ -598,7 +598,7 @@ select {
 
 .trending-section {
   width: 100%;
-  padding: 16px clamp(16px, 2vw, 32px) 24px;
+  padding: 16px 2px 24px;
   background: #ffffff;
   overflow: hidden;
 }
@@ -617,7 +617,7 @@ select {
 .trending-slide {
   position: relative;
   width: 100%;
-  height: clamp(440px, 48vh, 580px);
+  height: clamp(650px, 78vh, 880px);
   display: block;
   text-decoration: none;
   color: #ffffff;
@@ -1107,11 +1107,11 @@ select {
     padding-left: 0;
     padding-right: 0;
   }
-  .category-section {
-    padding-left: 6px;
-    padding-right: 6px;
+  .category-section,
+  .trending-section {
+    padding-left: 2px;
+    padding-right: 2px;
   }
-  .trending-section,
   .products-section,
   .about-section {
     padding-left: 14px;
@@ -1126,7 +1126,7 @@ select {
     grid-auto-rows: 300px;
   }
   .trending-slide {
-    height: 480px;
+    height: 560px;
   }
   .about-top {
     grid-template-columns: 1fr;
