@@ -219,6 +219,7 @@ export default function AuthSlidingCard({
         loginEmail.trim()
       )}; path=/; max-age=2592000; SameSite=Lax`;
       window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("greeno_auth_change"));
 
       setLoginMessage("Login successful! Redirecting...");
 
@@ -416,6 +417,7 @@ export default function AuthSlidingCard({
         signupEmail.trim()
       )}; path=/; max-age=2592000; SameSite=Lax`;
       window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("greeno_auth_change"));
 
       setSignupMessage(
         "Email verified successfully! Welcome to GreenO. Redirecting..."

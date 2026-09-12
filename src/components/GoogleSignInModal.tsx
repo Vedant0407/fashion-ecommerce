@@ -203,6 +203,7 @@ export default function GoogleSignInModal({
         finalEmail
       )}; path=/; max-age=2592000; SameSite=Lax`;
       window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("greeno_auth_change"));
 
       // 5. Client-side Supabase sync (non-blocking, fails gracefully)
       try {

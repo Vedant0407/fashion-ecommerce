@@ -77,6 +77,7 @@ export default function AccountPage() {
       document.cookie = "greeno_session=; path=/; max-age=0";
       window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
+      window.dispatchEvent(new CustomEvent("greeno_auth_change"));
     }
     router.push("/login");
     router.refresh();
