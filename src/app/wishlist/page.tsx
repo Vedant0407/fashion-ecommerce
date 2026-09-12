@@ -224,23 +224,6 @@ function WishlistItemCard({
           </span>
         </div>
       </Link>
-
-      {/* Dedicated Bottom ADD TO CART Button */}
-      <div style={{ padding: "0 14px 16px", marginTop: "auto" }}>
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          className={`wishlist-card-bottom-btn ${isAdded ? "added" : ""}`}
-        >
-          {isAdded ? (
-            <>
-              <Check size={14} /> ADDED TO CART ✓
-            </>
-          ) : (
-            "ADD TO CART →"
-          )}
-        </button>
-      </div>
     </article>
   );
 }
