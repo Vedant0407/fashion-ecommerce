@@ -655,188 +655,132 @@ export default function CheckoutPage() {
       )}
 
       <div className={styles.container}>
-        <Link href="/cart" className={styles.back}>
-          ← BACK TO SHOPPING BAG
-        </Link>
-
-        <p className={styles.crumb}>GREENO / CHECKOUT</p>
-        <h1 className={styles.title}>CHECKOUT</h1>
+        {/* Compact Top Header */}
+        <div className={styles.headerRow}>
+          <div className={styles.headerLeft}>
+            <Link href="/cart" className={styles.back}>
+              ← BAG
+            </Link>
+            <h1 className={styles.compactTitle}>CHECKOUT</h1>
+          </div>
+          <div className={styles.secureBadge}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>256-BIT ENCRYPTED</span>
+          </div>
+        </div>
 
         {!isLoggedIn && (
-          <div
-            style={{
-              padding: "16px 20px",
-              background: "#fff",
-              border: "1px solid #cfcfcb",
-              marginBottom: "35px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "10px",
-            }}
-          >
-            <div>
-              <strong style={{ fontSize: "11px", letterSpacing: "0.14em" }}>
-                ORDERING AS GUEST
-              </strong>
-              <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#666" }}>
-                Already have a GreenO account? Log in to save to your order history.
-              </p>
-            </div>
-            <Link
-              href="/login?redirect=/checkout"
-              style={{
-                fontSize: "10px",
-                letterSpacing: "0.16em",
-                fontWeight: 600,
-                color: "#111",
-                textDecoration: "underline",
-              }}
-            >
-              LOG IN NOW →
-            </Link>
+          <div className={styles.guestNotice}>
+            <span>Ordering as guest · Want to save this order to your profile?</span>
+            <Link href="/login?redirect=/checkout">LOG IN →</Link>
           </div>
         )}
 
         <div className={styles.layout}>
-          <section className={styles.formSection}>
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>PERSONAL INFORMATION</h2>
+          {/* Left Column: Delivery & Payment Details */}
+          <section className={styles.card}>
+            <div className={styles.cardHeader}>
+              <span className={styles.stepNum}>1</span>
+              <h2 className={styles.cardTitle}>Delivery &amp; Contact Details</h2>
+            </div>
 
-              <div className={styles.fields}>
-                <div className={styles.field}>
-                  <label className={styles.label}>FULL NAME</label>
+            <div className={styles.fieldsGrid}>
+              {/* Row 1: Full Name & Email */}
+              <div className={styles.field}>
+                <label className={styles.label}>Full Name</label>
+                <input
+                  className={styles.input}
+                  type="text"
+                  placeholder="e.g. John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
+                  required
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Email Address</label>
+                <input
+                  className={styles.input}
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              {/* Row 2: Phone with integrated OTP Action & Street Address */}
+              <div className={styles.field}>
+                <label className={styles.label}>Phone Number</label>
+                <div className={styles.phoneWrapper}>
                   <input
-                    className={styles.input}
-                    type="text"
-                    placeholder="Your full name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    autoComplete="name"
+                    className={styles.phoneInput}
+                    type="tel"
+                    placeholder="10-digit mobile number"
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    autoComplete="tel"
+                    required
                   />
-                </div>
-
-                <div className={styles.field}>
-                  <label className={styles.label}>EMAIL ADDRESS</label>
-                  <input
-                    className={styles.input}
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div className={styles.field}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "9px" }}>
-                    <label className={styles.label} style={{ margin: 0 }}>PHONE NUMBER</label>
-                    {isPhoneVerified ? (
-                      <span
-                        style={{
-                          fontSize: "9px",
-                          fontWeight: 700,
-                          letterSpacing: "0.1em",
-                          background: "#000000",
-                          color: "#ffffff",
-                          padding: "2px 8px",
-                          border: "1px solid #000000",
-                        }}
-                      >
-                        ✓ VERIFIED
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: "10px", color: "#888888", letterSpacing: "0.06em" }}>
-                        SMS OTP REQUIRED
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                    <input
-                      className={styles.input}
-                      type="tel"
-                      placeholder="10-digit mobile number"
-                      value={phone}
-                      onChange={(e) => handlePhoneChange(e.target.value)}
-                      autoComplete="tel"
-                      style={{ paddingRight: isPhoneVerified ? "110px" : "120px" }}
-                    />
-                    {isPhoneVerified ? (
+                  {isPhoneVerified ? (
+                    <div className={styles.phoneVerifiedBadge}>
+                      <span className={styles.verifiedPill}>✓ VERIFIED</span>
                       <button
                         type="button"
+                        className={styles.changePhoneBtn}
                         onClick={() => {
                           setIsPhoneVerified(false);
                           setVerifiedPhone("");
                         }}
-                        style={{
-                          position: "absolute",
-                          right: 0,
-                          bottom: "10px",
-                          background: "transparent",
-                          border: "none",
-                          fontSize: "10px",
-                          fontWeight: 600,
-                          color: "#666666",
-                          textDecoration: "underline",
-                          cursor: "pointer",
-                          letterSpacing: "0.08em",
-                        }}
                       >
-                        CHANGE
+                        Change
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleSendPhoneOtp}
-                        disabled={otpLoading || phone.replace(/\D/g, "").length < 10}
-                        style={{
-                          position: "absolute",
-                          right: 0,
-                          bottom: "8px",
-                          background: phone.replace(/\D/g, "").length >= 10 ? "#000000" : "#e0e0e0",
-                          color: phone.replace(/\D/g, "").length >= 10 ? "#ffffff" : "#888888",
-                          border: "none",
-                          padding: "6px 14px",
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          letterSpacing: "0.1em",
-                          cursor: phone.replace(/\D/g, "").length >= 10 ? "pointer" : "not-allowed",
-                          transition: "all 0.2s ease",
-                        }}
-                      >
-                        {otpLoading ? "SENDING..." : "VERIFY OTP"}
-                      </button>
-                    )}
-                  </div>
-                  {!isPhoneVerified && (
-                    <div style={{ fontSize: "10px", color: "#888888", marginTop: "6px" }}>
-                      We will send a 6-digit confirmation code via SMS to verify this number.
                     </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.phoneActionBtn}
+                      onClick={handleSendPhoneOtp}
+                      disabled={otpLoading || phone.replace(/\D/g, "").length < 10}
+                    >
+                      {otpLoading ? "SENDING..." : "VERIFY OTP"}
+                    </button>
                   )}
                 </div>
               </div>
-            </div>
 
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>SHIPPING INFORMATION</h2>
+              <div className={styles.field}>
+                <label className={styles.label}>Street Address</label>
+                <input
+                  className={styles.input}
+                  type="text"
+                  placeholder="House, street, area"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  autoComplete="street-address"
+                  required
+                />
+              </div>
 
-              <div className={styles.fields}>
-                <div className={`${styles.field} ${styles.full}`}>
-                  <label className={styles.label}>ADDRESS</label>
-                  <input
-                    className={styles.input}
-                    type="text"
-                    placeholder="House / street / locality"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    autoComplete="street-address"
-                  />
-                </div>
-
+              {/* Row 3: City, State, Pincode in 1 line */}
+              <div className={styles.row3}>
                 <div className={styles.field}>
-                  <label className={styles.label}>CITY</label>
+                  <label className={styles.label}>City</label>
                   <input
                     className={styles.input}
                     type="text"
@@ -844,11 +788,12 @@ export default function CheckoutPage() {
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     autoComplete="address-level2"
+                    required
                   />
                 </div>
 
                 <div className={styles.field}>
-                  <label className={styles.label}>STATE</label>
+                  <label className={styles.label}>State</label>
                   <input
                     className={styles.input}
                     type="text"
@@ -856,74 +801,83 @@ export default function CheckoutPage() {
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     autoComplete="address-level1"
+                    required
                   />
                 </div>
 
                 <div className={styles.field}>
-                  <label className={styles.label}>PINCODE</label>
+                  <label className={styles.label}>Pincode</label>
                   <input
                     className={styles.input}
                     type="text"
-                    placeholder="6-digit pincode"
+                    placeholder="6 digits"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
                     autoComplete="postal-code"
+                    maxLength={6}
+                    required
                   />
                 </div>
               </div>
             </div>
 
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>PAYMENT METHOD</h2>
-
-              <div className={styles.paymentBox}>
-                <div className={styles.paymentTitle}>CASH ON DELIVERY (COD)</div>
-                <p className={styles.paymentText}>
-                  Pay conveniently in cash or via UPI at your doorstep upon delivery. Verified orders are dispatched with priority tracking.
-                </p>
+            {/* Payment Method */}
+            <div className={styles.paymentSection}>
+              <div className={styles.cardHeader} style={{ marginBottom: "10px" }}>
+                <span className={styles.stepNum}>2</span>
+                <h2 className={styles.cardTitle}>Payment Method</h2>
               </div>
-            </div>
 
-            {error && <div className={styles.error}>{error}</div>}
-
-            <div className={styles.actions}>
-              <button
-                className={styles.placeButton}
-                disabled={loading}
-                onClick={placeOrder}
-              >
-                {loading ? "PROCESSING ORDER..." : "PLACE ORDER (CASH ON DELIVERY)"}
-              </button>
+              <div className={styles.codBox}>
+                <div className={styles.codLeft}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    id="payment-cod"
+                    checked
+                    readOnly
+                    className={styles.codRadio}
+                  />
+                  <div>
+                    <div className={styles.codName}>Cash on Delivery (COD)</div>
+                    <div className={styles.codSub}>
+                      Pay via Cash or UPI upon delivery at your doorstep
+                    </div>
+                  </div>
+                </div>
+                <span className={styles.codBadge}>✓ PRIORITY DISPATCH</span>
+              </div>
             </div>
           </section>
 
-          <aside className={styles.summary}>
+          {/* Right Column: Compact Order Summary Card */}
+          <aside className={styles.summaryCard}>
             <div className={styles.summaryHeader}>
-              <h2 className={styles.summaryTitle}>ORDER SUMMARY</h2>
+              <h2 className={styles.summaryTitle}>Order Summary</h2>
               <span className={styles.itemCount}>
-                {cart.reduce((s, i) => s + i.quantity, 0)} {cart.reduce((s, i) => s + i.quantity, 0) === 1 ? "ITEM" : "ITEMS"}
+                {cart.reduce((s, i) => s + i.quantity, 0)}{" "}
+                {cart.reduce((s, i) => s + i.quantity, 0) === 1 ? "Item" : "Items"}
               </span>
             </div>
 
-            <div className={styles.items}>
+            {/* Items List */}
+            <div className={styles.itemsList}>
               {cart.map((item) => (
-                <div key={`${item.id}-${item.size}`} className={styles.item}>
+                <div key={`${item.id}-${item.size}`} className={styles.itemRow}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={item.image || "/black-tee.jfif"}
                     alt={item.name}
-                    className={styles.image}
+                    className={styles.itemImg}
                   />
-
-                  <div className={styles.itemInfo}>
-                    <h3 className={styles.itemName}>{item.name}</h3>
-                    <p className={styles.meta}>
+                  <div className={styles.itemDetails}>
+                    <div className={styles.itemName}>{item.name}</div>
+                    <div className={styles.itemMeta}>
                       Qty: {item.quantity}
-                      {item.size ? ` · Size: ${item.size}` : ""}
-                      {item.color ? ` · Color: ${item.color}` : ""}
-                    </p>
+                      {item.size ? ` · ${item.size}` : ""}
+                      {item.color ? ` · ${item.color}` : ""}
+                    </div>
                   </div>
-
                   <span className={styles.itemPrice}>
                     ₹{(Number(item.price) * item.quantity).toLocaleString("en-IN")}
                   </span>
@@ -931,32 +885,54 @@ export default function CheckoutPage() {
               ))}
             </div>
 
-            <div className={styles.totals}>
+            {/* Totals Breakdown */}
+            <div className={styles.totalRows}>
               <div className={styles.totalRow}>
-                <span className={styles.totalLabel}>SUBTOTAL</span>
+                <span>Subtotal</span>
                 <span>₹{subtotal.toLocaleString("en-IN")}</span>
               </div>
 
               <div className={styles.totalRow}>
-                <span className={styles.totalLabel}>DELIVERY</span>
-                <span>{shipping === 0 ? "FREE" : `₹${shipping.toLocaleString("en-IN")}`}</span>
+                <span>Delivery</span>
+                <span
+                  style={{
+                    color: shipping === 0 ? "#16a34a" : "inherit",
+                    fontWeight: 600,
+                  }}
+                >
+                  {shipping === 0 ? "FREE" : `₹${shipping.toLocaleString("en-IN")}`}
+                </span>
               </div>
 
               {discount > 0 && (
                 <div className={styles.totalRow} style={{ color: "#16a34a" }}>
-                  <span className={styles.totalLabel}>
-                    PROMO ({appliedCoupon?.code})
-                  </span>
+                  <span>Promo ({appliedCoupon?.code})</span>
                   <span>-₹{discount.toLocaleString("en-IN")}</span>
                 </div>
               )}
 
-              <div className={`${styles.totalRow} ${styles.grandTotal}`}>
-                <span style={{ color: "#000000", fontWeight: 700 }}>TOTAL</span>
-                <strong>
-                  ₹{total.toLocaleString("en-IN")}
-                </strong>
+              <div className={styles.grandTotalRow}>
+                <span>Total Amount</span>
+                <span>₹{total.toLocaleString("en-IN")}</span>
               </div>
+            </div>
+
+            {error && <div className={styles.errorBox}>{error}</div>}
+
+            <button
+              className={styles.placeBtn}
+              disabled={loading}
+              onClick={placeOrder}
+            >
+              {loading ? "PLACING ORDER..." : "PLACE ORDER (COD)"}
+            </button>
+
+            <div className={styles.trustBadges}>
+              <span>🔒 100% Secure</span>
+              <span>•</span>
+              <span>🚚 Express Dispatch</span>
+              <span>•</span>
+              <span>↩ Easy Returns</span>
             </div>
           </aside>
         </div>
