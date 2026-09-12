@@ -4,7 +4,25 @@ import { registerOrUpdateGoogleUser, normalizeEmail } from "@/lib/user-store";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, name } = body;
+    let { email, name } = body;
+
+    // If a Google Identity Services JWT credential is provided, decode it
+    if (body.credential && typeof body.credential === "string") {
+      try {
+        const parts = body.credential.split(".");
+        if (parts.length >= 2) {
+          const payloadBase64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+          const payloadJson = Buffer.from(payloadBase64, "base64").toString("utf-8");
+          const payload = JSON.parse(payloadJson);
+          if (payload.email) {
+            email = payload.email;
+            name = payload.name || name || payload.email.split("@")[0];
+          }
+        }
+      } catch (jwtErr) {
+        console.warn("Could not decode Google JWT credential:", jwtErr);
+      }
+    }
 
     if (!email || typeof email !== "string") {
       return NextResponse.json(
