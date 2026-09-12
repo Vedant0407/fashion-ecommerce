@@ -8,7 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { createClient } from "@/lib/supabase/client";
 import OtpInput from "@/components/ui/OtpInput";
 import GatewayNotification from "@/components/ui/GatewayNotification";
-import { INDIAN_STATES, INDIA_STATES_AND_CITIES } from "@/data/india-states-cities";
+import { INDIAN_STATES, INDIA_STATES_AND_CITIES, getPincodeForCity } from "@/data/india-states-cities";
 import styles from "./checkout.module.css";
 
 export default function CheckoutPage() {
@@ -109,12 +109,19 @@ export default function CheckoutPage() {
     setState(val);
     setCity("");
     setCustomCity("");
+    setPincode("");
   }
 
   function handleCityChange(val: string) {
     setCity(val);
     if (val !== "Other") {
       setCustomCity("");
+      const autoPin = getPincodeForCity(state, val);
+      if (autoPin) {
+        setPincode(autoPin);
+      }
+    } else {
+      setPincode("");
     }
   }
 
