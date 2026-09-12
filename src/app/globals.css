@@ -4024,6 +4024,253 @@ select {
 }
 
 /* =========================================
+   PINTEREST SLIDING AUTH PANEL ANIMATION
+   (BOSS0exe dual-slide sign-in / sign-up)
+========================================= */
+
+.auth-sliding-card {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 980px;
+  background: #ffffff;
+  border-radius: 36px;
+  box-shadow: 0 35px 90px -15px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  min-height: 680px;
+}
+
+.auth-sliding-form {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 50%;
+  padding: 42px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #ffffff;
+  transition: all 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.auth-sliding-form::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sign In Pane: default left side */
+.auth-form-signin {
+  left: 0;
+  z-index: 2;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.auth-sliding-card.active .auth-form-signin {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Sign Up Pane: starts behind, slides into right side when active */
+.auth-form-signup {
+  left: 0;
+  width: 50%;
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+  transform: translateX(0);
+}
+
+.auth-sliding-card.active .auth-form-signup {
+  transform: translateX(100%);
+  opacity: 1;
+  z-index: 5;
+  pointer-events: auto;
+  animation: authMove 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+@keyframes authMove {
+  0%, 49.99% {
+    opacity: 0;
+    z-index: 1;
+  }
+  50%, 100% {
+    opacity: 1;
+    z-index: 5;
+  }
+}
+
+/* Sliding Overlay Container (Right half by default) */
+.auth-sliding-toggle-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  transition: all 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  z-index: 100;
+  border-radius: 0 36px 36px 0;
+}
+
+.auth-sliding-card.active .auth-sliding-toggle-container {
+  transform: translateX(-100%);
+  border-radius: 36px 0 0 36px;
+}
+
+/* Double-width toggle slider */
+.auth-sliding-toggle {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.6) 50%, rgba(0, 0, 0, 0.88) 100%), url('/hero.jfif');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #ffffff;
+  position: relative;
+  left: -100%;
+  height: 100%;
+  width: 200%;
+  transform: translateX(0);
+  transition: all 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.auth-sliding-card.active .auth-sliding-toggle {
+  transform: translateX(50%);
+}
+
+/* Individual toggle panels */
+.auth-toggle-panel {
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 44px;
+  text-align: center;
+  top: 0;
+  transform: translateX(0);
+  transition: all 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  box-sizing: border-box;
+}
+
+.auth-toggle-left {
+  transform: translateX(-200%);
+}
+
+.auth-sliding-card.active .auth-toggle-left {
+  transform: translateX(0);
+}
+
+.auth-toggle-right {
+  right: 0;
+  transform: translateX(0);
+}
+
+.auth-sliding-card.active .auth-toggle-right {
+  transform: translateX(200%);
+}
+
+/* Ghost Action Button on Toggle Overlay */
+.auth-ghost-btn {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  color: #ffffff;
+  font-size: 13px;
+  padding: 12px 38px;
+  border-radius: 9999px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.auth-ghost-btn:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+}
+
+.auth-toggle-tag {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.auth-toggle-title {
+  margin: 0 0 14px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.auth-toggle-desc {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 320px;
+}
+
+/* Responsive Rules */
+@media (max-width: 860px) {
+  .auth-sliding-card {
+    border-radius: 24px;
+    max-width: 480px;
+    min-height: auto;
+    position: relative;
+  }
+
+  .auth-sliding-toggle-container {
+    display: none;
+  }
+
+  .auth-sliding-form {
+    position: relative;
+    width: 100%;
+    padding: 36px 24px;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .auth-form-signin {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .auth-sliding-card.active .auth-form-signin {
+    display: none;
+  }
+
+  .auth-form-signup {
+    display: none;
+  }
+
+  .auth-sliding-card.active .auth-form-signup {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}
+
+/* =========================================
    GOOGLE SIGN-IN MODAL
 ========================================= */
 
