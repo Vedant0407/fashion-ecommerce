@@ -8,6 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { createClient } from "@/lib/supabase/client";
 import OtpInput from "@/components/ui/OtpInput";
 import GatewayNotification from "@/components/ui/GatewayNotification";
+import { INDIAN_STATES, INDIA_STATES_AND_CITIES } from "@/data/india-states-cities";
 import styles from "./checkout.module.css";
 
 export default function CheckoutPage() {
@@ -24,6 +25,7 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
+  const [customCity, setCustomCity] = useState("");
   const [state, setState] = useState("");
   const [pincode, setPincode] = useState("");
   const [delivery, setDelivery] = useState("standard");
@@ -97,6 +99,22 @@ export default function CheckoutPage() {
     if (isPhoneVerified && val.replace(/\D/g, "") !== verifiedPhone.replace(/\D/g, "")) {
       setIsPhoneVerified(false);
       setVerifiedPhone("");
+    }
+  }
+
+  // Available cities computed based on selected state
+  const availableCities = state ? (INDIA_STATES_AND_CITIES[state] || []) : [];
+
+  function handleStateChange(val: string) {
+    setState(val);
+    setCity("");
+    setCustomCity("");
+  }
+
+  function handleCityChange(val: string) {
+    setCity(val);
+    if (val !== "Other") {
+      setCustomCity("");
     }
   }
 
@@ -200,16 +218,18 @@ export default function CheckoutPage() {
   async function placeOrder() {
     setError("");
 
+    const finalCity = city === "Other" ? customCity.trim() : city.trim();
+
     if (
       !fullName.trim() ||
       !email.trim() ||
       !phone.trim() ||
       !address.trim() ||
-      !city.trim() ||
       !state.trim() ||
+      !finalCity ||
       !pincode.trim()
     ) {
-      setError("Please complete all contact and shipping fields.");
+      setError("Please complete all contact and shipping fields, including State and City.");
       return;
     }
 
@@ -242,8 +262,8 @@ export default function CheckoutPage() {
           email,
           phone,
           address,
-          city,
-          state,
+          city: finalCity,
+          state: state.trim(),
           pincode,
           items: cart.map((item: any) => {
             const rawP = item.price ?? item.product_price ?? 0;
@@ -286,7 +306,7 @@ export default function CheckoutPage() {
           email: email.trim(),
           phone: phone.trim(),
           address: address.trim(),
-          city: city.trim(),
+          city: finalCity,
           state: state.trim(),
           pincode: pincode.trim(),
         },
@@ -777,35 +797,59 @@ export default function CheckoutPage() {
                 />
               </div>
 
-              {/* Row 3: City, State, Pincode in 1 line */}
+              {/* Row 3: State (left), City (right), Pincode */}
               <div className={styles.row3}>
                 <div className={styles.field}>
-                  <label className={styles.label}>City</label>
-                  <input
-                    className={styles.input}
-                    type="text"
-                    placeholder="City"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    autoComplete="address-level2"
-                    required
-                  />
-                </div>
-
-                <div className={styles.field}>
                   <label className={styles.label}>State</label>
-                  <input
-                    className={styles.input}
-                    type="text"
-                    placeholder="State"
+                  <select
+                    className={styles.select}
                     value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    autoComplete="address-level1"
+                    onChange={(e) => handleStateChange(e.target.value)}
                     required
-                  />
+                  >
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map((st) => (
+                      <option key={st} value={st}>
+                        {st}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className={styles.field}>
+                  <label className={styles.label}>City</label>
+                  <select
+                    className={styles.select}
+                    value={city}
+                    onChange={(e) => handleCityChange(e.target.value)}
+                    disabled={!state}
+                    required
+                  >
+                    <option value="">
+                      {state ? "Select City" : "Select State first"}
+                    </option>
+                    {availableCities.map((ct) => (
+                      <option key={ct} value={ct}>
+                        {ct}
+                      </option>
+                    ))}
+                    {state && <option value="Other">Other / Not Listed</option>}
+                  </select>
+                  {city === "Other" && (
+                    <input
+                      className={styles.input}
+                      style={{ marginTop: "8px" }}
+                      type="text"
+                      placeholder="Type your city / town"
+                      value={customCity}
+                      onChange={(e) => setCustomCity(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  )}
+                </div>
+
+                <div className={`${styles.field} ${styles.row3Pincode}`}>
                   <label className={styles.label}>Pincode</label>
                   <input
                     className={styles.input}

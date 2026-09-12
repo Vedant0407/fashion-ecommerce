@@ -144,7 +144,7 @@
 .row3 {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1.2fr 1fr 0.8fr;
+  grid-template-columns: 1.15fr 1.15fr 0.85fr;
   gap: 14px;
 }
 
@@ -183,6 +183,40 @@
 .input::placeholder {
   color: #999999;
   font-size: 13px;
+}
+
+.select {
+  width: 100%;
+  box-sizing: border-box;
+  height: 46px;
+  padding: 0 34px 0 14px;
+  border: 1.5px solid #dcdcdc;
+  border-radius: 0px;
+  font-size: 14px;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23111111' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  color: #111111;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.select:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+.select:disabled {
+  background-color: #f7f7f7;
+  color: #999999;
+  cursor: not-allowed;
+  border-color: #e5e5e5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaaaaa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
 /* Phone Field with Inline OTP Action */
@@ -573,5 +607,9 @@
 
   .row3 {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .row3Pincode {
+    grid-column: 1 / -1;
   }
 }
