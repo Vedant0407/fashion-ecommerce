@@ -882,16 +882,16 @@ export default function AuthSlidingCard({
                 style={{
                   background: "#f8f9fa",
                   border: "1px solid #e9ecef",
-                  borderRadius: "16px",
-                  padding: "14px 18px",
-                  fontSize: "13px",
+                  borderRadius: "10px",
+                  padding: "8px 12px",
+                  fontSize: "11px",
                   color: "#495057",
-                  lineHeight: "1.5",
-                  marginBottom: "20px",
+                  lineHeight: "1.4",
+                  marginBottom: "12px",
                 }}
               >
-                ✉ <strong>Check your inbox and Spam folder.</strong> We dispatched
-                a 6-digit verification code to <strong>{signupEmail}</strong>.
+                ✉ <strong>Check inbox &amp; Spam.</strong> Verification code sent
+                to <strong>{signupEmail}</strong>.
               </div>
 
               {/* Error & Success Feedback */}
@@ -904,16 +904,16 @@ export default function AuthSlidingCard({
 
               {/* 6-Digit Code Input Form */}
               <form onSubmit={handleVerifyAndSignup}>
-                <div style={{ textAlign: "center", marginBottom: "16px" }}>
+                <div style={{ textAlign: "center", marginBottom: "12px" }}>
                   <span
                     style={{
-                      fontSize: "11px",
+                      fontSize: "10px",
                       fontWeight: 700,
                       letterSpacing: "0.14em",
                       color: "#666666",
                       textTransform: "uppercase",
                       display: "block",
-                      marginBottom: "6px",
+                      marginBottom: "4px",
                     }}
                   >
                     ENTER 6-DIGIT SECURITY CODE
@@ -947,11 +947,11 @@ export default function AuthSlidingCard({
               {/* Bottom Resend Row */}
               <div
                 style={{
-                  marginTop: "16px",
+                  marginTop: "10px",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  fontSize: "12px",
+                  fontSize: "11px",
                   color: "#666",
                 }}
               >
