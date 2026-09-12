@@ -128,11 +128,31 @@ export default function ProductCard({
           href={`/products/${product.id}?from=${source}`}
           className="product-image-link"
         >
-          <img
-            src={currentImage}
-            alt={`${product.name} - Angle ${photoIndex + 1}`}
-            className="product-card-img"
-          />
+          <div
+            className="product-image-track"
+            style={{
+              display: "flex",
+              width: "100%",
+              height: "100%",
+              transform: `translateX(-${photoIndex * 100}%)`,
+              transition: "transform 0.38s cubic-bezier(0.22, 1, 0.36, 1)",
+            }}
+          >
+            {images.map((img, idx) => (
+              <img
+                key={idx}
+                src={img}
+                alt={`${product.name} - Angle ${idx + 1}`}
+                className="product-card-img"
+                style={{
+                  flex: "0 0 100%",
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ))}
+          </div>
         </Link>
 
         {/* Photo count indicator on hover */}
@@ -140,6 +160,18 @@ export default function ProductCard({
           <span className="product-photo-indicator">
             {photoIndex + 1} / {images.length}
           </span>
+        )}
+
+        {/* Dots indicator on hover */}
+        {images.length > 1 && (
+          <div className="product-photo-dots">
+            {images.map((_, dotIdx) => (
+              <span
+                key={dotIdx}
+                className={`product-photo-dot ${dotIdx === photoIndex ? "active" : ""}`}
+              />
+            ))}
+          </div>
         )}
 
         {/* Left Arrow Button */}
