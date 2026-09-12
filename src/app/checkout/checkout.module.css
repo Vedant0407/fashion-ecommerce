@@ -58,7 +58,7 @@
   text-transform: uppercase;
   background: #f0fdf4;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: 0px;
   border: 1px solid #dcfce7;
 }
 
@@ -67,7 +67,7 @@
   padding: 12px 20px;
   background: #ffffff;
   border: 1px solid #e5e5e5;
-  border-radius: 12px;
+  border-radius: 0px;
   margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
@@ -96,7 +96,7 @@
 .card {
   background: #ffffff;
   border: 1px solid #e5e5e5;
-  border-radius: 16px;
+  border-radius: 0px;
   padding: 28px 32px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
@@ -111,7 +111,7 @@
 .stepNum {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 0px;
   background: #000000;
   color: #ffffff;
   font-size: 11px;
@@ -167,7 +167,7 @@
   height: 46px;
   padding: 0 16px;
   border: 1.5px solid #dcdcdc;
-  border-radius: 10px;
+  border-radius: 0px;
   font-size: 14px;
   background: #ffffff;
   color: #111111;
@@ -199,7 +199,7 @@
   height: 46px;
   padding: 0 115px 0 16px;
   border: 1.5px solid #dcdcdc;
-  border-radius: 10px;
+  border-radius: 0px;
   font-size: 14px;
   background: #ffffff;
   color: #111111;
@@ -222,7 +222,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  border-radius: 7px;
+  border-radius: 0px;
   border: none;
   background: #000000;
   color: #ffffff;
@@ -257,7 +257,7 @@
   color: #15803d;
   background: #dcfce7;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 0px;
   letter-spacing: 0.04em;
 }
 
@@ -285,7 +285,7 @@
   justify-content: space-between;
   padding: 15px 18px;
   border: 1.5px solid #111111;
-  border-radius: 12px;
+  border-radius: 0px;
   background: #fafafa;
 }
 
@@ -322,7 +322,7 @@
   color: #16a34a;
   background: #dcfce7;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 0px;
   letter-spacing: 0.04em;
 }
 
@@ -330,7 +330,7 @@
 .summaryCard {
   background: #ffffff;
   border: 1px solid #e5e5e5;
-  border-radius: 16px;
+  border-radius: 0px;
   padding: 26px 28px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   position: sticky;
@@ -375,7 +375,7 @@
 
 .itemsList::-webkit-scrollbar-thumb {
   background: #e0e0e0;
-  border-radius: 4px;
+  border-radius: 0px;
 }
 
 .itemRow {
@@ -394,7 +394,7 @@
   width: 56px;
   height: 68px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 0px;
   background: #f5f5f5;
   flex-shrink: 0;
   border: 1px solid #ebebeb;
@@ -459,7 +459,7 @@
   background: #fef2f2;
   border: 1px solid #fee2e2;
   color: #dc2626;
-  border-radius: 8px;
+  border-radius: 0px;
   padding: 9px 12px;
   font-size: 12px;
   margin-top: 14px;
@@ -472,7 +472,7 @@
   background: #000000;
   color: #ffffff;
   border: none;
-  border-radius: 10px;
+  border-radius: 0px;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -524,7 +524,7 @@
   padding: 14px 30px;
   background: #000000;
   color: #ffffff;
-  border-radius: 10px;
+  border-radius: 0px;
   text-decoration: none;
   font-size: 12px;
   font-weight: 700;

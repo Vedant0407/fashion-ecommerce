@@ -475,18 +475,18 @@ export default function CheckoutPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
               <div
                 style={{
-                  width: "28px",
-                  height: "28px",
+                  padding: "4px 8px",
                   background: "#ffffff",
                   color: "#000000",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontWeight: 900,
-                  fontSize: "14px",
+                  fontSize: "10px",
+                  letterSpacing: "0.1em",
                 }}
               >
-                ✆
+                SMS
               </div>
               <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", color: "#888888", textTransform: "uppercase" }}>
                 GREENO CARRIER VERIFICATION
@@ -513,7 +513,7 @@ export default function CheckoutPage() {
                 }}
               >
                 <strong style={{ display: "block", color: "#4ade80", marginBottom: "3px", letterSpacing: "0.08em" }}>
-                  ✓ REAL SMS TRANSMITTED TO YOUR PHONE
+                  REAL SMS TRANSMITTED TO YOUR PHONE
                 </strong>
                 A live SMS text message was sent across cellular networks to <strong>+91 {phone.replace(/\D/g, "").slice(-10)}</strong>. Please open your phone&apos;s Messages app to view your 6-digit code.
               </div>
@@ -530,7 +530,7 @@ export default function CheckoutPage() {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                  <strong style={{ color: "#f59e0b", letterSpacing: "0.06em" }}>⚠️ CARRIER GATEWAY NOT CONFIGURED</strong>
+                  <strong style={{ color: "#f59e0b", letterSpacing: "0.06em" }}>CARRIER GATEWAY NOT CONFIGURED</strong>
                   <Link
                     href="/admin"
                     target="_blank"
@@ -739,7 +739,7 @@ export default function CheckoutPage() {
                   />
                   {isPhoneVerified ? (
                     <div className={styles.phoneVerifiedBadge}>
-                      <span className={styles.verifiedPill}>✓ VERIFIED</span>
+                      <span className={styles.verifiedPill}>VERIFIED</span>
                       <button
                         type="button"
                         className={styles.changePhoneBtn}
@@ -845,7 +845,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
-                <span className={styles.codBadge}>✓ PRIORITY DISPATCH</span>
+                <span className={styles.codBadge}>PRIORITY DISPATCH</span>
               </div>
             </div>
           </section>
@@ -928,11 +928,11 @@ export default function CheckoutPage() {
             </button>
 
             <div className={styles.trustBadges}>
-              <span>🔒 100% Secure</span>
+              <span>100% SECURE</span>
               <span>•</span>
-              <span>🚚 Express Dispatch</span>
+              <span>EXPRESS DISPATCH</span>
               <span>•</span>
-              <span>↩ Easy Returns</span>
+              <span>EASY RETURNS</span>
             </div>
           </aside>
         </div>

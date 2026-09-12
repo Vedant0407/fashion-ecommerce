@@ -59,18 +59,19 @@ export default function GatewayNotification({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div
             style={{
-              width: "22px",
-              height: "22px",
+              padding: "2px 6px",
+              height: "20px",
               background: "#ffffff",
               color: "#000000",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "12px",
-              fontWeight: 800,
+              fontSize: "9px",
+              fontWeight: 900,
+              letterSpacing: "0.06em",
             }}
           >
-            {isEmail ? "✉" : "✆"}
+            {isEmail ? "MAIL" : "SMS"}
           </div>
           <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", color: "#aaaaaa", textTransform: "uppercase" }}>
             {isEmail ? "GREENO MAIL GATEWAY" : "GREENO SMS CARRIER"} &bull; JUST NOW
