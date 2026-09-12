@@ -168,14 +168,6 @@ export default function GoogleSignInModal({
         localStorage.removeItem("greeno_all_orders");
       }
 
-      // Reset cart on first login for this account
-      const firstLoginKey = `greeno_cart_cleared_for_${finalEmail}`;
-      if (!localStorage.getItem(firstLoginKey)) {
-        localStorage.removeItem("greeno_cart");
-        localStorage.removeItem("greeno_coupon");
-        localStorage.setItem(firstLoginKey, "true");
-        window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
-      }
 
       // 3. Save to remembered Google accounts list for instant 1-click access
       try {

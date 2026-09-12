@@ -69,14 +69,11 @@ export default function AccountPage() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("greeno_user_name");
       localStorage.removeItem("greeno_user_email");
-      localStorage.removeItem("greeno_cart");
-      localStorage.removeItem("greeno_coupon");
       localStorage.removeItem("greeno_customer_orders");
       localStorage.removeItem("greeno_last_order");
       localStorage.removeItem("greeno_all_orders");
       document.cookie = "greeno_session=; path=/; max-age=0";
       window.dispatchEvent(new Event("storage"));
-      window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
       window.dispatchEvent(new CustomEvent("greeno_auth_change"));
     }
     router.push("/login");

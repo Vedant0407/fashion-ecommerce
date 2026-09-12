@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
   ReactNode,
 } from "react";
 
@@ -49,12 +50,41 @@ type CartContextType = {
   toggleCart: () => void;
 };
 
+function getCartStorageKey(email: string | null): string {
+  if (!email || !email.trim() || !email.includes("@")) {
+    return "greeno_cart_guest";
+  }
+  return `greeno_cart_${email.trim().toLowerCase()}`;
+}
+
+function getCouponStorageKey(email: string | null): string {
+  if (!email || !email.trim() || !email.includes("@")) {
+    return "greeno_coupon_guest";
+  }
+  return `greeno_coupon_${email.trim().toLowerCase()}`;
+}
+
+function getCurrentUserEmail(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("greeno_user_email");
+    if (stored && stored.trim().includes("@")) {
+      return stored.trim().toLowerCase();
+    }
+  } catch {
+    // Ignore
+  }
+  return null;
+}
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartProduct[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [activeEmail, setActiveEmail] = useState<string | null>(null);
+  const activeEmailRef = useRef<string | null>(null);
+  const isLoadedRef = useRef(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const openCart = () => setIsCartOpen(true);
@@ -73,81 +103,158 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Load saved cart and coupon
-  useEffect(() => {
-    // If a user is logged in for the first time, guarantee an empty cart
-    const userEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
-    if (userEmail) {
-      const normalizedEmail = userEmail.trim().toLowerCase();
-      const firstLoginKey = `greeno_cart_cleared_for_${normalizedEmail}`;
-      if (!localStorage.getItem(firstLoginKey)) {
-        localStorage.removeItem("greeno_cart");
-        localStorage.removeItem("greeno_coupon");
-        localStorage.setItem(firstLoginKey, "true");
-        setCart([]);
-        setAppliedCoupon(null);
-        setLoaded(true);
-        return;
-      }
+  // Sync cart state to backend persistent storage
+  const syncToServer = async (
+    email: string | null,
+    cartList: CartProduct[],
+    coupon: AppliedCoupon | null
+  ) => {
+    if (!email || !email.includes("@")) return;
+    try {
+      await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, cart: cartList, coupon }),
+      });
+    } catch (err) {
+      console.warn("Notice: Cart server sync error:", err);
     }
+  };
 
-    const savedCart = localStorage.getItem("greeno_cart");
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch {
-        localStorage.removeItem("greeno_cart");
-      }
-    }
+  // Load cart for a specific user email
+  const loadCartForAccount = async (email: string | null) => {
+    activeEmailRef.current = email;
+    setActiveEmail(email);
 
-    const savedCoupon = localStorage.getItem("greeno_coupon");
-    if (savedCoupon) {
-      try {
-        setAppliedCoupon(JSON.parse(savedCoupon));
-      } catch {
-        localStorage.removeItem("greeno_coupon");
-      }
-    }
+    const cartKey = getCartStorageKey(email);
+    const couponKey = getCouponStorageKey(email);
 
-    setLoaded(true);
-  }, []);
+    let items: CartProduct[] = [];
+    let savedCouponObj: AppliedCoupon | null = null;
 
-  // Listen for cart reset events (e.g. on first login, signup, or logout)
-  useEffect(() => {
-    const handleCartReset = () => {
-      setCart([]);
-      setAppliedCoupon(null);
-      try {
-        localStorage.removeItem("greeno_cart");
-        localStorage.removeItem("greeno_coupon");
-      } catch {
-        // Ignore
-      }
-    };
-
-    window.addEventListener("greeno_cart_reset", handleCartReset);
-    return () => {
-      window.removeEventListener("greeno_cart_reset", handleCartReset);
-    };
-  }, []);
-
-  // Save cart
-  useEffect(() => {
-    if (loaded) {
-      localStorage.setItem("greeno_cart", JSON.stringify(cart));
-    }
-  }, [cart, loaded]);
-
-  // Save coupon
-  useEffect(() => {
-    if (loaded) {
-      if (appliedCoupon) {
-        localStorage.setItem("greeno_coupon", JSON.stringify(appliedCoupon));
+    try {
+      const saved = localStorage.getItem(cartKey);
+      if (saved) {
+        items = JSON.parse(saved);
       } else {
-        localStorage.removeItem("greeno_coupon");
+        // Migration: If user previously had an un-scoped legacy greeno_cart
+        const legacy = localStorage.getItem("greeno_cart");
+        if (legacy) {
+          try {
+            const parsedLegacy = JSON.parse(legacy);
+            if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
+              items = parsedLegacy;
+              localStorage.setItem(cartKey, JSON.stringify(items));
+            }
+          } catch {}
+          localStorage.removeItem("greeno_cart");
+        } else if (email) {
+          // If guest added items before logging in, transfer them to this account
+          const guestCart = localStorage.getItem("greeno_cart_guest");
+          if (guestCart) {
+            try {
+              const parsedGuest = JSON.parse(guestCart);
+              if (Array.isArray(parsedGuest) && parsedGuest.length > 0) {
+                items = parsedGuest;
+                localStorage.setItem(cartKey, JSON.stringify(items));
+                localStorage.removeItem("greeno_cart_guest");
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch {
+      items = [];
+    }
+
+    try {
+      const savedCoupon = localStorage.getItem(couponKey);
+      if (savedCoupon) {
+        savedCouponObj = JSON.parse(savedCoupon);
+      }
+    } catch {
+      savedCouponObj = null;
+    }
+
+    setCart(Array.isArray(items) ? items : []);
+    setAppliedCoupon(savedCouponObj);
+    isLoadedRef.current = true;
+
+    // Cross-device backend synchronization for logged in accounts
+    if (email && email.includes("@")) {
+      try {
+        const res = await fetch(`/api/cart?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.success) {
+          if (Array.isArray(data.cart) && data.cart.length > 0 && items.length === 0) {
+            setCart(data.cart);
+            localStorage.setItem(cartKey, JSON.stringify(data.cart));
+            if (data.coupon) {
+              setAppliedCoupon(data.coupon);
+              localStorage.setItem(couponKey, JSON.stringify(data.coupon));
+            }
+          } else if (items.length > 0) {
+            syncToServer(email, items, savedCouponObj);
+          }
+        }
+      } catch (err) {
+        console.warn("Notice: Cart server fetch error:", err);
       }
     }
-  }, [appliedCoupon, loaded]);
+  };
+
+  // On mount: initialize for current user and listen to account switches
+  useEffect(() => {
+    const initialEmail = getCurrentUserEmail();
+    loadCartForAccount(initialEmail);
+
+    const handleAccountChange = () => {
+      const current = getCurrentUserEmail();
+      if (current !== activeEmailRef.current) {
+        loadCartForAccount(current);
+      }
+    };
+
+    window.addEventListener("storage", handleAccountChange);
+    window.addEventListener("greeno_auth_change", handleAccountChange);
+    window.addEventListener("greeno_account_switched", handleAccountChange);
+
+    return () => {
+      window.removeEventListener("storage", handleAccountChange);
+      window.removeEventListener("greeno_auth_change", handleAccountChange);
+      window.removeEventListener("greeno_account_switched", handleAccountChange);
+    };
+  }, []);
+
+  // Save cart changes
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    const currentEmail = activeEmailRef.current;
+    const cartKey = getCartStorageKey(currentEmail);
+    try {
+      localStorage.setItem(cartKey, JSON.stringify(cart));
+    } catch {}
+    if (currentEmail) {
+      syncToServer(currentEmail, cart, appliedCoupon);
+    }
+  }, [cart]);
+
+  // Save coupon changes
+  useEffect(() => {
+    if (!isLoadedRef.current) return;
+    const currentEmail = activeEmailRef.current;
+    const couponKey = getCouponStorageKey(currentEmail);
+    try {
+      if (appliedCoupon) {
+        localStorage.setItem(couponKey, JSON.stringify(appliedCoupon));
+      } else {
+        localStorage.removeItem(couponKey);
+      }
+    } catch {}
+    if (currentEmail) {
+      syncToServer(currentEmail, cart, appliedCoupon);
+    }
+  }, [appliedCoupon]);
 
   const addToCart = (
     product: Omit<CartProduct, "quantity">,
@@ -207,8 +314,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = () => {
     setCart([]);
     setAppliedCoupon(null);
-    localStorage.removeItem("greeno_cart");
-    localStorage.removeItem("greeno_coupon");
+    const currentEmail = activeEmailRef.current;
+    const cartKey = getCartStorageKey(currentEmail);
+    const couponKey = getCouponStorageKey(currentEmail);
+    try {
+      localStorage.removeItem(cartKey);
+      localStorage.removeItem(couponKey);
+      localStorage.removeItem("greeno_cart");
+      localStorage.removeItem("greeno_coupon");
+    } catch {}
+    if (currentEmail) {
+      syncToServer(currentEmail, [], null);
+    }
   };
 
   const subtotal = cart.reduce(
