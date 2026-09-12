@@ -319,10 +319,11 @@ select {
 
 .new-in-heading h2 {
   margin: 0;
-  font-size: clamp(34px, 4.5vw, 60px);
-  line-height: 0.92;
+  font-size: 28px;
+  line-height: 1.1;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
   color: #000000;
 }
 
@@ -476,10 +477,11 @@ select {
 
 .category-heading h2 {
   margin: 0 0 18px;
-  font-size: clamp(34px, 4.5vw, 60px);
-  line-height: 0.92;
+  font-size: 28px;
+  line-height: 1.1;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
   color: #000000;
 }
 
@@ -663,9 +665,11 @@ select {
 
 .trending-overlay h2 {
   margin: 0 0 14px;
-  font-size: clamp(30px, 4.5vw, 52px);
+  font-size: 28px;
+  line-height: 1.1;
   font-weight: 800;
   letter-spacing: -0.02em;
+  text-transform: uppercase;
   color: #ffffff;
 }
 
@@ -761,10 +765,11 @@ select {
 
 .products-title {
   margin: 0;
-  font-size: clamp(30px, 4.2vw, 52px);
-  line-height: 0.92;
+  font-size: 28px;
+  line-height: 1.1;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
   color: #000000;
 }
 
@@ -1498,10 +1503,10 @@ select {
 .product-left h1 {
   margin: 0;
   max-width: 480px;
-  font-size: clamp(34px, 4vw, 56px);
-  line-height: 0.95;
+  font-size: 28px;
+  line-height: 1.1;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   color: #000000;
   text-transform: uppercase;
 }
@@ -1921,9 +1926,12 @@ select {
 
 .more-products-header h2 {
   margin: 0;
-  font-size: clamp(32px, 4vw, 58px);
-  letter-spacing: -0.04em;
-  line-height: 0.95;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #000000;
 }
 
 .more-products-grid {
@@ -2027,10 +2035,12 @@ select {
 }
 
 .product-about-content h2 {
-  margin: 0 0 30px;
-  font-size: clamp(40px, 6vw, 80px);
-  line-height: 0.95;
-  letter-spacing: -0.05em;
+  margin: 0 0 20px;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #000000;
 }
 
 .product-about-content p {
@@ -2564,9 +2574,12 @@ select {
 
 .auth-container h1 {
   margin: 0;
-  font-size: clamp(38px, 6vw, 64px);
-  letter-spacing: -0.04em;
-  font-weight: 500;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: #000000;
 }
 
 .auth-subtitle {
@@ -2658,10 +2671,13 @@ select {
 }
 
 .account-container h1 {
-  margin: 0 0 60px;
-  font-size: clamp(40px, 6vw, 72px);
-  letter-spacing: -0.04em;
-  font-weight: 500;
+  margin: 0 0 35px;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: #000000;
 }
 
 .account-details {
@@ -2773,10 +2789,11 @@ select {
 
 .cart-heading-row h1 {
   margin: 0;
-  font-size: clamp(48px, 7vw, 92px);
-  line-height: .88;
-  font-weight: 500;
-  letter-spacing: -.065em;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
 }
 
 .cart-heading-row h1 span {

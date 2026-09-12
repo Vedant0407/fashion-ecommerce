@@ -306,11 +306,12 @@ export default function WishlistPage() {
             <h1
               style={{
                 margin: 0,
-                fontSize: "clamp(44px, 6vw, 76px)",
-                letterSpacing: "-0.04em",
+                fontSize: "28px",
+                letterSpacing: "-0.02em",
                 fontWeight: 800,
-                lineHeight: 0.92,
-                color: "#000000",
+                lineHeight: 1.1,
+                textTransform: "uppercase",
+                color: "#111111",
               }}
             >
               MY WISHLIST
@@ -352,10 +353,10 @@ export default function WishlistPage() {
             <h2
               style={{
                 margin: "0 0 16px",
-                fontSize: "clamp(24px, 3.5vw, 36px)",
-                fontWeight: 600,
+                fontSize: "20px",
+                fontWeight: 700,
                 letterSpacing: "-0.02em",
-                color: "#000000",
+                color: "#111111",
               }}
             >
               Your wishlist is currently empty.

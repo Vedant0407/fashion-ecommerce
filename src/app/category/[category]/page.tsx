@@ -161,11 +161,12 @@ export default function CategoryPage() {
           <h1
             style={{
               margin: "0 0 12px",
-              fontSize: "clamp(44px, 6vw, 76px)",
-              letterSpacing: "-0.04em",
+              fontSize: "28px",
+              letterSpacing: "-0.02em",
               fontWeight: 800,
-              lineHeight: 0.92,
-              color: "#000000",
+              lineHeight: 1.1,
+              textTransform: "uppercase",
+              color: "#111111",
             }}
           >
             {meta.name}

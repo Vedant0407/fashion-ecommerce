@@ -18,11 +18,13 @@
 }
 
 .title {
-  margin: 0 0 50px;
-  font-size: clamp(46px, 6vw, 78px);
-  line-height: .9;
-  letter-spacing: -.055em;
-  font-weight: 500;
+  margin: 0 0 35px;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #111111;
 }
 
 .dashboard {
