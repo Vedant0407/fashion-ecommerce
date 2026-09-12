@@ -47,35 +47,69 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Helper to read cached customer orders
-  function getLocalOrders(): Order[] {
-    if (typeof window === "undefined") return [];
+  // Helper to read cached customer orders strictly scoped to a specific email
+  function getLocalOrdersForEmail(userEmail: string): Order[] {
+    if (typeof window === "undefined" || !userEmail) return [];
+    const cleanUserEmail = userEmail.trim().toLowerCase();
+
     try {
-      const raw = localStorage.getItem("greeno_customer_orders");
-      const list = raw ? JSON.parse(raw) : [];
+      const results: Order[] = [];
+      const seenIds = new Set<string>();
+
+      // 1. Check email-scoped storage first
+      const scopedRaw = localStorage.getItem(`greeno_orders_${cleanUserEmail}`);
+      if (scopedRaw) {
+        const list = JSON.parse(scopedRaw);
+        if (Array.isArray(list)) {
+          list.forEach((o: any) => {
+            if (o?.id && !seenIds.has(o.id)) {
+              seenIds.add(o.id);
+              results.push(o);
+            }
+          });
+        }
+      }
+
+      // 2. Fallback check for last placed order if it belongs to this account
       const lastRaw = localStorage.getItem("greeno_last_order");
       if (lastRaw) {
         const lastOrder = JSON.parse(lastRaw);
-        if (lastOrder?.id && !list.some((o: any) => o.id === lastOrder.id)) {
-          list.unshift(lastOrder);
+        const lastOrderEmail = lastOrder?.customer?.email?.trim().toLowerCase();
+        if (
+          lastOrder?.id &&
+          lastOrderEmail === cleanUserEmail &&
+          !seenIds.has(lastOrder.id)
+        ) {
+          seenIds.add(lastOrder.id);
+          results.unshift(lastOrder);
         }
       }
-      return Array.isArray(list) ? list : [];
+
+      // 3. Fallback check for legacy greeno_customer_orders ONLY if matching email
+      const legacyRaw = localStorage.getItem("greeno_customer_orders");
+      if (legacyRaw) {
+        const legacyList = JSON.parse(legacyRaw);
+        if (Array.isArray(legacyList)) {
+          legacyList.forEach((o: any) => {
+            const oEmail = o?.customer?.email?.trim().toLowerCase();
+            if (o?.id && oEmail === cleanUserEmail && !seenIds.has(o.id)) {
+              seenIds.add(o.id);
+              results.push(o);
+            }
+          });
+        }
+      }
+
+      return results.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     } catch {
       return [];
     }
   }
 
   useEffect(() => {
-    // 1. Instantly show locally cached orders so user never sees an empty screen on refresh
-    const local = getLocalOrders();
-    if (local.length > 0) {
-      setOrders(local);
-      setLoading(false);
-    }
-
-    async function fetchOrders() {
-      const currentLocal = getLocalOrders();
+    async function initAndFetchOrders() {
       try {
         let user: any = null;
         try {
@@ -88,24 +122,62 @@ export default function OrdersPage() {
           // Supabase getUser failed
         }
 
-        const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
+        const storedEmail =
+          typeof window !== "undefined"
+            ? localStorage.getItem("greeno_user_email")
+            : null;
 
-        if (!user && !storedEmail && currentLocal.length === 0) {
+        const effectiveEmail = (user?.email || storedEmail || "").trim().toLowerCase();
+
+        if (!effectiveEmail) {
           setError("Please log in to view your orders.");
+          setOrders([]);
           setLoading(false);
           return;
         }
 
-        const effectiveEmail = user?.email || storedEmail || currentLocal[0]?.id ? storedEmail || user?.email || "" : "";
+        // Clean up any legacy unscoped customer order cache from previous accounts
+        try {
+          const rawCust = localStorage.getItem("greeno_customer_orders");
+          if (rawCust) {
+            const list = JSON.parse(rawCust);
+            if (Array.isArray(list)) {
+              const onlyMine = list.filter(
+                (o: any) => o?.customer?.email?.trim().toLowerCase() === effectiveEmail
+              );
+              localStorage.setItem("greeno_customer_orders", JSON.stringify(onlyMine));
+            }
+          }
 
-        // Query server API
+          const rawLast = localStorage.getItem("greeno_last_order");
+          if (rawLast) {
+            const last = JSON.parse(rawLast);
+            if (last?.customer?.email?.trim().toLowerCase() !== effectiveEmail) {
+              localStorage.removeItem("greeno_last_order");
+            }
+          }
+        } catch {}
+
+        // Instantly display cached orders belonging EXCLUSIVELY to this user email
+        const initialLocal = getLocalOrdersForEmail(effectiveEmail);
+        if (initialLocal.length > 0) {
+          setOrders(initialLocal);
+          setLoading(false);
+        }
+
+        // Query server API for this authenticated user's orders
         let serverOrders: Order[] = [];
         try {
           const res = await fetch(`/api/orders?email=${encodeURIComponent(effectiveEmail)}`);
           if (res.ok) {
             const data = await res.json();
             if (data.success && Array.isArray(data.orders)) {
-              serverOrders = data.orders;
+              // Strictly verify each order has matching customer email
+              serverOrders = data.orders.filter(
+                (o: Order) =>
+                  !o.customer?.email ||
+                  o.customer.email.trim().toLowerCase() === effectiveEmail
+              );
             }
           }
         } catch (apiErr) {
@@ -132,15 +204,17 @@ export default function OrdersPage() {
           }
         }
 
-        // Merge server and local orders: server status wins, but local items and customer details are never lost
+        // Merge server orders and local orders strictly for this user email
         const orderMap = new Map<string, Order>();
 
-        // Add local orders first
-        for (const loc of currentLocal) {
-          if (loc?.id) orderMap.set(loc.id, loc);
+        // Add local orders first (only matching this user's email)
+        for (const loc of initialLocal) {
+          if (loc?.id) {
+            orderMap.set(loc.id, loc);
+          }
         }
 
-        // Merge with server orders non-destructively
+        // Merge with server orders (server status wins, but local items and customer details are never lost)
         for (const srv of serverOrders) {
           if (srv?.id) {
             const existing = orderMap.get(srv.id);
@@ -164,7 +238,7 @@ export default function OrdersPage() {
                 state: srv.customer?.state || existing.customer?.state || "",
                 pincode: srv.customer?.pincode || existing.customer?.pincode || "",
                 phone: srv.customer?.phone || existing.customer?.phone || "",
-                email: srv.customer?.email || existing.customer?.email || "",
+                email: effectiveEmail,
               };
 
               orderMap.set(srv.id, {
@@ -188,47 +262,32 @@ export default function OrdersPage() {
 
         setOrders(mergedOrders);
 
-        // Update local storage with merged orders
-        if (typeof window !== "undefined" && mergedOrders.length > 0) {
+        // Update scoped local storage for this specific email
+        if (typeof window !== "undefined") {
           try {
-            localStorage.setItem("greeno_customer_orders", JSON.stringify(mergedOrders));
+            localStorage.setItem(
+              `greeno_orders_${effectiveEmail}`,
+              JSON.stringify(mergedOrders)
+            );
           } catch {}
-        }
-
-        // If local had orders missing or hollow on server, heal them back to server
-        if (currentLocal.length > 0) {
-          const needsHealingOnServer = currentLocal.filter((lo) => {
-            const srv = serverOrders.find((so) => so.id === lo.id);
-            if (!srv) return true;
-            if ((!srv.items || srv.items.length === 0) && lo.items && lo.items.length > 0) return true;
-            if ((!srv.total || srv.total === 0) && lo.total && lo.total > 0) return true;
-            return false;
-          });
-
-          if (needsHealingOnServer.length > 0) {
-            fetch("/api/orders/sync", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ orders: needsHealingOnServer }),
-            }).catch(() => {});
-          }
         }
       } catch (err) {
         console.error("FETCH ORDERS ERROR:", err);
-        if (currentLocal.length === 0) {
-          setError("Something went wrong while loading your orders.");
-        }
+        setError("Something went wrong while loading your orders.");
       } finally {
         setLoading(false);
       }
     }
 
-    fetchOrders();
+    initAndFetchOrders();
 
-    // Listen for order status updates from admin
     function handleStorageChange() {
-      const refreshed = getLocalOrders();
-      if (refreshed.length > 0) {
+      const storedEmail =
+        typeof window !== "undefined"
+          ? localStorage.getItem("greeno_user_email")?.trim().toLowerCase()
+          : null;
+      if (storedEmail) {
+        const refreshed = getLocalOrdersForEmail(storedEmail);
         setOrders(refreshed);
       }
     }

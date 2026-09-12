@@ -8,10 +8,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
+    const cleanId = (id || "").trim();
+
+    const cookieEmail = request.cookies.get("greeno_session")?.value
+      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
+      : null;
 
     let authenticatedUser: any = null;
     try {
+      const supabase = await createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -20,11 +25,32 @@ export async function GET(
       // Supabase user fetch failed
     }
 
+    const authEmail =
+      cookieEmail ||
+      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
+
+    if (!authEmail) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Please log in." },
+        { status: 401 }
+      );
+    }
+
     // Check store-data first to get full item options and latest admin status
-    const allStoreOrders = await getStoreOrders();
-    const matched = allStoreOrders.find((o) => o.id === id);
+    const allStoreOrders = await getStoreOrders(true);
+    const matched = allStoreOrders.find((o) => o.id === cleanId);
 
     if (matched) {
+      const orderCustomerEmail = matched.customer?.email?.trim().toLowerCase();
+
+      // Strict per-account security check: Order must belong to this user
+      if (orderCustomerEmail && orderCustomerEmail !== authEmail) {
+        return NextResponse.json(
+          { success: false, message: "Forbidden. You cannot view an order belonging to another account." },
+          { status: 403 }
+        );
+      }
+
       return NextResponse.json({
         success: true,
         order: {
@@ -64,40 +90,39 @@ export async function GET(
     }
 
     const isUuid =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
 
-    if (isUuid) {
-      let query = supabase
-        .from("orders")
-        .select(
-          "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, address_id, addresses(*)"
-        )
-        .eq("id", id);
+    if (isUuid && authenticatedUser) {
+      try {
+        const supabase = await createClient();
+        const { data: order, error: orderError } = await supabase
+          .from("orders")
+          .select(
+            "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, address_id, addresses(*)"
+          )
+          .eq("id", cleanId)
+          .eq("user_id", authenticatedUser.id)
+          .maybeSingle();
 
-      if (authenticatedUser) {
-        query = query.eq("user_id", authenticatedUser.id);
-      }
+        if (!orderError && order) {
+          const { data: items } = await supabase
+            .from("order_items")
+            .select("id, product_id, product_name, product_price, quantity")
+            .eq("order_id", cleanId);
 
-      const { data: order, error: orderError } = await query.maybeSingle();
-
-      if (!orderError && order) {
-        const { data: items } = await supabase
-          .from("order_items")
-          .select("id, product_id, product_name, product_price, quantity")
-          .eq("order_id", id);
-
-        return NextResponse.json({
-          success: true,
-          order: {
-            ...order,
-            items: items || [],
-          },
-        });
-      }
+          return NextResponse.json({
+            success: true,
+            order: {
+              ...order,
+              items: items || [],
+            },
+          });
+        }
+      } catch {}
     }
 
     return NextResponse.json(
-      { success: false, message: "Order not found" },
+      { success: false, message: "Order not found." },
       { status: 404 }
     );
   } catch (error: any) {
@@ -122,6 +147,33 @@ export async function POST(
       return NextResponse.json(
         { success: false, message: "Valid order object matching ID is required" },
         { status: 400 }
+      );
+    }
+
+    const cookieEmail = request.cookies.get("greeno_session")?.value
+      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
+      : null;
+
+    let authenticatedUser: any = null;
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      authenticatedUser = user;
+    } catch {}
+
+    const authEmail =
+      cookieEmail ||
+      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
+
+    const clientOrderEmail = clientOrder.customer?.email?.trim().toLowerCase();
+
+    // Verify ownership: client cannot heal/sync an order belonging to another email
+    if (authEmail && clientOrderEmail && clientOrderEmail !== authEmail) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden. You cannot modify an order for another account." },
+        { status: 403 }
       );
     }
 

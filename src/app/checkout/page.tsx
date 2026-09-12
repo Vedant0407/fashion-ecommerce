@@ -338,34 +338,39 @@ export default function CheckoutPage() {
         total: data.order?.total || completeOrderFallback.total,
       };
 
+      const cleanEmail = email.trim().toLowerCase();
+
       // 1. Save single latest order
       localStorage.setItem("greeno_last_order", JSON.stringify(placedOrder));
 
-      // 2. Save into permanent customer orders list
+      // 2. Save into scoped customer orders list for this email
       try {
-        const rawCustomerOrders = localStorage.getItem("greeno_customer_orders");
-        const customerOrders = rawCustomerOrders ? JSON.parse(rawCustomerOrders) : [];
-        const filtered = Array.isArray(customerOrders)
-          ? customerOrders.filter((o: any) => o.id !== placedOrder.id)
+        const scopedKey = `greeno_orders_${cleanEmail}`;
+        const rawScopedOrders = localStorage.getItem(scopedKey);
+        const scopedOrders = rawScopedOrders ? JSON.parse(rawScopedOrders) : [];
+        const filtered = Array.isArray(scopedOrders)
+          ? scopedOrders.filter((o: any) => o.id !== placedOrder.id)
           : [];
         filtered.unshift(placedOrder);
-        localStorage.setItem("greeno_customer_orders", JSON.stringify(filtered));
+        localStorage.setItem(scopedKey, JSON.stringify(filtered));
       } catch (e) {
         console.warn("Failed to persist customer order locally:", e);
       }
 
-      // 3. Save into all orders (for fulfillment & admin)
+      // 3. Keep customer orders list updated strictly for this email
       try {
-        const rawAllOrders = localStorage.getItem("greeno_all_orders");
-        const allOrders = rawAllOrders ? JSON.parse(rawAllOrders) : [];
-        const filteredAll = Array.isArray(allOrders)
-          ? allOrders.filter((o: any) => o.id !== placedOrder.id)
+        const rawCustomerOrders = localStorage.getItem("greeno_customer_orders");
+        const customerOrders = rawCustomerOrders ? JSON.parse(rawCustomerOrders) : [];
+        const filtered = Array.isArray(customerOrders)
+          ? customerOrders.filter(
+              (o: any) =>
+                o.id !== placedOrder.id &&
+                o.customer?.email?.trim().toLowerCase() === cleanEmail
+            )
           : [];
-        filteredAll.unshift(placedOrder);
-        localStorage.setItem("greeno_all_orders", JSON.stringify(filteredAll));
-      } catch (e) {
-        console.warn("Failed to persist all orders locally:", e);
-      }
+        filtered.unshift(placedOrder);
+        localStorage.setItem("greeno_customer_orders", JSON.stringify(filtered));
+      } catch (e) {}
 
       // 4. Save user email & name so account and orders load seamlessly
       localStorage.setItem("greeno_user_email", email.trim());

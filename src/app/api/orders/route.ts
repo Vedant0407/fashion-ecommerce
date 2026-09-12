@@ -19,40 +19,53 @@ export async function GET(request: NextRequest) {
     const cookieEmail = request.cookies.get("greeno_session")?.value
       ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
       : null;
-    const effectiveEmail = queryEmail || authenticatedUser?.email?.toLowerCase() || cookieEmail;
 
-    if (!authenticatedUser && !effectiveEmail) {
+    // Strict authentication: determine the single verified email for this session
+    const authEmail =
+      cookieEmail ||
+      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null) ||
+      queryEmail;
+
+    if (!authEmail) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized" },
+        { success: false, message: "Unauthorized. Please log in to view orders." },
         { status: 401 }
       );
     }
 
-    const emailsToMatch = new Set<string>();
-    if (queryEmail) emailsToMatch.add(queryEmail);
-    if (authenticatedUser?.email) emailsToMatch.add(authenticatedUser.email.toLowerCase().trim());
-    if (cookieEmail) emailsToMatch.add(cookieEmail);
+    // Security check: If a query email is passed, it MUST match the authenticated session
+    if (queryEmail && cookieEmail && queryEmail !== cookieEmail) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden. You cannot view orders for another account." },
+        { status: 403 }
+      );
+    }
 
     let dbOrders: any[] = [];
     if (authenticatedUser) {
-      const supabase = await createClient();
-      const { data, error: ordersError } = await supabase
-        .from("orders")
-        .select(
-          "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
-        )
-        .eq("user_id", authenticatedUser.id)
-        .order("created_at", { ascending: false });
+      try {
+        const supabase = await createClient();
+        const { data, error: ordersError } = await supabase
+          .from("orders")
+          .select(
+            "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
+          )
+          .eq("user_id", authenticatedUser.id)
+          .order("created_at", { ascending: false });
 
-      if (!ordersError && data) {
-        dbOrders = data;
-      }
+        if (!ordersError && data) {
+          dbOrders = data;
+        }
+      } catch {}
     }
 
-    const allStoreOrders = await getStoreOrders();
+    // Read fresh store orders from disk
+    const allStoreOrders = await getStoreOrders(true);
+
+    // Strictly isolate: Only orders placed by this specific email
     const storeUserOrders = allStoreOrders.filter((o) => {
       const custEmail = o.customer?.email?.trim().toLowerCase();
-      return custEmail ? emailsToMatch.has(custEmail) : false;
+      return custEmail === authEmail;
     });
 
     const orderMap = new Map<string, any>();
@@ -72,7 +85,7 @@ export async function GET(request: NextRequest) {
         payment_method: dbOrder.payment_method,
         customer: {
           fullName: addr.full_name || "Customer",
-          email: effectiveEmail,
+          email: authEmail,
           phone: addr.phone || "",
           address: addr.address_line1 || "",
           city: addr.city || "",
@@ -107,9 +120,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    let authenticatedUser: any = null;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      authenticatedUser = user;
+    } catch {}
 
     const body = await request.json();
     const {
@@ -144,6 +161,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     const calculatedSubtotal = items.reduce(
       (sum: number, item: any) => sum + Number(item.price) * item.quantity,
       0
@@ -158,12 +177,12 @@ export async function POST(request: NextRequest) {
       .substring(2, 6)
       .toUpperCase()}`;
 
-    if (user) {
+    if (authenticatedUser) {
       try {
         const { data: addressData, error: addressError } = await supabase
           .from("addresses")
           .insert({
-            user_id: user.id,
+            user_id: authenticatedUser.id,
             full_name: fullName.trim(),
             phone: phone.trim(),
             address_line1: address.trim(),
@@ -180,7 +199,7 @@ export async function POST(request: NextRequest) {
           const { data: orderData, error: orderError } = await supabase
             .from("orders")
             .insert({
-              user_id: user.id,
+              user_id: authenticatedUser.id,
               address_id: addressData.id,
               status: "confirmed",
               subtotal: calculatedSubtotal,
@@ -210,13 +229,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Save order to persistent store data for admin dashboard
+    // Save order permanently to persistent store data for customer account and admin dashboard
     const savedStoreOrder = await addStoreOrder({
       id: createdOrderId,
       created_at: new Date().toISOString(),
       customer: {
         fullName: fullName.trim(),
-        email: email.trim(),
+        email: cleanEmail,
         phone: phone.trim(),
         address: address.trim(),
         city: city.trim(),
@@ -251,11 +270,21 @@ export async function POST(request: NextRequest) {
       payment_status: paymentMethod === "COD" ? "pending" : "paid",
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       orderId: createdOrderId,
       order: savedStoreOrder,
     });
+
+    // Ensure session cookie matches this order's owner
+    response.cookies.set("greeno_session", encodeURIComponent(cleanEmail), {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      sameSite: "lax",
+      httpOnly: false,
+    });
+
+    return response;
   } catch (error: any) {
     console.error("POST /api/orders error:", error);
     return NextResponse.json(

@@ -325,8 +325,28 @@ export function getInitialData(): StoreData {
   };
 }
 
-export async function readStoreData(): Promise<StoreData> {
-  if (memoryData) {
+export async function readStoreData(forceFresh = false): Promise<StoreData> {
+  if (memoryData && !forceFresh) {
+    try {
+      if (fs.existsSync(DATA_FILE)) {
+        const raw = fs.readFileSync(DATA_FILE, "utf-8");
+        const diskData = JSON.parse(raw);
+        if (diskData?.orders && Array.isArray(diskData.orders)) {
+          const diskOrderMap = new Map<string, StoreOrder>(
+            diskData.orders.map((o: StoreOrder) => [o.id, o])
+          );
+          for (const mo of memoryData.orders) {
+            if (!diskOrderMap.has(mo.id)) {
+              diskOrderMap.set(mo.id, mo);
+            }
+          }
+          memoryData.orders = Array.from(diskOrderMap.values()).sort(
+            (a: StoreOrder, b: StoreOrder) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        }
+      }
+    } catch {}
     return memoryData;
   }
 
@@ -478,19 +498,19 @@ export async function writeStoreData(data: StoreData): Promise<void> {
   memoryData = data;
   try {
     if (!fs.existsSync(DATA_DIR)) {
-      await fs.promises.mkdir(DATA_DIR, { recursive: true });
+      fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    await fs.promises.writeFile(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
-  } catch {
-    // In read-only environments (e.g. Vercel deployment), root write fails safely
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("Could not write DATA_FILE synchronously:", err);
   }
 
   try {
     const tmpDir = path.dirname(TMP_FILE);
     if (!fs.existsSync(tmpDir)) {
-      await fs.promises.mkdir(tmpDir, { recursive: true });
+      fs.mkdirSync(tmpDir, { recursive: true });
     }
-    await fs.promises.writeFile(TMP_FILE, JSON.stringify(data, null, 2), "utf-8");
+    fs.writeFileSync(TMP_FILE, JSON.stringify(data, null, 2), "utf-8");
   } catch {
     // Memory state is retained in memoryData
   }
@@ -603,15 +623,15 @@ export async function deleteStoreCategory(categoryIdOrSlug: string): Promise<boo
 
 // ----------------- Order Helpers -----------------
 
-export async function getStoreOrders(): Promise<StoreOrder[]> {
-  const data = await readStoreData();
+export async function getStoreOrders(forceFresh = false): Promise<StoreOrder[]> {
+  const data = await readStoreData(forceFresh);
   return data.orders.sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 }
 
 export async function addStoreOrder(order: StoreOrder): Promise<StoreOrder> {
-  const data = await readStoreData();
+  const data = await readStoreData(true);
   // Avoid duplicate entries
   const existingIdx = data.orders.findIndex((o) => o.id === order.id);
   if (existingIdx >= 0) {

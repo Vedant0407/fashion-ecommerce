@@ -215,6 +215,9 @@ function SignupFormContent() {
       const firstLoginKey = `greeno_cart_cleared_for_${normalizedEmail}`;
       localStorage.removeItem("greeno_cart");
       localStorage.removeItem("greeno_coupon");
+      localStorage.removeItem("greeno_customer_orders");
+      localStorage.removeItem("greeno_last_order");
+      localStorage.removeItem("greeno_all_orders");
       localStorage.setItem(firstLoginKey, "true");
       window.dispatchEvent(new CustomEvent("greeno_cart_reset"));
 

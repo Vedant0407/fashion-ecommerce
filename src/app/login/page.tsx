@@ -120,6 +120,14 @@ function LoginFormContent() {
       const normalizedEmail = email.trim().toLowerCase();
       const firstLoginKey = `greeno_cart_cleared_for_${normalizedEmail}`;
 
+      // Clean up previous account orders if logging into a different account
+      const prevEmail = localStorage.getItem("greeno_user_email");
+      if (prevEmail && prevEmail.trim().toLowerCase() !== normalizedEmail) {
+        localStorage.removeItem("greeno_customer_orders");
+        localStorage.removeItem("greeno_last_order");
+        localStorage.removeItem("greeno_all_orders");
+      }
+
       if (!localStorage.getItem(firstLoginKey)) {
         localStorage.removeItem("greeno_cart");
         localStorage.removeItem("greeno_coupon");

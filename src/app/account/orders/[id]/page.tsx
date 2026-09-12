@@ -72,28 +72,56 @@ export default function OrderDetailsPage() {
   const [returnSuccessMsg, setReturnSuccessMsg] = useState<string>("");
 
   // Helper to find order in local storage
-  function findLocalOrder(id: string): any | null {
+  // Helper to find order in local storage strictly for this user
+  function findLocalOrder(id: string, userEmail?: string): any | null {
     if (typeof window === "undefined") return null;
+    const cleanEmail = (
+      userEmail ||
+      (typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : "") ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+    if (!cleanEmail) return null;
+
     try {
       const cleanId = (id || "").trim().toLowerCase();
-      const rawLast = localStorage.getItem("greeno_last_order");
-      if (rawLast) {
-        const parsed = JSON.parse(rawLast);
-        if (parsed?.id && parsed.id.trim().toLowerCase() === cleanId) return parsed;
-      }
-      const rawCustomer = localStorage.getItem("greeno_customer_orders");
-      if (rawCustomer) {
-        const list = JSON.parse(rawCustomer);
+
+      // 1. Check scoped orders
+      const scopedRaw = localStorage.getItem(`greeno_orders_${cleanEmail}`);
+      if (scopedRaw) {
+        const list = JSON.parse(scopedRaw);
         const match = Array.isArray(list)
           ? list.find((o: any) => o?.id && o.id.trim().toLowerCase() === cleanId)
           : null;
         if (match) return match;
       }
-      const rawAll = localStorage.getItem("greeno_all_orders");
-      if (rawAll) {
-        const list = JSON.parse(rawAll);
+
+      // 2. Check last order only if it belongs to this account
+      const rawLast = localStorage.getItem("greeno_last_order");
+      if (rawLast) {
+        const parsed = JSON.parse(rawLast);
+        if (
+          parsed?.id &&
+          parsed.id.trim().toLowerCase() === cleanId &&
+          parsed.customer?.email?.trim().toLowerCase() === cleanEmail
+        ) {
+          return parsed;
+        }
+      }
+
+      // 3. Check customer orders only if matching email
+      const rawCustomer = localStorage.getItem("greeno_customer_orders");
+      if (rawCustomer) {
+        const list = JSON.parse(rawCustomer);
         const match = Array.isArray(list)
-          ? list.find((o: any) => o?.id && o.id.trim().toLowerCase() === cleanId)
+          ? list.find(
+              (o: any) =>
+                o?.id &&
+                o.id.trim().toLowerCase() === cleanId &&
+                o.customer?.email?.trim().toLowerCase() === cleanEmail
+            )
           : null;
         if (match) return match;
       }
@@ -104,15 +132,8 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     if (!orderId) return;
 
-    // 1. Immediately render locally cached order if available
-    const cachedOrder = findLocalOrder(orderId);
-    if (cachedOrder) {
-      setOrder(cachedOrder);
-      setItems(cachedOrder.items || []);
-      setLoading(false);
-    }
-
     async function fetchOrder() {
+      let cachedOrder: any = null;
       try {
         let user: any = null;
         try {
@@ -130,18 +151,45 @@ export default function OrderDetailsPage() {
             ? localStorage.getItem("greeno_user_email")
             : null;
 
-        if (!user && !storedEmail && !cachedOrder) {
+        const currentEmail = (user?.email || storedEmail || "").trim().toLowerCase();
+
+        if (!currentEmail) {
           router.push("/login");
           return;
+        }
+
+        // Render cached order if it belongs to this user
+        cachedOrder = findLocalOrder(orderId, currentEmail);
+        if (cachedOrder) {
+          setOrder(cachedOrder);
+          setItems(cachedOrder.items || []);
+          setLoading(false);
         }
 
         // 1. Fetch via API route
         try {
           const res = await fetch(`/api/orders/${orderId}`);
+          if (res.status === 403) {
+            setError("You are not authorized to view this order.");
+            setOrder(null);
+            setItems([]);
+            setLoading(false);
+            return;
+          }
+
           if (res.ok) {
             const data = await res.json();
             if (data.success && data.order) {
-              const currentCached = findLocalOrder(orderId) || cachedOrder;
+              const orderOwnerEmail = data.order.customer?.email?.trim().toLowerCase();
+              if (orderOwnerEmail && orderOwnerEmail !== currentEmail) {
+                setError("You are not authorized to view this order.");
+                setOrder(null);
+                setItems([]);
+                setLoading(false);
+                return;
+              }
+
+              const currentCached = findLocalOrder(orderId, currentEmail) || cachedOrder;
 
               // Ensure real items are never wiped out by a hollow server order
               const resolvedItems =
@@ -191,43 +239,19 @@ export default function OrderDetailsPage() {
               setItems(resolvedItems);
               setLoading(false);
 
-              // If server was missing items but client has them, heal server immediately
-              if (
-                (!data.order.items || data.order.items.length === 0) &&
-                resolvedItems.length > 0
-              ) {
-                fetch(`/api/orders/${orderId}`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ order: mergedOrder }),
-                }).catch(() => {});
-              }
-
-              // Update local cache
+              // Update user-scoped local storage
               try {
-                const updateLocalList = (key: string) => {
-                  const raw = localStorage.getItem(key);
-                  if (raw) {
-                    const list = JSON.parse(raw);
-                    if (Array.isArray(list)) {
-                      const updated = list.map((o: any) =>
-                        o.id === data.order.id ? { ...o, ...mergedOrder } : o
-                      );
-                      localStorage.setItem(key, JSON.stringify(updated));
-                    }
+                const scopedKey = `greeno_orders_${currentEmail}`;
+                const rawScoped = localStorage.getItem(scopedKey);
+                const list = rawScoped ? JSON.parse(rawScoped) : [];
+                if (Array.isArray(list)) {
+                  const updated = list.map((o: any) =>
+                    o.id === data.order.id ? { ...o, ...mergedOrder } : o
+                  );
+                  if (!updated.some((o: any) => o.id === data.order.id)) {
+                    updated.unshift(mergedOrder);
                   }
-                };
-                updateLocalList("greeno_customer_orders");
-                updateLocalList("greeno_all_orders");
-                const rawLast = localStorage.getItem("greeno_last_order");
-                if (rawLast) {
-                  const last = JSON.parse(rawLast);
-                  if (last?.id === data.order.id) {
-                    localStorage.setItem(
-                      "greeno_last_order",
-                      JSON.stringify({ ...last, ...mergedOrder })
-                    );
-                  }
+                  localStorage.setItem(scopedKey, JSON.stringify(updated));
                 }
               } catch {}
               return;

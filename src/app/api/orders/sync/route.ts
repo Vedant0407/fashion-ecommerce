@@ -1,8 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncStoreOrders, StoreOrder } from "@/lib/store-data";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
+    const cookieEmail = request.cookies.get("greeno_session")?.value
+      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
+      : null;
+
+    let authenticatedUser: any = null;
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      authenticatedUser = user;
+    } catch {}
+
+    const authEmail =
+      cookieEmail ||
+      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
+
+    if (!authEmail) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Please log in to sync orders." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const orders: StoreOrder[] = Array.isArray(body.orders)
       ? body.orders
@@ -14,12 +39,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "No orders to sync", count: 0 });
     }
 
-    const updatedOrders = await syncStoreOrders(orders);
+    // Strict account isolation: Only sync orders belonging to the authenticated session email
+    const safeOrders = orders.filter((o) => {
+      const orderEmail = o.customer?.email?.trim().toLowerCase();
+      return orderEmail === authEmail;
+    });
+
+    if (safeOrders.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: "None of the submitted orders belong to your authenticated account.",
+      }, { status: 403 });
+    }
+
+    const updatedOrders = await syncStoreOrders(safeOrders);
 
     return NextResponse.json({
       success: true,
-      count: updatedOrders.length,
-      orders: updatedOrders,
+      count: safeOrders.length,
+      orders: updatedOrders.filter(
+        (o) => o.customer?.email?.trim().toLowerCase() === authEmail
+      ),
     });
   } catch (error: any) {
     console.error("POST /api/orders/sync error:", error);
