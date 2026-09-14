@@ -18,12 +18,14 @@ export default function Header() {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [announcementText, setAnnouncementText] = useState(
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"
   );
   const accountRef = useRef<HTMLDivElement>(null);
+  const mobileAccountRef = useRef<HTMLDivElement>(null);
 
   const isHomePage = pathname === "/";
 
@@ -105,21 +107,26 @@ export default function Header() {
   // Close account menu on route change
   useEffect(() => {
     setAccountOpen(false);
+    setMobileAccountOpen(false);
   }, [pathname]);
 
   // Close account menu when clicking outside or pressing Escape
   useEffect(() => {
-    if (!accountOpen) return;
+    if (!accountOpen && !mobileAccountOpen) return;
 
     function handleClickOutside(e: MouseEvent | TouchEvent) {
       if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
         setAccountOpen(false);
+      }
+      if (mobileAccountRef.current && !mobileAccountRef.current.contains(e.target as Node)) {
+        setMobileAccountOpen(false);
       }
     }
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setAccountOpen(false);
+        setMobileAccountOpen(false);
       }
     }
 
@@ -132,7 +139,7 @@ export default function Header() {
       document.removeEventListener("touchstart", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [accountOpen]);
+  }, [accountOpen, mobileAccountOpen]);
 
   async function handleLogout() {
     try {
@@ -154,6 +161,7 @@ export default function Header() {
     }
     setIsLoggedIn(false);
     setAccountOpen(false);
+    setMobileAccountOpen(false);
     router.push("/login");
     router.refresh();
   }
@@ -306,6 +314,143 @@ export default function Header() {
           </div>
         </nav>
       </header>
+
+      {/* =========================================
+          MOBILE CURVY RECTANGLE DOCK (PHONE ONLY)
+          Icons: Search, Wishlist, Account, Cart
+      ========================================= */}
+      <nav className="mobile-bottom-dock" aria-label="Mobile navigation">
+        <div className="mobile-dock-inner">
+          {/* SEARCH */}
+          <button
+            type="button"
+            className="mobile-dock-item"
+            aria-label="Search"
+            onClick={() => setSearchOpen(true)}
+            title="Search catalogue"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          {/* WISHLIST */}
+          <Link
+            href="/wishlist"
+            className={`mobile-dock-item ${pathname === "/wishlist" ? "active" : ""}`}
+            aria-label="Wishlist"
+            title="Wishlist"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+              />
+            </svg>
+            {wishlistCount > 0 && (
+              <span className="mobile-dock-badge">{wishlistCount}</span>
+            )}
+          </Link>
+
+          {/* ACCOUNT */}
+          <div className="mobile-dock-account-wrapper" ref={mobileAccountRef}>
+            <button
+              type="button"
+              className={`mobile-dock-item ${
+                pathname.startsWith("/account") || pathname === "/login" || pathname === "/signup"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() => setMobileAccountOpen((open) => !open)}
+              aria-label="Account"
+              aria-expanded={mobileAccountOpen}
+              title="Account"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+              >
+                <circle cx="12" cy="8" r="4" />
+                <path
+                  d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+
+            {mobileAccountOpen && (
+              <div className="mobile-dock-account-menu">
+                {isLoggedIn ? (
+                  <>
+                    <Link href="/account" onClick={() => setMobileAccountOpen(false)}>
+                      ACCOUNT DETAILS
+                    </Link>
+                    <Link href="/account?tab=orders" onClick={() => setMobileAccountOpen(false)}>
+                      MY ORDERS
+                    </Link>
+                    <button type="button" onClick={handleLogout}>
+                      LOG OUT
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={() => setMobileAccountOpen(false)}>
+                      LOG IN
+                    </Link>
+                    <Link href="/signup" onClick={() => setMobileAccountOpen(false)}>
+                      CREATE ACCOUNT
+                    </Link>
+                  </>
+                )}
+                <div className="mobile-dock-menu-divider" />
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileAccountOpen(false)}
+                  className="mobile-dock-menu-admin"
+                >
+                  ADMIN CONSOLE &rarr;
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* CART */}
+          <button
+            type="button"
+            onClick={openCart}
+            className="mobile-dock-item"
+            aria-label="Shopping bag"
+            title="Shopping bag"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            >
+              <path d="M6 7h12l1 14H5L6 7Z" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 8V6a3 3 0 0 1 6 0v2" strokeLinecap="round" />
+            </svg>
+            {cartCount > 0 && (
+              <span className="mobile-dock-badge">{cartCount}</span>
+            )}
+          </button>
+        </div>
+      </nav>
 
       <SearchModal
         isOpen={searchOpen}
