@@ -62,6 +62,15 @@ export async function GET(request: NextRequest) {
       } catch {}
     }
 
+    // Read cookie-based status overrides to bridge serverless environments
+    const cookieStatusesRaw = request.cookies.get("greeno_order_statuses")?.value;
+    let cookieStatuses: Record<string, string> = {};
+    if (cookieStatusesRaw) {
+      try {
+        cookieStatuses = JSON.parse(decodeURIComponent(cookieStatusesRaw));
+      } catch {}
+    }
+
     // Read fresh store orders from disk
     const allStoreOrders = await getStoreOrders(true);
 
@@ -77,10 +86,11 @@ export async function GET(request: NextRequest) {
     for (const dbOrder of dbOrders) {
       const rawAddr = dbOrder.addresses;
       const addr = (Array.isArray(rawAddr) ? rawAddr[0] : rawAddr) || {};
+      const statusOverride = cookieStatuses[dbOrder.id];
       orderMap.set(dbOrder.id, {
         id: dbOrder.id,
         created_at: dbOrder.created_at,
-        status: dbOrder.status,
+        status: statusOverride || dbOrder.status || "confirmed",
         subtotal: dbOrder.subtotal,
         shipping: dbOrder.shipping,
         total: dbOrder.total,
@@ -101,19 +111,24 @@ export async function GET(request: NextRequest) {
     // Merge store orders with DB orders: keep full item details and latest status synchronized
     for (const stOrder of storeUserOrders) {
       const existingDb = orderMap.get(stOrder.id);
+      const statusOverride = cookieStatuses[stOrder.id];
       if (!existingDb) {
-        orderMap.set(stOrder.id, stOrder);
+        orderMap.set(stOrder.id, {
+          ...stOrder,
+          status: statusOverride || stOrder.status || "confirmed",
+        });
       } else {
-        // If store order has an updated status from admin console, let it take precedence
+        // If cookie status or store order has an updated status, let it take precedence
         const finalStatus =
-          stOrder.status && stOrder.status !== "confirmed"
-            ? stOrder.status
-            : existingDb.status || stOrder.status;
+          statusOverride ||
+          stOrder.status ||
+          existingDb.status ||
+          "confirmed";
 
         const finalPaymentStatus =
-          stOrder.payment_status && stOrder.payment_status !== "pending"
-            ? stOrder.payment_status
-            : existingDb.payment_status || stOrder.payment_status;
+          stOrder.payment_status ||
+          existingDb.payment_status ||
+          "pending";
 
         orderMap.set(stOrder.id, {
           ...existingDb,

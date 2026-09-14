@@ -11,9 +11,25 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const storeOrders = await getStoreOrders(true);
+
+    // Read cookie-based status overrides to bridge serverless environments
+    const cookieHeader = request.cookies.get("greeno_order_statuses")?.value;
+    let cookieStatuses: Record<string, string> = {};
+    if (cookieHeader) {
+      try {
+        cookieStatuses = JSON.parse(decodeURIComponent(cookieHeader));
+      } catch {}
+    }
+
+    // Apply cookie status overrides first
+    for (const o of storeOrders) {
+      if (cookieStatuses[o.id]) {
+        o.status = cookieStatuses[o.id] as StoreOrder["status"];
+      }
+    }
 
     // Optionally merge with any orders from Supabase and synchronize status
     try {
@@ -31,14 +47,17 @@ export async function GET() {
           const addr = (Array.isArray(rawAddr) ? rawAddr[0] : rawAddr) || {};
           const existing = storeOrders.find((o) => o.id === dbOrder.id);
           if (existing) {
-            // Keep status synchronized from Supabase if changed in Supabase console
-            if (dbOrder.status && dbOrder.status !== "confirmed" && existing.status === "confirmed") {
+            // If cookie had an explicit status override from admin console, preserve it; otherwise apply DB status
+            if (cookieStatuses[dbOrder.id]) {
+              existing.status = cookieStatuses[dbOrder.id] as StoreOrder["status"];
+            } else if (dbOrder.status) {
               existing.status = dbOrder.status as StoreOrder["status"];
             }
-            if (dbOrder.payment_status && dbOrder.payment_status !== "pending" && existing.payment_status === "pending") {
+            if (dbOrder.payment_status) {
               existing.payment_status = dbOrder.payment_status as StoreOrder["payment_status"];
             }
           } else {
+            const finalStatus = (cookieStatuses[dbOrder.id] || dbOrder.status) as StoreOrder["status"];
             storeOrders.push({
               id: dbOrder.id,
               created_at: dbOrder.created_at,
@@ -56,7 +75,7 @@ export async function GET() {
               shipping: Number(dbOrder.shipping) || 0,
               discount: 0,
               total: Number(dbOrder.total) || 0,
-              status: dbOrder.status as StoreOrder["status"],
+              status: finalStatus,
               payment_method: dbOrder.payment_method || "COD",
               payment_status: dbOrder.payment_status || "pending",
             });
@@ -123,7 +142,28 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, order: updated });
+    // 3. Maintain cookie-based status map for serverless cross-lambda persistence
+    const cookieHeader = request.cookies.get("greeno_order_statuses")?.value;
+    let cookieStatuses: Record<string, string> = {};
+    if (cookieHeader) {
+      try {
+        cookieStatuses = JSON.parse(decodeURIComponent(cookieHeader));
+      } catch {}
+    }
+    cookieStatuses[id] = status;
+
+    const response = NextResponse.json({ success: true, order: updated });
+    response.cookies.set(
+      "greeno_order_statuses",
+      encodeURIComponent(JSON.stringify(cookieStatuses)),
+      {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      }
+    );
+
+    return response;
   } catch (error: any) {
     console.error("PATCH /api/admin/orders error:", error);
     return NextResponse.json(

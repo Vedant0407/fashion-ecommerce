@@ -189,6 +189,17 @@ export default function AdminPage() {
         const orderData = await orderRes.json();
         const serverOrders = orderData.orders || [];
 
+        // Also read cookie-based status overrides if present
+        let cookieStatuses: Record<string, string> = {};
+        try {
+          const cookieMatch = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("greeno_order_statuses="));
+          if (cookieMatch) {
+            cookieStatuses = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
+          }
+        } catch {}
+
         // Also merge with any orders saved locally in browser
         let localOrders: StoreOrder[] = [];
         try {
@@ -200,17 +211,40 @@ export default function AdminPage() {
         } catch {}
 
         const orderMap = new Map<string, StoreOrder>();
+        // 1. Add server orders first
         for (const o of serverOrders) {
-          if (o?.id) orderMap.set(o.id, o);
+          if (o?.id) {
+            const statusOverride = cookieStatuses[o.id];
+            orderMap.set(o.id, {
+              ...o,
+              status: (statusOverride || o.status) as StoreOrder["status"],
+            });
+          }
         }
 
-        let hadMissing = false;
-        const missingToSync: StoreOrder[] = [];
+        // 2. Intelligently merge local orders:
+        // Local orders with updated statuses or local changes MUST NOT be dropped!
         for (const lo of localOrders) {
-          if (lo?.id && !orderMap.has(lo.id)) {
-            orderMap.set(lo.id, lo);
-            missingToSync.push(lo);
-            hadMissing = true;
+          if (!lo?.id) continue;
+          const statusOverride = cookieStatuses[lo.id];
+          const serverOrder = orderMap.get(lo.id);
+          if (!serverOrder) {
+            orderMap.set(lo.id, {
+              ...lo,
+              status: (statusOverride || lo.status) as StoreOrder["status"],
+            });
+          } else {
+            // Keep local order's status if local has progress or cookie override
+            const chosenStatus = (statusOverride || lo.status || serverOrder.status) as StoreOrder["status"];
+            const chosenPaymentStatus = lo.payment_status || serverOrder.payment_status;
+            orderMap.set(lo.id, {
+              ...serverOrder,
+              ...lo,
+              status: chosenStatus,
+              payment_status: chosenPaymentStatus,
+              items: Array.isArray(lo.items) && lo.items.length > 0 ? lo.items : serverOrder.items,
+              customer: lo.customer?.address ? lo.customer : serverOrder.customer,
+            });
           }
         }
 
@@ -222,15 +256,6 @@ export default function AdminPage() {
         try {
           localStorage.setItem("greeno_all_orders", JSON.stringify(mergedOrders));
         } catch {}
-
-        // Sync local orders to server if missing
-        if (hadMissing && missingToSync.length > 0) {
-          fetch("/api/orders/sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orders: missingToSync }),
-          }).catch(() => {});
-        }
       }
 
       // Fetch & Merge Returns / Exchanges
@@ -760,6 +785,22 @@ export default function AdminPage() {
               localStorage.setItem("greeno_last_order", JSON.stringify(last));
             }
           }
+
+          // Also update cookie directly in document.cookie for instant client-side and server bridge
+          const cookieMatch = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("greeno_order_statuses="));
+          let statusMap: Record<string, string> = {};
+          if (cookieMatch) {
+            try {
+              statusMap = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
+            } catch {}
+          }
+          statusMap[orderId] = newStatus;
+          document.cookie = `greeno_order_statuses=${encodeURIComponent(
+            JSON.stringify(statusMap)
+          )}; path=/; max-age=31536000; SameSite=Lax`;
+
           window.dispatchEvent(new Event("storage"));
           window.dispatchEvent(
             new CustomEvent("greeno_order_updated", {

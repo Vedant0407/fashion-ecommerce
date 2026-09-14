@@ -224,12 +224,27 @@ export default function OrdersPage() {
           }
         }
 
-        // Merge with server orders (server status wins, but local items and customer details are never lost)
+        // Read cookie status overrides if present
+        let cookieStatuses: Record<string, string> = {};
+        try {
+          const cookieMatch = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("greeno_order_statuses="));
+          if (cookieMatch) {
+            cookieStatuses = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
+          }
+        } catch {}
+
+        // Merge with server orders (preserving cookie overrides and local status updates)
         for (const srv of serverOrders) {
           if (srv?.id) {
+            const statusOverride = cookieStatuses[srv.id];
             const existing = orderMap.get(srv.id);
             if (!existing) {
-              orderMap.set(srv.id, srv);
+              orderMap.set(srv.id, {
+                ...srv,
+                status: statusOverride || srv.status || "confirmed",
+              });
             } else {
               const mergedItems =
                 Array.isArray(srv.items) && srv.items.length > 0
@@ -251,6 +266,8 @@ export default function OrdersPage() {
                 email: effectiveEmail,
               };
 
+              const resolvedStatus = statusOverride || existing.status || srv.status || "confirmed";
+
               orderMap.set(srv.id, {
                 ...existing,
                 ...srv,
@@ -258,7 +275,7 @@ export default function OrdersPage() {
                 customer: mergedCustomer,
                 subtotal: srv.subtotal && srv.subtotal > 0 ? srv.subtotal : existing.subtotal || 0,
                 total: srv.total && srv.total > 0 ? srv.total : existing.total || 0,
-                status: srv.status || existing.status,
+                status: resolvedStatus,
                 payment_status: srv.payment_status || existing.payment_status,
                 payment_method: srv.payment_method || existing.payment_method,
               });

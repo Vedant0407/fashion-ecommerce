@@ -227,9 +227,28 @@ export default function OrderDetailsPage() {
                   ? data.order.total
                   : currentCached?.total || 0;
 
+              // Read cookie status override if present
+              let cookieStatus: string | undefined;
+              try {
+                const cookieMatch = document.cookie
+                  .split("; ")
+                  .find((row) => row.startsWith("greeno_order_statuses="));
+                if (cookieMatch) {
+                  const map = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
+                  cookieStatus = map[orderId];
+                }
+              } catch {}
+
+              const finalStatus =
+                cookieStatus ||
+                data.order.status ||
+                currentCached?.status ||
+                "confirmed";
+
               const mergedOrder = {
                 ...currentCached,
                 ...data.order,
+                status: finalStatus,
                 items: resolvedItems,
                 customer: resolvedCustomer,
                 addresses: resolvedAddresses,
@@ -359,11 +378,31 @@ export default function OrderDetailsPage() {
         .catch(() => {});
     } catch {}
 
-    function handleStorageChange() {
+    function handleStorageChange(e?: any) {
+      let cookieStatus: string | undefined;
+      try {
+        const cookieMatch = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("greeno_order_statuses="));
+        if (cookieMatch) {
+          const map = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
+          cookieStatus = map[orderId];
+        }
+      } catch {}
+
+      const customEventStatus = e?.detail?.orderId === orderId ? e.detail.status : undefined;
+      const effectiveOverrideStatus = customEventStatus || cookieStatus;
+
       const refreshed = findLocalOrder(orderId);
       if (refreshed) {
-        setOrder(refreshed);
+        const finalOrder = {
+          ...refreshed,
+          status: effectiveOverrideStatus || refreshed.status || "confirmed",
+        };
+        setOrder(finalOrder);
         if (refreshed.items?.length) setItems(refreshed.items);
+      } else if (effectiveOverrideStatus) {
+        setOrder((prev) => (prev ? { ...prev, status: effectiveOverrideStatus } : prev));
       }
       try {
         const rawReturns = localStorage.getItem("greeno_returns");

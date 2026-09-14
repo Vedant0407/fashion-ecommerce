@@ -42,6 +42,15 @@ export async function GET(
       );
     }
 
+    // Read cookie-based status overrides to bridge serverless environments
+    const cookieStatusesRaw = request.cookies.get("greeno_order_statuses")?.value;
+    let cookieStatuses: Record<string, string> = {};
+    if (cookieStatusesRaw) {
+      try {
+        cookieStatuses = JSON.parse(decodeURIComponent(cookieStatusesRaw));
+      } catch {}
+    }
+
     // Check store-data first to get full item options and latest admin status
     const allStoreOrders = await getStoreOrders(true);
     const matched = allStoreOrders.find((o) => o.id === cleanId);
@@ -72,14 +81,19 @@ export async function GET(
             .maybeSingle();
 
           if (dbOrder) {
-            if (dbOrder.status && dbOrder.status !== "confirmed" && matched.status === "confirmed") {
+            if (dbOrder.status && !cookieStatuses[cleanId]) {
               matched.status = dbOrder.status as any;
             }
-            if (dbOrder.payment_status && dbOrder.payment_status !== "pending" && matched.payment_status === "pending") {
+            if (dbOrder.payment_status && matched.payment_status === "pending") {
               matched.payment_status = dbOrder.payment_status as any;
             }
           }
         } catch {}
+      }
+
+      // Apply cookie status override if present
+      if (cookieStatuses[cleanId]) {
+        matched.status = cookieStatuses[cleanId] as any;
       }
 
       return NextResponse.json({
@@ -143,10 +157,13 @@ export async function GET(
             .select("id, product_id, product_name, product_price, quantity")
             .eq("order_id", cleanId);
 
+          const finalStatus = cookieStatuses[cleanId] || order.status || "confirmed";
+
           return NextResponse.json({
             success: true,
             order: {
               ...order,
+              status: finalStatus,
               items: items || [],
             },
           }, {

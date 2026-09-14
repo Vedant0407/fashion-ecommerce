@@ -313,6 +313,26 @@ const DEFAULT_RETURNS: ReturnExchangeRequest[] = [
 ];
 
 let memoryData: StoreData | null = null;
+const inMemoryOrderStatusOverrides = new Map<
+  string,
+  { status: StoreOrder["status"]; payment_status?: StoreOrder["payment_status"] }
+>();
+
+export function setOrderStatusOverride(
+  orderId: string,
+  status: StoreOrder["status"],
+  payment_status?: StoreOrder["payment_status"]
+) {
+  inMemoryOrderStatusOverrides.set(orderId, { status, payment_status });
+}
+
+export function getInMemoryOrderStatusOverrides(): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [id, val] of inMemoryOrderStatusOverrides.entries()) {
+    result[id] = val.status;
+  }
+  return result;
+}
 
 export function getInitialData(): StoreData {
   return {
@@ -347,6 +367,14 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
         }
       }
     } catch {}
+
+    for (const o of memoryData.orders) {
+      const override = inMemoryOrderStatusOverrides.get(o.id);
+      if (override) {
+        o.status = override.status;
+        if (override.payment_status) o.payment_status = override.payment_status;
+      }
+    }
     return memoryData;
   }
 
@@ -490,6 +518,15 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
     coupons: base.coupons || fileData?.coupons || initial.coupons,
     settings: { ...initial.settings, ...(fileData?.settings || {}), ...(tmpData?.settings || {}) },
   };
+
+  // Ensure any explicit status overrides are applied to memoryData
+  for (const o of memoryData.orders) {
+    const override = inMemoryOrderStatusOverrides.get(o.id);
+    if (override) {
+      o.status = override.status;
+      if (override.payment_status) o.payment_status = override.payment_status;
+    }
+  }
 
   return memoryData;
 }
@@ -699,6 +736,7 @@ export async function updateStoreOrderStatus(
     }
   }
 
+  setOrderStatusOverride(orderId, status, payment_status);
   await writeStoreData(data);
   return order;
 }

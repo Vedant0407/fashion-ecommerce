@@ -167,36 +167,117 @@ function AccountPageContent() {
     loadAccount();
   }, [router]);
 
-  // Load orders when the Orders tab is active
+  // Load orders when the Orders tab is active, and listen for real-time updates
   useEffect(() => {
-    if (activeTab === "orders" && userEmail) {
-      setOrdersLoading(true);
-      const cleanEmail = userEmail.trim().toLowerCase();
+    if (activeTab !== "orders" || !userEmail) return;
 
-      // Check local cache first
-      if (typeof window !== "undefined") {
-        const raw = localStorage.getItem(`greeno_orders_${cleanEmail}`);
-        if (raw) {
+    const cleanEmail = userEmail.trim().toLowerCase();
+    setOrdersLoading(true);
+
+    function loadLocalOrders() {
+      if (typeof window === "undefined") return;
+      let cookieStatuses: Record<string, string> = {};
+      try {
+        const cookieMatch = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("greeno_order_statuses="));
+        if (cookieMatch) {
+          cookieStatuses = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
+        }
+      } catch {}
+
+      const raw = localStorage.getItem(`greeno_orders_${cleanEmail}`);
+      if (raw) {
+        try {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            const withOverrides = list.map((o: any) => {
+              const statusOverride = cookieStatuses[o.id];
+              return statusOverride ? { ...o, status: statusOverride } : o;
+            });
+            setOrders(withOverrides);
+          }
+        } catch {}
+      }
+    }
+
+    // Check local cache immediately for instant render
+    loadLocalOrders();
+
+    // Query server for latest orders and merge intelligently
+    fetch(`/api/orders?email=${encodeURIComponent(cleanEmail)}&t=${Date.now()}`, {
+      cache: "no-store",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.orders)) {
+          let cookieStatuses: Record<string, string> = {};
           try {
-            const list = JSON.parse(raw);
-            if (Array.isArray(list)) setOrders(list);
+            const cookieMatch = document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("greeno_order_statuses="));
+            if (cookieMatch) {
+              cookieStatuses = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
+            }
+          } catch {}
+
+          const rawLocal = localStorage.getItem(`greeno_orders_${cleanEmail}`);
+          const localList = rawLocal ? JSON.parse(rawLocal) : [];
+          const localMap = new Map<string, any>(
+            Array.isArray(localList) ? localList.map((o: any) => [o.id, o]) : []
+          );
+
+          const merged = data.orders.map((so: any) => {
+            const lo = localMap.get(so.id);
+            const statusOverride = cookieStatuses[so.id];
+            const finalStatus = statusOverride || lo?.status || so.status || "confirmed";
+            return {
+              ...(lo || {}),
+              ...so,
+              status: finalStatus,
+            };
+          });
+
+          // Also include any local orders not yet in server response
+          const serverIds = new Set(data.orders.map((o: any) => o.id));
+          if (Array.isArray(localList)) {
+            for (const lo of localList) {
+              if (lo?.id && !serverIds.has(lo.id)) {
+                const statusOverride = cookieStatuses[lo.id];
+                merged.push({
+                  ...lo,
+                  status: statusOverride || lo.status || "confirmed",
+                });
+              }
+            }
+          }
+
+          merged.sort(
+            (a: any, b: any) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+
+          setOrders(merged);
+          try {
+            localStorage.setItem(`greeno_orders_${cleanEmail}`, JSON.stringify(merged));
           } catch {}
         }
-      }
-
-      // Query server for latest orders
-      fetch(`/api/orders?email=${encodeURIComponent(cleanEmail)}&t=${Date.now()}`, {
-        cache: "no-store",
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.orders)) {
-            setOrders(data.orders);
-          }
-        })
-        .catch(() => {})
-        .finally(() => setOrdersLoading(false));
+      .catch(() => {})
+      .finally(() => setOrdersLoading(false));
+
+    // Listen to real-time events across tabs/windows
+    function handleStorageOrOrderUpdated() {
+      loadLocalOrders();
     }
+
+    window.addEventListener("storage", handleStorageOrOrderUpdated);
+    window.addEventListener("greeno_order_updated", handleStorageOrOrderUpdated);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageOrOrderUpdated);
+      window.removeEventListener("greeno_order_updated", handleStorageOrOrderUpdated);
+    };
   }, [activeTab, userEmail]);
 
   function handleSaveDetails() {
