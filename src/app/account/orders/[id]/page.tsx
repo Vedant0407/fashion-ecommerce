@@ -190,9 +190,12 @@ export default function OrderDetailsPage() {
 
         // 1. Fetch via API route
         try {
-          const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}?t=${Date.now()}`, {
-            cache: "no-store",
-          });
+          const res = await fetch(
+            `/api/orders/${encodeURIComponent(orderId)}?email=${encodeURIComponent(currentEmail)}&t=${Date.now()}`,
+            {
+              cache: "no-store",
+            }
+          );
           if (res.status === 403) {
             setError("You are not authorized to view this order.");
             setOrder(null);
@@ -438,12 +441,28 @@ export default function OrderDetailsPage() {
       } catch {}
     }
 
+    const handleRevalidate = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchOrder();
+      }
+    };
+
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("greeno_order_updated", handleStorageChange);
+    window.addEventListener("focus", handleRevalidate);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleRevalidate);
+    }
+    const intervalId = setInterval(handleRevalidate, 20000);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("greeno_order_updated", handleStorageChange);
+      window.removeEventListener("focus", handleRevalidate);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleRevalidate);
+      }
+      clearInterval(intervalId);
     };
   }, [orderId, router]);
 

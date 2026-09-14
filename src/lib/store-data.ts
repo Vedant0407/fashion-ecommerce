@@ -318,15 +318,64 @@ const inMemoryOrderStatusOverrides = new Map<
   { status: StoreOrder["status"]; payment_status?: StoreOrder["payment_status"] }
 >();
 
+const OVERRIDES_FILE = path.join(
+  typeof process !== "undefined" && process.platform === "win32"
+    ? DATA_DIR
+    : "/tmp",
+  "order-status-overrides.json"
+);
+const DATA_OVERRIDES_FILE = path.join(DATA_DIR, "order-status-overrides.json");
+
+export function loadOrderStatusOverrides() {
+  try {
+    const fileToRead = fs.existsSync(DATA_OVERRIDES_FILE)
+      ? DATA_OVERRIDES_FILE
+      : fs.existsSync(OVERRIDES_FILE)
+      ? OVERRIDES_FILE
+      : null;
+    if (fileToRead) {
+      const content = fs.readFileSync(fileToRead, "utf-8");
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === "object") {
+        for (const [k, v] of Object.entries(parsed)) {
+          if (v && typeof v === "object" && (v as any).status) {
+            inMemoryOrderStatusOverrides.set(k, {
+              status: (v as any).status,
+              payment_status: (v as any).payment_status,
+            });
+          }
+        }
+      }
+    }
+  } catch {}
+}
+
 export function setOrderStatusOverride(
   orderId: string,
   status: StoreOrder["status"],
   payment_status?: StoreOrder["payment_status"]
 ) {
   inMemoryOrderStatusOverrides.set(orderId, { status, payment_status });
+  try {
+    const obj: Record<string, { status: StoreOrder["status"]; payment_status?: StoreOrder["payment_status"] }> = {};
+    for (const [k, v] of inMemoryOrderStatusOverrides.entries()) {
+      obj[k] = v;
+    }
+    const raw = JSON.stringify(obj, null, 2);
+    try {
+      if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(DATA_OVERRIDES_FILE, raw, "utf-8");
+    } catch {}
+    try {
+      const dir = path.dirname(OVERRIDES_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(OVERRIDES_FILE, raw, "utf-8");
+    } catch {}
+  } catch {}
 }
 
 export function getInMemoryOrderStatusOverrides(): Record<string, string> {
+  loadOrderStatusOverrides();
   const result: Record<string, string> = {};
   for (const [id, val] of inMemoryOrderStatusOverrides.entries()) {
     result[id] = val.status;
@@ -346,6 +395,7 @@ export function getInitialData(): StoreData {
 }
 
 export async function readStoreData(forceFresh = false): Promise<StoreData> {
+  loadOrderStatusOverrides();
   if (memoryData && !forceFresh) {
     try {
       if (fs.existsSync(DATA_FILE)) {
@@ -768,6 +818,14 @@ export async function syncStoreOrders(clientOrders: StoreOrder[]): Promise<Store
           ? co.customer
           : existing.customer || co.customer;
 
+      const statusOverride = inMemoryOrderStatusOverrides.get(co.id)?.status;
+      const finalStatus =
+        statusOverride ||
+        (existing.status && existing.status !== "confirmed" ? existing.status : co.status) ||
+        existing.status ||
+        co.status ||
+        "confirmed";
+
       existingMap.set(co.id, {
         ...existing,
         ...co,
@@ -775,7 +833,7 @@ export async function syncStoreOrders(clientOrders: StoreOrder[]): Promise<Store
         customer: resolvedCustomer,
         subtotal: co.subtotal > 0 ? co.subtotal : existing.subtotal || 0,
         total: co.total > 0 ? co.total : existing.total || 0,
-        status: existing.status || co.status,
+        status: finalStatus,
         payment_status: existing.payment_status || co.payment_status,
       });
     }

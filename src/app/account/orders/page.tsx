@@ -266,7 +266,7 @@ export default function OrdersPage() {
                 email: effectiveEmail,
               };
 
-              const resolvedStatus = statusOverride || existing.status || srv.status || "confirmed";
+              const resolvedStatus = statusOverride || srv.status || existing.status || "confirmed";
 
               orderMap.set(srv.id, {
                 ...existing,
@@ -319,12 +319,28 @@ export default function OrdersPage() {
       }
     }
 
+    const handleRevalidate = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        initAndFetchOrders();
+      }
+    };
+
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("greeno_order_updated", handleStorageChange);
+    window.addEventListener("focus", handleRevalidate);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleRevalidate);
+    }
+    const intervalId = setInterval(handleRevalidate, 20000);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("greeno_order_updated", handleStorageChange);
+      window.removeEventListener("focus", handleRevalidate);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleRevalidate);
+      }
+      clearInterval(intervalId);
     };
   }, []);
 

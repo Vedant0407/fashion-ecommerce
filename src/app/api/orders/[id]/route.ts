@@ -13,6 +13,7 @@ export async function GET(
     const { id } = await params;
     const cleanId = (id || "").trim();
 
+    const queryEmail = request.nextUrl.searchParams.get("email")?.trim().toLowerCase();
     const cookieEmail = request.cookies.get("greeno_session")?.value
       ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
       : null;
@@ -30,13 +31,25 @@ export async function GET(
 
     const authEmail =
       cookieEmail ||
-      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
+      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null) ||
+      queryEmail;
 
     if (!authEmail) {
       return NextResponse.json(
         { success: false, message: "Unauthorized. Please log in." },
         {
           status: 401,
+          headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+        }
+      );
+    }
+
+    // Security check: If a query email is passed, it MUST match the authenticated session
+    if (queryEmail && cookieEmail && queryEmail !== cookieEmail) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden. You cannot view an order belonging to another account." },
+        {
+          status: 403,
           headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
         }
       );
@@ -82,7 +95,9 @@ export async function GET(
 
           if (dbOrder) {
             if (dbOrder.status && !cookieStatuses[cleanId]) {
-              matched.status = dbOrder.status as any;
+              if (dbOrder.status !== "confirmed" || matched.status === "confirmed") {
+                matched.status = dbOrder.status as any;
+              }
             }
             if (dbOrder.payment_status && matched.payment_status === "pending") {
               matched.payment_status = dbOrder.payment_status as any;

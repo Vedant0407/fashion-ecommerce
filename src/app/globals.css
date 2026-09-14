@@ -1500,8 +1500,20 @@ select {
     height: 560px;
   }
   .about-top {
-    grid-template-columns: 1fr;
-    gap: 30px;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px 16px;
+  }
+  .about-top .about-column:nth-child(1) {
+    grid-column: 1;
+  }
+  .about-top .about-column:nth-child(2) {
+    grid-column: 2;
+  }
+  .about-top .about-column:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .about-top .about-column.about-newsletter {
+    grid-column: 1 / -1;
   }
   .about-bottom {
     flex-direction: column;

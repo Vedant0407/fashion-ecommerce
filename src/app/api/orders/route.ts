@@ -121,6 +121,7 @@ export async function GET(request: NextRequest) {
         // If cookie status or store order has an updated status, let it take precedence
         const finalStatus =
           statusOverride ||
+          (stOrder.status && stOrder.status !== "confirmed" ? stOrder.status : existingDb.status) ||
           stOrder.status ||
           existingDb.status ||
           "confirmed";
