@@ -5762,19 +5762,20 @@ select {
     padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  /* Mobile Floating Dock: Curvy Rectangle Box */
+  /* Mobile Floating Dock: Curvy Rectangle Box shifted to bottom-left */
   .mobile-bottom-dock {
     display: flex !important;
     position: fixed !important;
-    bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 14px !important;
+    right: auto !important;
+    transform: none !important;
     z-index: 1000 !important;
     pointer-events: none !important;
-    justify-content: center !important;
+    justify-content: flex-start !important;
     align-items: center !important;
     width: auto !important;
-    max-width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 80px) !important;
   }
 
   .mobile-dock-inner {
@@ -5782,8 +5783,8 @@ select {
     display: flex !important;
     align-items: center !important;
     justify-content: space-around !important;
-    gap: 16px !important;
-    padding: 7px 20px !important;
+    gap: 12px !important;
+    padding: 6px 14px !important;
     background: rgba(17, 17, 17, 0.94) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
@@ -5793,12 +5794,14 @@ select {
       0 14px 40px -6px rgba(0, 0, 0, 0.55),
       0 4px 14px rgba(0, 0, 0, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+    height: 50px !important;
+    box-sizing: border-box !important;
   }
 
   .mobile-dock-item {
     position: relative !important;
-    width: 42px !important;
-    height: 42px !important;
+    width: 38px !important;
+    height: 38px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -6832,17 +6835,23 @@ select {
    ========================================= */
 
 @media (max-width: 768px) {
-  /* Position floating launcher neatly above dock on mobile */
+  /* Position floating launcher neatly on the right, aligned with bottom-left dock */
   .chatbot-launcher {
-    bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
     right: 14px !important;
-    width: 48px !important;
-    height: 48px !important;
+    width: 50px !important;
+    height: 50px !important;
+    box-sizing: border-box !important;
     z-index: 1040 !important;
   }
 
   /* When chatbot is open, hide mobile bottom dock to prevent overlay */
   body.chatbot-open .mobile-bottom-dock {
+    display: none !important;
+  }
+
+  /* When cart is open, hide chatbot launcher to prevent overlay */
+  body.cart-open .chatbot-launcher {
     display: none !important;
   }
 
