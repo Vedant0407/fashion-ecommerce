@@ -107,6 +107,8 @@ export function extractShoppingIntent(
   // 1b. Order Status & Real-time Database Order Tracking
   const orderIdMatch =
     userText.match(/#?\b(GO-[0-9A-Z]+(?:-[0-9A-Z]+)?)\b/i) ||
+    userText.match(/\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/i) ||
+    userText.match(/\b([0-9a-f]{8})\b/i) ||
     userText.match(/#\b([0-9A-Z-]{4,})\b/i);
 
   const emailMatch = userText.match(/\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/);
@@ -619,6 +621,9 @@ export async function generateGreenOResponse(
   previousProducts?: Product[],
   userInfo?: {
     email?: string | null;
+    clientOrders?: any[];
+    supabaseOrders?: any[];
+    cookieStatuses?: Record<string, string>;
     lastOrder?: any | null;
   }
 ): Promise<ChatbotResponse> {
@@ -626,15 +631,63 @@ export async function generateGreenOResponse(
 
   // 0. Real-time Database Order Status Lookup
   if (intent.orderQuery?.isOrderStatusRequest) {
-    const allOrders = await getStoreOrders(true);
+    const storeOrders = await getStoreOrders(true);
+
+    const orderMap = new Map<string, StoreOrder>();
+
+    // 1. Add store orders from disk
+    for (const o of storeOrders) {
+      if (o?.id) orderMap.set(o.id.toLowerCase(), o);
+    }
+
+    // 2. Add Supabase orders from server
+    if (Array.isArray(userInfo?.supabaseOrders)) {
+      for (const o of userInfo.supabaseOrders) {
+        if (o?.id) {
+          const existing = orderMap.get(o.id.toLowerCase());
+          orderMap.set(o.id.toLowerCase(), { ...existing, ...o });
+        }
+      }
+    }
+
+    // 3. Add client-side orders (which include the exact orders rendered on the Account page!)
+    if (Array.isArray(userInfo?.clientOrders)) {
+      for (const o of userInfo.clientOrders) {
+        if (o?.id) {
+          const existing = orderMap.get(o.id.toLowerCase());
+          orderMap.set(o.id.toLowerCase(), { ...existing, ...o });
+        }
+      }
+    }
+
+    // 4. Fallback to userInfo.lastOrder
+    if (userInfo?.lastOrder?.id) {
+      const existing = orderMap.get(userInfo.lastOrder.id.toLowerCase());
+      orderMap.set(userInfo.lastOrder.id.toLowerCase(), { ...existing, ...userInfo.lastOrder });
+    }
+
+    // Apply any cookie status overrides
+    if (userInfo?.cookieStatuses) {
+      for (const [id, overrideStatus] of Object.entries(userInfo.cookieStatuses)) {
+        const order = orderMap.get(id.toLowerCase());
+        if (order) {
+          order.status = overrideStatus as any;
+        }
+      }
+    }
+
+    const allOrders = Array.from(orderMap.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
     let matchedOrder: StoreOrder | null = null;
 
-    // 1. Search by explicit order ID if provided in query
+    // A. Search by explicit order ID if provided in query
     if (intent.orderQuery.orderId) {
       const qId = intent.orderQuery.orderId.toLowerCase().replace(/[^a-z0-9]/g, "");
       matchedOrder =
         allOrders.find((o) => {
-          const oId = o.id.toLowerCase().replace(/[^a-z0-9]/g, "");
+          const oId = (o.id || "").toLowerCase().replace(/[^a-z0-9]/g, "");
           return oId === qId || oId.includes(qId) || qId.includes(oId);
         }) || null;
 
@@ -647,35 +700,49 @@ export async function generateGreenOResponse(
       }
     }
 
-    // 2. Search by customer email (from query, or logged-in userInfo)
+    // B. Search by customer email (from query, or logged-in userInfo)
     const targetEmail = (intent.orderQuery.email || userInfo?.email || "").trim().toLowerCase();
     if (!matchedOrder && targetEmail) {
-      const userOrders = allOrders.filter(
-        (o) => o.customer?.email?.trim().toLowerCase() === targetEmail
-      );
+      const userOrders = allOrders.filter((o) => {
+        const oEmail = o.customer?.email?.trim().toLowerCase();
+        return oEmail === targetEmail;
+      });
       if (userOrders.length > 0) {
         matchedOrder = userOrders[0]; // Newest order
-      } else if (intent.orderQuery.email) {
-        return {
-          reply: `I checked our database for **${targetEmail}**, but there are no orders placed under this email address. If you checked out with a different email, please reply with that email or your Order ID!`,
-          products: [],
-          suggestions: ["View my orders", "Show me new arrivals", "Contact concierge"],
-        };
       }
     }
 
-    // 3. Fallback to userInfo.lastOrder if available
+    // C. Fallback: If user asked for last order and clientOrders has orders (from active browser session)
+    if (!matchedOrder && Array.isArray(userInfo?.clientOrders) && userInfo.clientOrders.length > 0) {
+      matchedOrder = userInfo.clientOrders[0];
+    }
+
+    // D. Fallback: If user asked for last order and supabaseOrders has orders
+    if (!matchedOrder && Array.isArray(userInfo?.supabaseOrders) && userInfo.supabaseOrders.length > 0) {
+      matchedOrder = userInfo.supabaseOrders[0];
+    }
+
+    // E. Fallback to userInfo.lastOrder if available
     if (!matchedOrder && userInfo?.lastOrder?.id) {
       matchedOrder =
         allOrders.find((o) => o.id === userInfo.lastOrder.id) ||
         (userInfo.lastOrder as StoreOrder);
     }
 
-    // 4. If no order could be identified, prompt user for email or order ID
+    // F. If user explicitly provided an email in chat, but still no order was found
+    if (!matchedOrder && intent.orderQuery.email) {
+      return {
+        reply: `I checked our database for **${targetEmail}**, but there are no orders placed under this email address. If you checked out with a different email, please reply with that email or your Order ID!`,
+        products: [],
+        suggestions: ["View my orders", "Show me new arrivals", "Contact concierge"],
+      };
+    }
+
+    // G. If no order could be identified, prompt user for email or order ID
     if (!matchedOrder) {
       return {
         reply:
-          "To check the status of your last order, please reply with your **Order ID** (e.g., `GO-9482-A1`) or the **email address** you used at checkout! You can also view all your orders anytime on your [Orders Page](/account/orders).",
+          "To check the status of your last order, please reply with your **Order ID** (e.g., `GO-9482-A1` or your order ID) or the **email address** you used at checkout! You can also view all your orders anytime on your [Orders Page](/account/orders).",
         products: [],
         suggestions: [
           "View my orders",

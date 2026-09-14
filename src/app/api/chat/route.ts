@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStoreProducts } from "@/lib/store-data";
+import { getStoreProducts, syncStoreOrders } from "@/lib/store-data";
 import { Product, getProductByIdOrSlug } from "@/lib/catalog";
+import { createClient } from "@/lib/supabase/server";
 import {
   extractShoppingIntent,
   filterLiveProducts,
@@ -18,14 +19,80 @@ export async function POST(request: NextRequest) {
       currentProductId = null,
       previousProducts = [],
       userEmail = null,
+      clientOrders = [],
       lastOrder = null,
     } = body;
+
+    // 1. Sync any client orders to persistent store-data
+    if (Array.isArray(clientOrders) && clientOrders.length > 0) {
+      try {
+        await syncStoreOrders(clientOrders);
+      } catch {}
+    }
+
+    // 2. Fetch authenticated Supabase user & orders if available
+    let authUserEmail: string | null = null;
+    let supabaseOrders: any[] = [];
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        authUserEmail = user.email ? user.email.trim().toLowerCase() : null;
+        const { data: dbOrders } = await supabase
+          .from("orders")
+          .select(
+            "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
+          )
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (dbOrders && Array.isArray(dbOrders)) {
+          supabaseOrders = dbOrders.map((dbo) => {
+            const addr =
+              (Array.isArray(dbo.addresses) ? dbo.addresses[0] : dbo.addresses) || {};
+            return {
+              id: dbo.id,
+              created_at: dbo.created_at,
+              status: dbo.status || "confirmed",
+              subtotal: dbo.subtotal,
+              shipping: dbo.shipping,
+              total: dbo.total,
+              payment_status: dbo.payment_status,
+              payment_method: dbo.payment_method,
+              customer: {
+                fullName: addr.full_name || "Customer",
+                email: user.email || "",
+                phone: addr.phone || "",
+                address: addr.address_line1 || "",
+                city: addr.city || "",
+                state: addr.state || "",
+                pincode: addr.postal_code || "",
+              },
+            };
+          });
+        }
+      }
+    } catch {}
 
     const cookieEmail = request.cookies.get("greeno_session")?.value
       ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
       : null;
 
-    const effectiveEmail = (userEmail ? String(userEmail).trim().toLowerCase() : null) || cookieEmail;
+    const effectiveEmail =
+      (userEmail ? String(userEmail).trim().toLowerCase() : null) ||
+      authUserEmail ||
+      cookieEmail;
+
+    // 3. Read cookie-based status overrides
+    const cookieStatusesRaw = request.cookies.get("greeno_order_statuses")?.value;
+    let cookieStatuses: Record<string, string> = {};
+    if (cookieStatusesRaw) {
+      try {
+        cookieStatuses = JSON.parse(decodeURIComponent(cookieStatusesRaw));
+      } catch {}
+    }
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -161,6 +228,9 @@ Respond with valid JSON in this exact schema:
       prevList,
       {
         email: effectiveEmail,
+        clientOrders: Array.isArray(clientOrders) ? clientOrders : [],
+        supabaseOrders,
+        cookieStatuses,
         lastOrder,
       }
     );
