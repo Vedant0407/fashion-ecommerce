@@ -949,7 +949,7 @@ export default function OrderDetailsPage() {
                 </div>
 
                 {isEligible && (
-                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <div className={styles.policyActions}>
                     <button type="button" onClick={() => openReturnModal("exchange")} className={styles.policyBtnDark}>
                       Request Exchange
                     </button>
@@ -1134,80 +1134,28 @@ export default function OrderDetailsPage() {
         {/* ==================== RETURN / EXCHANGE REQUEST MODAL ==================== */}
         {isReturnModalOpen && (
           <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.6)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 9999,
-              padding: "16px",
-            }}
+            className={styles.modalOverlay}
             onClick={(e) => {
               if (e.target === e.currentTarget) setIsReturnModalOpen(false);
             }}
           >
-            <div
-              style={{
-                background: "#ffffff",
-                maxWidth: "600px",
-                width: "100%",
-                maxHeight: "90vh",
-                overflowY: "auto",
-                border: "1px solid #111111",
-                padding: "32px",
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  borderBottom: "1px solid #eeeeee",
-                  paddingBottom: "16px",
-                  marginBottom: "20px",
-                }}
-              >
+            <div className={styles.modalContent}>
+              <div className={styles.modalHeader}>
                 <div>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      letterSpacing: "0.15em",
-                      fontWeight: 700,
-                      color: "#666",
-                    }}
-                  >
+                  <span className={styles.modalSuperTitle}>
                     GREENO ASSURANCE · 3-DAY POLICY
                   </span>
-                  <h2
-                    style={{
-                      margin: "4px 0 0",
-                      fontSize: "18px",
-                      fontWeight: 800,
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                    }}
-                  >
+                  <h2 className={styles.modalTitle}>
                     {returnModalType === "exchange"
                       ? "Request Size Exchange"
                       : "Request Return & Refund"}
                   </h2>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsReturnModalOpen(false)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    fontSize: "24px",
-                    lineHeight: 1,
-                    cursor: "pointer",
-                    color: "#666",
-                  }}
+                  className={styles.modalCloseBtn}
+                  aria-label="Close"
                 >
                   &times;
                 </button>
@@ -1215,17 +1163,8 @@ export default function OrderDetailsPage() {
 
               <form onSubmit={handleSubmitReturn}>
                 {/* Item Selection */}
-                <div style={{ marginBottom: "20px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      marginBottom: "8px",
-                    }}
-                  >
+                <div className={styles.modalFieldGroup}>
+                  <label className={styles.modalLabel}>
                     Select Items to {returnModalType === "exchange" ? "Exchange" : "Return"}
                   </label>
 
@@ -1239,14 +1178,9 @@ export default function OrderDetailsPage() {
                       return (
                         <div
                           key={itId}
-                          style={{
-                            border: `1px solid ${isChecked ? "#000" : "#eee"}`,
-                            padding: "12px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                            background: isChecked ? "#fafafa" : "#fff",
-                          }}
+                          className={`${styles.modalItemCard} ${
+                            isChecked ? styles.modalItemCardSelected : ""
+                          }`}
                         >
                           <input
                             type="checkbox"
@@ -1258,42 +1192,26 @@ export default function OrderDetailsPage() {
                                 setSelectedItemIds(selectedItemIds.filter((id) => id !== itId));
                               }
                             }}
-                            style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                            style={{ width: "16px", height: "16px", cursor: "pointer", flexShrink: 0 }}
                           />
 
                           <img
                             src={(it as any).image || "/black-tee.jfif"}
                             alt={itName}
-                            style={{
-                              width: "44px",
-                              height: "44px",
-                              objectFit: "cover",
-                              background: "#eee",
-                            }}
+                            className={styles.modalItemThumb}
                           />
 
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p
-                              style={{
-                                margin: 0,
-                                fontSize: "12px",
-                                fontWeight: 600,
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              {itName}
-                            </p>
-                            <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#666" }}>
+                          <div className={styles.modalItemInfo}>
+                            <p className={styles.modalItemName}>{itName}</p>
+                            <p className={styles.modalItemSub}>
                               Current Size: <strong>{itSize}</strong>
                             </p>
                           </div>
 
                           {returnModalType === "exchange" && isChecked && (
-                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <div className={styles.modalExchangeRow}>
                               <label style={{ fontSize: "10px", fontWeight: 700, color: "#666" }}>
-                                NEW SIZE:
+                                NEW:
                               </label>
                               <select
                                 value={exchangeSizes[itId] || (itSize === "M" ? "L" : "M")}
@@ -1304,11 +1222,12 @@ export default function OrderDetailsPage() {
                                   })
                                 }
                                 style={{
-                                  padding: "4px 8px",
+                                  padding: "5px 8px",
                                   fontSize: "12px",
                                   fontWeight: 700,
                                   border: "1px solid #111",
                                   background: "#fff",
+                                  borderRadius: "0px",
                                 }}
                               >
                                 {["XS", "S", "M", "L", "XL", "XXL"].map((sz) => (
@@ -1326,29 +1245,14 @@ export default function OrderDetailsPage() {
                 </div>
 
                 {/* Reason Selection */}
-                <div style={{ marginBottom: "18px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      marginBottom: "6px",
-                    }}
-                  >
+                <div className={styles.modalFieldGroup}>
+                  <label className={styles.modalLabel}>
                     Reason for {returnModalType === "exchange" ? "Exchange" : "Return"}
                   </label>
                   <select
                     value={reasonCategory}
                     onChange={(e) => setReasonCategory(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: "1px solid #ccc",
-                      fontSize: "13px",
-                      background: "#fff",
-                    }}
+                    className={styles.modalSelect}
                   >
                     <option value="Size too small">Size too small</option>
                     <option value="Size too large">Size too large</option>
@@ -1365,17 +1269,8 @@ export default function OrderDetailsPage() {
                 </div>
 
                 {/* Additional Notes */}
-                <div style={{ marginBottom: "18px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      marginBottom: "6px",
-                    }}
-                  >
+                <div className={styles.modalFieldGroup}>
+                  <label className={styles.modalLabel}>
                     Additional Notes / Feedback (Optional)
                   </label>
                   <textarea
@@ -1383,29 +1278,13 @@ export default function OrderDetailsPage() {
                     value={customerNotes}
                     onChange={(e) => setCustomerNotes(e.target.value)}
                     placeholder="Specify details, defects, or instructions for the warehouse team..."
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: "1px solid #ccc",
-                      fontSize: "13px",
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
+                    className={styles.modalTextarea}
                   />
                 </div>
 
                 {/* Reverse Pickup Address */}
-                <div style={{ marginBottom: "24px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      marginBottom: "6px",
-                    }}
-                  >
+                <div className={styles.modalFieldGroup} style={{ marginBottom: "24px" }}>
+                  <label className={styles.modalLabel}>
                     Reverse Pickup Address
                   </label>
                   <input
@@ -1414,33 +1293,19 @@ export default function OrderDetailsPage() {
                     value={pickupAddress}
                     onChange={(e) => setPickupAddress(e.target.value)}
                     placeholder="Complete address for courier reverse pickup"
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: "1px solid #ccc",
-                      fontSize: "13px",
-                    }}
+                    className={styles.modalInput}
                   />
-                  <span style={{ fontSize: "11px", color: "#777", marginTop: "4px", display: "block" }}>
+                  <span className={styles.modalHelpText}>
                     Our logistics partner will collect the parcel from this address within 24–48 hours of approval.
                   </span>
                 </div>
 
                 {/* Modal Buttons */}
-                <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <div className={styles.modalActions}>
                   <button
                     type="button"
                     onClick={() => setIsReturnModalOpen(false)}
-                    style={{
-                      background: "#f4f4f5",
-                      border: "1px solid #e4e4e7",
-                      padding: "12px 20px",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      cursor: "pointer",
-                      color: "#333",
-                    }}
+                    className={styles.modalCancelBtn}
                   >
                     CANCEL
                   </button>
@@ -1448,19 +1313,7 @@ export default function OrderDetailsPage() {
                   <button
                     type="submit"
                     disabled={submittingReturn || selectedItemIds.length === 0}
-                    style={{
-                      background: selectedItemIds.length === 0 ? "#888" : "#000",
-                      color: "#fff",
-                      border: "1px solid #000",
-                      padding: "12px 24px",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      cursor: selectedItemIds.length === 0 ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
+                    className={styles.modalSubmitBtn}
                   >
                     {submittingReturn
                       ? "SUBMITTING REQUEST..."
