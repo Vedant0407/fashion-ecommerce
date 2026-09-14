@@ -1287,10 +1287,14 @@ select {
     letter-spacing: 0.12em;
   }
   .category-grid {
-    grid-template-columns: 1fr 1fr;
-    grid-auto-rows: 260px;
+    grid-template-columns: 1.35fr 0.65fr 0.65fr;
+    grid-auto-rows: clamp(140px, 20vw, 240px);
+    gap: 4px;
   }
   .category-card.large {
+    grid-row: span 2;
+  }
+  .category-card.small {
     grid-row: span 1;
   }
   .products-grid {
@@ -1353,8 +1357,61 @@ select {
     width: 260px;
   }
   .category-grid {
-    grid-template-columns: 1fr;
-    grid-auto-rows: 300px;
+    grid-template-columns: 1.35fr 0.65fr 0.65fr;
+    grid-auto-rows: clamp(105px, 28vw, 155px);
+    gap: 3px;
+  }
+  .category-card.large {
+    grid-row: span 2;
+  }
+  .category-card.small {
+    grid-row: span 1;
+  }
+  .category-content {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .category-card.large .category-content {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+  }
+  .category-card.large .category-title {
+    font-size: clamp(10.5px, 3.2vw, 14px);
+    line-height: 1.15;
+    letter-spacing: 0.04em;
+  }
+  .category-card.large .category-sub {
+    font-size: 7px;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+  .category-card.small .category-content {
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .category-card.small .category-title {
+    font-size: clamp(8px, 2.4vw, 10px);
+    line-height: 1.15;
+    letter-spacing: 0.03em;
+    word-break: break-word;
+  }
+  .category-card.small .category-sub {
+    display: none;
+  }
+  .category-card.small .category-arrow {
+    display: none;
+  }
+  .category-arrow {
+    font-size: 9px;
   }
   .trending-slide {
     height: 560px;
