@@ -17,7 +17,15 @@ export async function POST(request: NextRequest) {
       messages = [],
       currentProductId = null,
       previousProducts = [],
+      userEmail = null,
+      lastOrder = null,
     } = body;
+
+    const cookieEmail = request.cookies.get("greeno_session")?.value
+      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
+      : null;
+
+    const effectiveEmail = (userEmail ? String(userEmail).trim().toLowerCase() : null) || cookieEmail;
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -150,7 +158,11 @@ Respond with valid JSON in this exact schema:
     const nativeResponse: ChatbotResponse = await generateGreenOResponse(
       userText,
       currentProduct,
-      prevList
+      prevList,
+      {
+        email: effectiveEmail,
+        lastOrder,
+      }
     );
 
     return NextResponse.json({

@@ -28,10 +28,10 @@ type Message = {
 };
 
 const INITIAL_SUGGESTIONS = [
+  "Track my last order",
   "Show me new arrivals",
   "Find hoodies",
   "Products under ₹1500",
-  "Show me oversized T-shirts",
 ];
 
 export default function ChatbotAssistant() {
@@ -137,6 +137,20 @@ export default function ChatbotAssistant() {
         content: m.content,
       }));
 
+      const storedEmail =
+        typeof window !== "undefined"
+          ? localStorage.getItem("greeno_user_email")
+          : null;
+
+      let lastOrderParsed: any = null;
+      try {
+        const rawLast =
+          typeof window !== "undefined"
+            ? localStorage.getItem("greeno_last_order")
+            : null;
+        if (rawLast) lastOrderParsed = JSON.parse(rawLast);
+      } catch {}
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -144,6 +158,8 @@ export default function ChatbotAssistant() {
           messages: payloadMessages,
           currentProductId: currentProduct?.id || null,
           previousProducts: recentProducts,
+          userEmail: storedEmail,
+          lastOrder: lastOrderParsed,
         }),
       });
 

@@ -1,5 +1,5 @@
 import { Product } from "@/lib/catalog";
-import { getStoreProducts } from "@/lib/store-data";
+import { getStoreProducts, getStoreOrders, StoreOrder } from "@/lib/store-data";
 
 export type ChatAction = {
   type: "add_to_cart" | "navigate" | "view_product";
@@ -39,6 +39,12 @@ export type ExtractedQuery = {
     quantity?: number;
   } | null;
   isComparative?: "cheapest" | "expensive" | "sizes" | "colors" | null;
+  orderQuery?: {
+    isOrderStatusRequest: boolean;
+    orderId?: string | null;
+    email?: string | null;
+    isLastOrder?: boolean;
+  } | null;
 };
 
 /**
@@ -87,23 +93,67 @@ export function extractShoppingIntent(
 
   if (
     norm.includes("contact") ||
-    norm.includes("support") ||
-    norm.includes("phone") ||
-    norm.includes("email") ||
+    norm.includes("customer care") ||
     norm.includes("help desk") ||
-    norm.includes("customer care")
+    norm.includes("support team") ||
+    norm.includes("how to contact") ||
+    norm.includes("support email") ||
+    norm.includes("phone number")
   ) {
     result.isGeneralQuestion = "contact";
     return result;
   }
 
-  if (
+  // 1b. Order Status & Real-time Database Order Tracking
+  const orderIdMatch =
+    userText.match(/#?\b(GO-[0-9A-Z]+(?:-[0-9A-Z]+)?)\b/i) ||
+    userText.match(/#\b([0-9A-Z-]{4,})\b/i);
+
+  const emailMatch = userText.match(/\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/);
+
+  const isOrderStatusPhrase =
+    Boolean(orderIdMatch) ||
+    norm.includes("status") ||
     norm.includes("track") ||
     norm.includes("where is my order") ||
-    norm.includes("order status") ||
-    norm.includes("my orders")
-  ) {
-    result.isGeneralQuestion = "orders";
+    norm.includes("where is my last order") ||
+    norm.includes("my last order") ||
+    norm.includes("last order") ||
+    norm.includes("order update") ||
+    norm.includes("has my order") ||
+    norm.includes("order progress") ||
+    norm.includes("order shipment") ||
+    norm.includes("is my order") ||
+    norm.includes("order confirmed") ||
+    norm.includes("order delivered") ||
+    norm.includes("order received") ||
+    norm.includes("order recieved") ||
+    norm.includes("order reached") ||
+    norm.includes("check my order") ||
+    norm.includes("my orders") ||
+    norm.includes("order details");
+
+  const isReturnPhrase =
+    norm.includes("return") ||
+    norm.includes("exchange") ||
+    norm.includes("refund") ||
+    norm.includes("replacement");
+
+  // If user only provided an email address or order ID (e.g. replying with order ID or email)
+  const isOnlyEmailOrOrderId =
+    (Boolean(emailMatch) || Boolean(orderIdMatch)) &&
+    !norm.includes("hoodie") &&
+    !norm.includes("tee") &&
+    !norm.includes("pant") &&
+    !norm.includes("cap");
+
+  if ((isOrderStatusPhrase || isOnlyEmailOrOrderId) && !isReturnPhrase) {
+    result.orderQuery = {
+      isOrderStatusRequest: true,
+      orderId: orderIdMatch ? orderIdMatch[1].toUpperCase().replace(/^#/, "") : null,
+      email: emailMatch ? emailMatch[1].toLowerCase() : null,
+      isLastOrder: norm.includes("last") || !orderIdMatch,
+    };
     return result;
   }
 
@@ -474,15 +524,184 @@ export async function filterLiveProducts(intent: ExtractedQuery): Promise<Produc
 }
 
 /**
+ * Formats a clear, luxurious and informative order status report for the customer
+ */
+function formatOrderStatusResponse(order: StoreOrder, orderedProducts: Product[]): ChatbotResponse {
+  const statusLower = (order.status || "confirmed").toLowerCase();
+
+  let statusBadge = "Confirmed";
+  let statusEmoji = "📦";
+  let statusExplanation = "";
+
+  if (statusLower === "delivered") {
+    statusBadge = "Delivered";
+    statusEmoji = "✅";
+    statusExplanation = `Your order was successfully **Delivered** to ${order.customer?.city || "your address"}! We hope you love your new GreenO pieces. If you need to request a size exchange or return, you have 7 days from delivery directly via your [Orders](/account/orders) page.`;
+  } else if (statusLower === "shipped") {
+    statusBadge = "Shipped (In Transit)";
+    statusEmoji = "🚚";
+    statusExplanation = `Your order has **Shipped** and is on its way with our express courier partner! Delivery is estimated within 2 to 4 business days.`;
+  } else if (statusLower === "reached") {
+    statusBadge = "Reached Hub / Out for Delivery";
+    statusEmoji = "📍";
+    statusExplanation = `Your package has **Reached your local distribution hub** in ${order.customer?.city || "your area"} and is scheduled for final doorstep delivery today!`;
+  } else if (statusLower === "processing") {
+    statusBadge = "Processing / Received";
+    statusEmoji = "⚙️";
+    statusExplanation = `Your order has been **Received** and is actively being tailored, quality-inspected, and packaged at our atelier.`;
+  } else if (statusLower === "cancelled") {
+    statusBadge = "Cancelled";
+    statusEmoji = "❌";
+    statusExplanation = `This order has been **Cancelled**. If you have any questions regarding refunds or payment adjustments, please contact our concierge team.`;
+  } else {
+    // confirmed
+    statusBadge = "Confirmed";
+    statusEmoji = "📦";
+    statusExplanation = `Your order is **Confirmed**! Our team has received your order and is currently preparing your pieces for packaging and quality inspection.`;
+  }
+
+  const itemsList =
+    (order.items || [])
+      .map(
+        (item) =>
+          `${item.name}${item.size ? ` (${item.size})` : ""}${item.quantity > 1 ? ` x${item.quantity}` : ""}`
+      )
+      .join(", ") || "GreenO Signature Streetwear";
+
+  const formattedDate = order.created_at
+    ? new Date(order.created_at).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "Recently placed";
+
+  const totalFormatted = Number(order.total || 0).toLocaleString("en-IN");
+  const paymentBadge = order.payment_method
+    ? `${order.payment_method} (${order.payment_status === "paid" ? "Paid" : "Pending"})`
+    : "Prepaid";
+
+  const deliveryLocation = order.customer?.city
+    ? `${order.customer.city}, ${order.customer.state || ""}`
+    : "Your shipping address";
+
+  const reply = `Here is the current status of your order **#${order.id}**:
+
+${statusEmoji} **Status: ${statusBadge}**
+${statusExplanation}
+
+• **Items**: ${itemsList}
+• **Total**: ₹${totalFormatted} • ${paymentBadge}
+• **Placed On**: ${formattedDate}
+• **Destination**: ${deliveryLocation}
+
+You can view complete tracking, updates, and invoice anytime on your [Order Details](/account/orders/${order.id}) page.`;
+
+  return {
+    reply,
+    products: orderedProducts.slice(0, 4),
+    suggestions: [
+      `Track order #${order.id}`,
+      "Return or exchange policy",
+      "Show me new arrivals",
+      "Contact customer care",
+    ],
+  };
+}
+
+/**
  * Built-in GreenO Natural Language Shopping Engine
  * Acts as the authoritative response generator using real live product data.
  */
 export async function generateGreenOResponse(
   userText: string,
   currentProduct?: Product | null,
-  previousProducts?: Product[]
+  previousProducts?: Product[],
+  userInfo?: {
+    email?: string | null;
+    lastOrder?: any | null;
+  }
 ): Promise<ChatbotResponse> {
   const intent = extractShoppingIntent(userText, currentProduct, previousProducts);
+
+  // 0. Real-time Database Order Status Lookup
+  if (intent.orderQuery?.isOrderStatusRequest) {
+    const allOrders = await getStoreOrders(true);
+    let matchedOrder: StoreOrder | null = null;
+
+    // 1. Search by explicit order ID if provided in query
+    if (intent.orderQuery.orderId) {
+      const qId = intent.orderQuery.orderId.toLowerCase().replace(/[^a-z0-9]/g, "");
+      matchedOrder =
+        allOrders.find((o) => {
+          const oId = o.id.toLowerCase().replace(/[^a-z0-9]/g, "");
+          return oId === qId || oId.includes(qId) || qId.includes(oId);
+        }) || null;
+
+      if (!matchedOrder) {
+        return {
+          reply: `I searched our database but could not find an order matching **#${intent.orderQuery.orderId}**. Please double-check your Order ID or view all past purchases on your [Orders](/account/orders) page.`,
+          products: [],
+          suggestions: ["View my orders", "Track another order", "Contact concierge"],
+        };
+      }
+    }
+
+    // 2. Search by customer email (from query, or logged-in userInfo)
+    const targetEmail = (intent.orderQuery.email || userInfo?.email || "").trim().toLowerCase();
+    if (!matchedOrder && targetEmail) {
+      const userOrders = allOrders.filter(
+        (o) => o.customer?.email?.trim().toLowerCase() === targetEmail
+      );
+      if (userOrders.length > 0) {
+        matchedOrder = userOrders[0]; // Newest order
+      } else if (intent.orderQuery.email) {
+        return {
+          reply: `I checked our database for **${targetEmail}**, but there are no orders placed under this email address. If you checked out with a different email, please reply with that email or your Order ID!`,
+          products: [],
+          suggestions: ["View my orders", "Show me new arrivals", "Contact concierge"],
+        };
+      }
+    }
+
+    // 3. Fallback to userInfo.lastOrder if available
+    if (!matchedOrder && userInfo?.lastOrder?.id) {
+      matchedOrder =
+        allOrders.find((o) => o.id === userInfo.lastOrder.id) ||
+        (userInfo.lastOrder as StoreOrder);
+    }
+
+    // 4. If no order could be identified, prompt user for email or order ID
+    if (!matchedOrder) {
+      return {
+        reply:
+          "To check the status of your last order, please reply with your **Order ID** (e.g., `GO-9482-A1`) or the **email address** you used at checkout! You can also view all your orders anytime on your [Orders Page](/account/orders).",
+        products: [],
+        suggestions: [
+          "View my orders",
+          "What is your return policy?",
+          "Show me new arrivals",
+          "Contact concierge",
+        ],
+      };
+    }
+
+    // 5. Order found! Resolve product cards for the items in the order
+    const allStoreProducts = await getStoreProducts();
+    const orderedProducts: Product[] = [];
+    if (Array.isArray(matchedOrder.items)) {
+      for (const item of matchedOrder.items) {
+        const prod = allStoreProducts.find(
+          (p) => p.id === item.product_id || p.name.toLowerCase() === item.name.toLowerCase()
+        );
+        if (prod && !orderedProducts.some((p) => p.id === prod.id)) {
+          orderedProducts.push(prod);
+        }
+      }
+    }
+
+    return formatOrderStatusResponse(matchedOrder, orderedProducts);
+  }
 
   // 1. General FAQ Answers
   if (intent.isGeneralQuestion === "shipping") {
