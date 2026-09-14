@@ -252,39 +252,22 @@ export default function Header() {
                 <div className="account-menu">
                   {isLoggedIn ? (
                     <>
-                      <Link href="/account" onClick={() => setAccountOpen(false)}>ACCOUNT DETAILS</Link>
-                      <Link href="/account/orders" onClick={() => setAccountOpen(false)}>MY ORDERS</Link>
-                      <Link href="/wishlist" onClick={() => setAccountOpen(false)}>MY WISHLIST</Link>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAccountOpen(false);
-                          openCart();
-                        }}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          textAlign: "left",
-                          padding: "8px 12px",
-                          font: "inherit",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          letterSpacing: "0.12em",
-                          cursor: "pointer",
-                          color: "inherit",
-                          width: "100%",
-                          display: "block",
-                        }}
-                      >
-                        SHOPPING BAG
-                      </button>
+                      <Link href="/account" onClick={() => setAccountOpen(false)}>
+                        ACCOUNT DETAILS
+                      </Link>
+                      <Link href="/account?tab=orders" onClick={() => setAccountOpen(false)}>
+                        MY ORDERS
+                      </Link>
                       <button onClick={handleLogout}>LOG OUT</button>
                     </>
                   ) : (
                     <>
-                      <Link href="/login" onClick={() => setAccountOpen(false)}>LOG IN</Link>
-                      <Link href="/signup" onClick={() => setAccountOpen(false)}>CREATE ACCOUNT</Link>
-                      <Link href="/wishlist" onClick={() => setAccountOpen(false)}>MY WISHLIST</Link>
+                      <Link href="/login" onClick={() => setAccountOpen(false)}>
+                        LOG IN
+                      </Link>
+                      <Link href="/signup" onClick={() => setAccountOpen(false)}>
+                        CREATE ACCOUNT
+                      </Link>
                     </>
                   )}
                   <div style={{ height: "1px", background: "rgba(0, 0, 0, 0.08)", margin: "6px 0" }} />

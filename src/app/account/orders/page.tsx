@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./orders.module.css";
 
@@ -43,6 +44,12 @@ type Order = {
 };
 
 export default function OrdersPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/account?tab=orders");
+  }, [router]);
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

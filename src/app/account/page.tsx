@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Package, User, Wallet, LogOut, Check, Pencil } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
@@ -17,11 +17,25 @@ interface OrderSummary {
   total: number;
 }
 
-export default function AccountPage() {
+function AccountPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as TabKey | null;
 
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("account");
+
+  // Sync tab with URL search parameter
+  useEffect(() => {
+    if (tabParam && ["orders", "address", "wallet", "account"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  function switchTab(tab: TabKey) {
+    setActiveTab(tab);
+    router.replace(`/account?tab=${tab}`, { scroll: false });
+  }
 
   // User Profile
   const [userName, setUserName] = useState("");
@@ -165,7 +179,7 @@ export default function AccountPage() {
         if (raw) {
           try {
             const list = JSON.parse(raw);
-            if (Array.isArray(list)) setOrders(list.slice(0, 5));
+            if (Array.isArray(list)) setOrders(list);
           } catch {}
         }
       }
@@ -177,7 +191,7 @@ export default function AccountPage() {
         .then((res) => res.json())
         .then((data) => {
           if (data.success && Array.isArray(data.orders)) {
-            setOrders(data.orders.slice(0, 5));
+            setOrders(data.orders);
           }
         })
         .catch(() => {})
@@ -254,7 +268,7 @@ export default function AccountPage() {
             <button
               type="button"
               className={`${styles.navButton} ${activeTab === "orders" ? styles.navButtonActive : ""}`}
-              onClick={() => setActiveTab("orders")}
+              onClick={() => switchTab("orders")}
             >
               <Package className={styles.navIcon} />
               <span>Order history</span>
@@ -263,7 +277,7 @@ export default function AccountPage() {
             <button
               type="button"
               className={`${styles.navButton} ${activeTab === "address" ? styles.navButtonActive : ""}`}
-              onClick={() => setActiveTab("address")}
+              onClick={() => switchTab("address")}
             >
               <User className={styles.navIcon} />
               <span>Shipping Address</span>
@@ -272,7 +286,7 @@ export default function AccountPage() {
             <button
               type="button"
               className={`${styles.navButton} ${activeTab === "wallet" ? styles.navButtonActive : ""}`}
-              onClick={() => setActiveTab("wallet")}
+              onClick={() => switchTab("wallet")}
             >
               <Wallet className={styles.navIcon} />
               <span>Wallet Details</span>
@@ -281,7 +295,7 @@ export default function AccountPage() {
             <button
               type="button"
               className={`${styles.navButton} ${activeTab === "account" ? styles.navButtonActive : ""}`}
-              onClick={() => setActiveTab("account")}
+              onClick={() => switchTab("account")}
             >
               <User className={styles.navIcon} />
               <span>Account details</span>
@@ -397,14 +411,9 @@ export default function AccountPage() {
             {/* 2. Order History Tab */}
             {activeTab === "orders" && (
               <div>
-                <div className={styles.tabHeader} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div>
-                    <h2 className={styles.tabTitle}>Order History</h2>
-                    <p className={styles.tabSubtitle}>Review your recent orders and shipment status.</p>
-                  </div>
-                  <Link href="/account/orders" className={styles.viewOrderBtn}>
-                    View All Orders →
-                  </Link>
+                <div className={styles.tabHeader}>
+                  <h2 className={styles.tabTitle}>Order History</h2>
+                  <p className={styles.tabSubtitle}>Review your recent orders and shipment status.</p>
                 </div>
 
                 {ordersLoading ? (
@@ -603,5 +612,21 @@ export default function AccountPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className={styles.page}>
+          <div className={styles.container}>
+            <p className={styles.message}>LOADING ACCOUNT...</p>
+          </div>
+        </main>
+      }
+    >
+      <AccountPageContent />
+    </Suspense>
   );
 }
