@@ -685,7 +685,7 @@ export default function CheckoutPage() {
         {/* Compact Top Header */}
         <div className={styles.headerRow}>
           <div className={styles.headerLeft}>
-            <Link href="/cart" className={styles.back}>
+            <Link href="/cart" className={`${styles.back} page-back-button`}>
               ← BAG
             </Link>
             <h1 className={styles.compactTitle}>CHECKOUT</h1>

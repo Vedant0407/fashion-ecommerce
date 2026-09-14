@@ -346,7 +346,7 @@ export default function OrdersPage() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
-        <Link href="/account" className={styles.back}>
+        <Link href="/account" className={`${styles.back} page-back-button`}>
           ← BACK TO ACCOUNT
         </Link>
 

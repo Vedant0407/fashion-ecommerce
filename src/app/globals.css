@@ -2137,15 +2137,26 @@ select {
     overflow-x: hidden;
   }
 
-  .product-back-button {
-    margin-bottom: 12px !important;
-    font-size: 11px !important;
-    letter-spacing: 0.14em !important;
-    display: inline-flex !important;
-    align-items: center;
-    gap: 6px;
-    color: #666666 !important;
-    padding: 4px 0 !important;
+  /* HIDE ALL BACK BUTTONS ON MOBILE PHONES */
+  .product-back-button,
+  .shop-back-button,
+  .category-back-button,
+  .all-products-back-button,
+  .wishlist-back-button,
+  .page-back-button,
+  .back-btn-mobile-hide,
+  .premium-auth-back-btn,
+  .google-modal-back-btn,
+  .reset-back-btn,
+  .search-modal-back-btn {
+    display: none !important;
+  }
+
+  .wishlist-header-nav,
+  .shop-header-nav,
+  .category-header-nav {
+    justify-content: flex-start !important;
+    margin-bottom: 16px !important;
   }
 
   .product-detail {

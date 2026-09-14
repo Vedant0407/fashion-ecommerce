@@ -206,6 +206,7 @@ function ResetPasswordForm() {
           <div style={{ textAlign: "center", marginTop: "16px" }}>
             <Link
               href="/login"
+              className="reset-back-btn page-back-button"
               style={{
                 fontSize: "12px",
                 color: "#888888",

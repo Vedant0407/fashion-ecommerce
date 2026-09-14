@@ -129,6 +129,7 @@ export default function ShopPage() {
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         {/* Breadcrumb & Navigation */}
         <div
+          className="shop-header-nav"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -138,6 +139,7 @@ export default function ShopPage() {
         >
           <button
             onClick={() => router.back()}
+            className="shop-back-button page-back-button"
             style={{
               background: "transparent",
               border: "none",

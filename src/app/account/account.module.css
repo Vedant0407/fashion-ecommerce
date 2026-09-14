@@ -1078,8 +1078,7 @@
   }
 
   .backToOrdersBtn {
-    margin-bottom: 16px;
-    font-size: 10.5px;
+    display: none !important;
   }
 
   .detailHeader {

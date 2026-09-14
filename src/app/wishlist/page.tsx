@@ -244,6 +244,7 @@ export default function WishlistPage() {
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         {/* Breadcrumb & Back */}
         <div
+          className="wishlist-header-nav"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -253,6 +254,7 @@ export default function WishlistPage() {
         >
           <button
             onClick={() => router.back()}
+            className="wishlist-back-button page-back-button"
             style={{
               background: "transparent",
               border: "none",

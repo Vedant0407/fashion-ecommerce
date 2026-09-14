@@ -116,6 +116,7 @@ export default function CategoryPage() {
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         {/* Breadcrumb & Back */}
         <div
+          className="category-header-nav"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -125,6 +126,7 @@ export default function CategoryPage() {
         >
           <button
             onClick={() => router.back()}
+            className="category-back-button page-back-button"
             style={{
               background: "transparent",
               border: "none",

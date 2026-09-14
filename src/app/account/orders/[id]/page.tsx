@@ -715,7 +715,7 @@ export default function OrderDetailsPage() {
 
           {/* Right Content Area */}
           <section className={styles.contentArea}>
-            <Link href="/account?tab=orders" className={styles.backToOrdersBtn}>
+            <Link href="/account?tab=orders" className={`${styles.backToOrdersBtn} page-back-button`}>
               <ArrowLeft style={{ width: 14, height: 14 }} />
               <span>Back to Order History</span>
             </Link>

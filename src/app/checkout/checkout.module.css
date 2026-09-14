@@ -600,6 +600,12 @@
   }
 }
 
+@media (max-width: 768px) {
+  .back {
+    display: none !important;
+  }
+}
+
 @media (max-width: 640px) {
   .fieldsGrid {
     grid-template-columns: 1fr;
