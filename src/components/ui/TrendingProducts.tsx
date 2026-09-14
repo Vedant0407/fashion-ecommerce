@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Product, getAllProducts } from "@/lib/catalog";
@@ -97,7 +97,10 @@ export default function TrendingProducts() {
 
   const currentPhoto = photos[photoIndex] || photos[0] || "/black-tee.jfif";
 
-  const previousSlide = (e?: React.MouseEvent) => {
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+
+  const previousSlide = (e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -110,7 +113,7 @@ export default function TrendingProducts() {
     }
   };
 
-  const nextSlide = (e?: React.MouseEvent) => {
+  const nextSlide = (e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -123,9 +126,34 @@ export default function TrendingProducts() {
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const diffX = touchStartXRef.current - e.changedTouches[0].clientX;
+    const diffY = touchStartYRef.current - e.changedTouches[0].clientY;
+    // Horizontal swipe threshold: at least 35px horizontal and more horizontal than vertical
+    if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 0) {
+        nextSlide();
+      } else {
+        previousSlide();
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
   return (
     <section className="trending-section" id="trending">
-      <div className="trending-container">
+      <div
+        className="trending-container"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <AnimatePresence mode="wait">
           <motion.a
             key={`${activeItem.id || activeIndex}-${photoIndex}`}
@@ -151,7 +179,7 @@ export default function TrendingProducts() {
           </motion.a>
         </AnimatePresence>
 
-        {/* LEFT ARROW (Appears on hover) */}
+        {/* LEFT ARROW */}
         <button
           type="button"
           className="trending-arrow trending-arrow-left"
@@ -161,7 +189,7 @@ export default function TrendingProducts() {
           <ChevronLeft size={22} />
         </button>
 
-        {/* RIGHT ARROW (Appears on hover) */}
+        {/* RIGHT ARROW */}
         <button
           type="button"
           className="trending-arrow trending-arrow-right"

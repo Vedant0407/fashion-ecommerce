@@ -33,11 +33,14 @@ export default function CartDrawer() {
   useEffect(() => {
     if (isCartOpen) {
       document.body.style.overflow = "hidden";
+      document.body.classList.add("cart-open");
     } else {
       document.body.style.overflow = "";
+      document.body.classList.remove("cart-open");
     }
     return () => {
       document.body.style.overflow = "";
+      document.body.classList.remove("cart-open");
     };
   }, [isCartOpen]);
 
