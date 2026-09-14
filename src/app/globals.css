@@ -5505,4 +5505,48 @@ select {
   }
 }
 
+/* =========================================
+   MOBILE ONLY: DECREASED SECTION GAPS
+   (Hero, New In, Collection, Trending, Catalogue, Footer)
+   ========================================= */
+@media (max-width: 768px) {
+  .new-in-section {
+    padding-top: 10px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .new-in-heading {
+    margin-bottom: 8px !important;
+  }
+
+  .category-section {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .category-heading h2 {
+    margin-bottom: 8px !important;
+  }
+
+  .trending-section {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .products-section {
+    padding-top: 6px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .products-header-row {
+    margin-bottom: 8px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .about-section {
+    padding-top: 18px !important;
+  }
+}
+
+
 

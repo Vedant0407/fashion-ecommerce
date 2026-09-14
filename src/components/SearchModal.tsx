@@ -104,6 +104,22 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         .search-modal-scroll::-webkit-scrollbar-thumb:hover {
           background: #888888;
         }
+        @media (max-width: 768px) {
+          .search-modal-back-btn,
+          .search-modal-divider,
+          .search-esc-text,
+          .search-esc-hint {
+            display: none !important;
+          }
+          .search-mobile-close-icon {
+            display: block !important;
+          }
+        }
+        @media (min-width: 769px) {
+          .search-mobile-close-icon {
+            display: none !important;
+          }
+        }
       `}</style>
 
       {/* Blurred Backdrop */}
@@ -159,6 +175,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 onClick={onClose}
                 aria-label="Back"
                 title="Go back"
+                className="search-modal-back-btn"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -186,7 +203,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 <span>BACK</span>
               </button>
 
-              <span style={{ color: "#d0d0cc", fontSize: "18px", lineHeight: "1", flexShrink: 0 }}>|</span>
+              <span className="search-modal-divider" style={{ color: "#d0d0cc", fontSize: "18px", lineHeight: "1", flexShrink: 0 }}>|</span>
 
               <svg
                 viewBox="0 0 24 24"
@@ -251,9 +268,27 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 fontWeight: 700,
                 color: "#000000",
                 flexShrink: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              ESC [X]
+              <span className="search-esc-text">ESC [X]</span>
+              <svg
+                className="search-mobile-close-icon"
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ display: "none" }}
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
 
@@ -328,7 +363,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 letterSpacing: "0.08em",
               }}
             >
-              <span>
+              <span className="search-esc-hint">
                 Press <strong style={{ color: "#000000" }}>ESC</strong> or click outside to close
               </span>
               <span style={{ fontWeight: 600, color: "#555555" }}>
