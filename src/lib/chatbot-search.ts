@@ -563,29 +563,55 @@ function formatOrderStatusResponse(order: StoreOrder, orderedProducts: Product[]
   }
 
   const itemsList =
-    (order.items || [])
-      .map(
-        (item) =>
-          `${item.name}${item.size ? ` (${item.size})` : ""}${item.quantity > 1 ? ` x${item.quantity}` : ""}`
-      )
-      .join(", ") || "GreenO Signature Streetwear";
+    Array.isArray(order.items) && order.items.length > 0
+      ? order.items
+          .filter(Boolean)
+          .map((item: any) => {
+            const name = item.name || item.product_name || "Streetwear Piece";
+            const size = item.size ? ` (${item.size})` : "";
+            const qty = item.quantity && Number(item.quantity) > 1 ? ` x${item.quantity}` : "";
+            return `${name}${size}${qty}`;
+          })
+          .join(", ")
+      : "GreenO Signature Streetwear";
 
-  const formattedDate = order.created_at
-    ? new Date(order.created_at).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "Recently placed";
+  let formattedDate = "Recently placed";
+  if (order.created_at) {
+    try {
+      const d = new Date(order.created_at);
+      if (!isNaN(d.getTime())) {
+        formattedDate = d.toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+      } else {
+        formattedDate = String(order.created_at);
+      }
+    } catch {
+      formattedDate = String(order.created_at);
+    }
+  }
 
-  const totalFormatted = Number(order.total || 0).toLocaleString("en-IN");
+  let totalFormatted = "0";
+  if (order.total !== undefined && order.total !== null) {
+    const rawTotal = String(order.total).replace(/[₹,\s]/g, "");
+    const parsedNum = parseFloat(rawTotal);
+    if (!isNaN(parsedNum)) {
+      totalFormatted = parsedNum.toLocaleString("en-IN");
+    } else {
+      totalFormatted = String(order.total);
+    }
+  }
+
   const paymentBadge = order.payment_method
-    ? `${order.payment_method} (${order.payment_status === "paid" ? "Paid" : "Pending"})`
-    : "Prepaid";
+    ? `${order.payment_method}${order.payment_status ? ` (${order.payment_status.toUpperCase() === "PAID" ? "Paid" : "Pending"})` : ""}`
+    : "Prepaid (Paid)";
 
-  const deliveryLocation = order.customer?.city
-    ? `${order.customer.city}, ${order.customer.state || ""}`
-    : "Your shipping address";
+  const deliveryLocation =
+    order.customer?.city || order.customer?.address
+      ? [order.customer.city, order.customer.state].filter(Boolean).join(", ") || order.customer.address || "Your Address"
+      : "Your registered delivery address";
 
   const reply = `Here is the current status of your order **#${order.id}**:
 
@@ -631,7 +657,8 @@ export async function generateGreenOResponse(
 
   // 0. Real-time Database Order Status Lookup
   if (intent.orderQuery?.isOrderStatusRequest) {
-    const storeOrders = await getStoreOrders(true);
+    try {
+      const storeOrders = await getStoreOrders(true);
 
     const orderMap = new Map<string, StoreOrder>();
 
@@ -758,8 +785,14 @@ export async function generateGreenOResponse(
     const orderedProducts: Product[] = [];
     if (Array.isArray(matchedOrder.items)) {
       for (const item of matchedOrder.items) {
+        if (!item || typeof item !== "object") continue;
+        const rawItem = item as any;
+        const rawName = String(rawItem.name || rawItem.product_name || "").toLowerCase().trim();
         const prod = allStoreProducts.find(
-          (p) => p.id === item.product_id || p.name.toLowerCase() === item.name.toLowerCase()
+          (p) =>
+            (rawItem.product_id && p.id === rawItem.product_id) ||
+            (rawName && p.name && p.name.toLowerCase() === rawName) ||
+            (rawName && p.id && p.id.toLowerCase() === rawName.replace(/\s+/g, "-"))
         );
         if (prod && !orderedProducts.some((p) => p.id === prod.id)) {
           orderedProducts.push(prod);
@@ -768,6 +801,15 @@ export async function generateGreenOResponse(
     }
 
     return formatOrderStatusResponse(matchedOrder, orderedProducts);
+    } catch (orderErr) {
+      console.warn("Order lookup fallback notice:", orderErr);
+      return {
+        reply:
+          "You can view and track all your active orders, real-time dispatch progress, and delivery timelines directly in your [Order History](/account/orders).",
+        products: [],
+        suggestions: ["View my orders", "Show me hoodies", "Trending drops"],
+      };
+    }
   }
 
   // 1. General FAQ Answers
