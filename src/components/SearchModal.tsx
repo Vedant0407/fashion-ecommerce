@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Product } from "@/lib/catalog";
+import ProductCard from "@/components/ui/ProductCard";
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -12,13 +14,29 @@ interface SearchModalProps {
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
+  const [curatedProducts, setCuratedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    onClose();
+  }, [pathname]);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
       setTimeout(() => inputRef.current?.focus(), 50);
+
+      // Pre-load curated items to display as suggested pieces
+      fetch("/api/products?featured=true")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+            setCuratedProducts(data.products.slice(0, 8));
+          }
+        })
+        .catch(() => {});
     } else {
       document.body.style.overflow = "";
       setQuery("");
@@ -105,6 +123,13 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           background: #888888;
         }
         @media (max-width: 768px) {
+          .search-modal-backdrop {
+            padding: 10px 8px !important;
+          }
+          .search-modal-card {
+            padding: 14px 10px !important;
+            max-height: 94vh !important;
+          }
           .search-modal-back-btn,
           .search-modal-divider,
           .search-esc-text,
@@ -114,16 +139,25 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           .search-mobile-close-icon {
             display: block !important;
           }
+          .search-products-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 16px 10px !important;
+          }
         }
         @media (min-width: 769px) {
           .search-mobile-close-icon {
             display: none !important;
+          }
+          .search-products-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 20px 14px !important;
           }
         }
       `}</style>
 
       {/* Blurred Backdrop */}
       <div
+        className="search-modal-backdrop"
         style={{
           position: "fixed",
           inset: 0,
@@ -142,6 +176,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       >
         {/* Floating White Modal Card */}
         <div
+          className="search-modal-card"
           style={{
             width: "100%",
             maxWidth: "880px",
@@ -347,28 +382,53 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             ))}
           </div>
 
-          {/* Prompt when no query entered */}
+          {/* Curated Suggestions when no query entered */}
           {!query.trim() && (
             <div
+              className="search-modal-scroll"
               style={{
-                paddingTop: "14px",
-                borderTop: "1px solid #f0f0f0",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "8px",
-                color: "#888888",
-                fontSize: "11px",
-                letterSpacing: "0.08em",
+                overflowY: "auto",
+                maxHeight: "calc(88vh - 190px)",
+                paddingRight: "6px",
+                marginRight: "-6px",
+                marginTop: "10px",
               }}
             >
-              <span className="search-esc-hint">
-                Press <strong style={{ color: "#000000" }}>ESC</strong> or click outside to close
-              </span>
-              <span style={{ fontWeight: 600, color: "#555555" }}>
-                TYPE TO EXPLORE ALL PIECES
-              </span>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "10px 0 14px",
+                  borderTop: "1px solid #f0f0f0",
+                  color: "#888888",
+                  fontSize: "10px",
+                  letterSpacing: "0.14em",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                }}
+              >
+                <span>CURATED CATALOGUE // SUGGESTED PIECES</span>
+                <span className="search-esc-hint" style={{ fontWeight: 500, fontSize: "11px", letterSpacing: "0.06em" }}>
+                  Press <strong style={{ color: "#000000" }}>ESC</strong> to close
+                </span>
+              </div>
+
+              {curatedProducts.length > 0 && (
+                <div
+                  className="products-grid search-products-grid"
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest("a") || target.closest(".product-add-to-cart-btn")) {
+                      onClose();
+                    }
+                  }}
+                >
+                  {curatedProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} source="search" />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -381,6 +441,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 maxHeight: "calc(88vh - 190px)",
                 paddingRight: "6px",
                 marginRight: "-6px",
+                marginTop: "6px",
               }}
             >
               {loading && (
@@ -423,93 +484,16 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     FOUND {results.length} PIECE{results.length > 1 ? "S" : ""}
                   </div>
                   <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
-                      gap: "16px",
+                    className="products-grid search-products-grid"
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.closest("a") || target.closest(".product-add-to-cart-btn")) {
+                        onClose();
+                      }
                     }}
                   >
                     {results.map((product) => (
-                      <Link
-                        key={product.id}
-                        href={`/products/${product.id}?from=search`}
-                        onClick={onClose}
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          background: "#ffffff",
-                          border: "1px solid #e8e8e8",
-                          borderRadius: "0px",
-                          padding: "0px",
-                          textDecoration: "none",
-                          overflow: "hidden",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.borderColor = "#000000";
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.08)";
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.borderColor = "#e8e8e8";
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow = "none";
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "100%",
-                            height: "220px",
-                            background: "#f7f7f7",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <img
-                            src={product.image || "/black-tee.jfif"}
-                            alt={product.name}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        </div>
-                        <div style={{ padding: "12px 12px 14px", display: "flex", flexDirection: "column", gap: "3px" }}>
-                          <span
-                            style={{
-                              fontSize: "9px",
-                              letterSpacing: "0.16em",
-                              color: "#888888",
-                              fontWeight: 600,
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {product.category_name || "STREETWEAR"}
-                          </span>
-                          <strong
-                            style={{
-                              fontSize: "12px",
-                              color: "#000000",
-                              fontWeight: 700,
-                              letterSpacing: "0.02em",
-                              lineHeight: 1.35,
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {product.name}
-                          </strong>
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              color: "#000000",
-                              fontWeight: 600,
-                              marginTop: "2px",
-                            }}
-                          >
-                            ₹{Number(product.price).toLocaleString("en-IN")}
-                          </span>
-                        </div>
-                      </Link>
+                      <ProductCard key={product.id} product={product} source="search" />
                     ))}
                   </div>
                 </div>
