@@ -158,29 +158,10 @@ export default function CategoryPage() {
             marginBottom: "35px",
           }}
         >
-          <h1
-            style={{
-              margin: "0 0 12px",
-              fontSize: "28px",
-              letterSpacing: "-0.02em",
-              fontWeight: 800,
-              lineHeight: 1.1,
-              textTransform: "uppercase",
-              color: "#111111",
-            }}
-          >
+          <h1 className="page-heading-title">
             {meta.name}
           </h1>
-          <p
-            style={{
-              margin: "0 0 25px",
-              color: "#666666",
-              fontSize: "13px",
-              letterSpacing: "0.02em",
-              maxWidth: "600px",
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="page-heading-desc">
             {meta.description}
           </p>
 

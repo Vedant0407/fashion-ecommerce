@@ -171,29 +171,10 @@ export default function ShopPage() {
             marginBottom: "35px",
           }}
         >
-          <h1
-            style={{
-              margin: "0 0 12px",
-              fontSize: "28px",
-              letterSpacing: "-0.02em",
-              fontWeight: 800,
-              lineHeight: 1.1,
-              textTransform: "uppercase",
-              color: "#111111",
-            }}
-          >
+          <h1 className="page-heading-title">
             CATALOGUE
           </h1>
-          <p
-            style={{
-              margin: "0 0 25px",
-              color: "#666666",
-              fontSize: "13px",
-              letterSpacing: "0.02em",
-              maxWidth: "600px",
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="page-heading-desc">
             Everyday luxury streetwear crafted with heavyweight fabrics, drop silhouettes, and utilitarian detailing.
           </p>
 
