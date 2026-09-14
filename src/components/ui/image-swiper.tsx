@@ -25,8 +25,13 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const startX = useRef(0);
+  const startY = useRef(0);
   const currentX = useRef(0);
+  const currentY = useRef(0);
   const dragging = useRef(false);
+  const isHorizontalSwipe = useRef(false);
+  const isVerticalScroll = useRef(false);
+  const capturedPointerId = useRef<number | null>(null);
 
   const [dragX, setDragX] = useState(0);
 
@@ -53,41 +58,130 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
   ) => {
     dragging.current = true;
     startX.current = e.clientX;
+    startY.current = e.clientY;
     currentX.current = e.clientX;
+    currentY.current = e.clientY;
+    isHorizontalSwipe.current = false;
+    isVerticalScroll.current = false;
+    capturedPointerId.current = null;
 
-    e.currentTarget.setPointerCapture(e.pointerId);
+    // For mouse drag on desktop, capture pointer for smooth drag interaction
+    if (e.pointerType === "mouse") {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        capturedPointerId.current = e.pointerId;
+      } catch {}
+    }
+    // IMPORTANT: For touch on mobile, do NOT call setPointerCapture on pointerdown!
+    // Capturing touch immediately intercepts and cancels browser native vertical page scrolling.
   };
 
   const handlePointerMove = (
     e: React.PointerEvent<HTMLDivElement>
   ) => {
     if (!dragging.current) return;
+    if (isVerticalScroll.current) return;
 
     currentX.current = e.clientX;
+    currentY.current = e.clientY;
 
-    const distance = currentX.current - startX.current;
+    const deltaX = currentX.current - startX.current;
+    const deltaY = currentY.current - startY.current;
 
-    setDragX(distance);
+    // On touch devices, detect whether gesture is vertical page scroll or horizontal card swipe
+    if (e.pointerType === "touch" && !isHorizontalSwipe.current) {
+      // If vertical movement exceeds 6px and vertical >= horizontal: it's a page scroll!
+      if (Math.abs(deltaY) > 6 && Math.abs(deltaY) >= Math.abs(deltaX)) {
+        isVerticalScroll.current = true;
+        setDragX(0);
+        return;
+      }
+
+      // If horizontal movement exceeds 10px and horizontal movement dominates: it's a card swipe!
+      if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+        isHorizontalSwipe.current = true;
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          capturedPointerId.current = e.pointerId;
+        } catch {}
+      } else {
+        return;
+      }
+    }
+
+    if (isHorizontalSwipe.current || e.pointerType === "mouse") {
+      setDragX(deltaX);
+    }
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (
+    e: React.PointerEvent<HTMLDivElement>
+  ) => {
     if (!dragging.current) return;
 
     dragging.current = false;
 
-    const distance = currentX.current - startX.current;
+    // Release pointer capture if held
+    if (capturedPointerId.current !== null) {
+      try {
+        if (e.currentTarget.hasPointerCapture(capturedPointerId.current)) {
+          e.currentTarget.releasePointerCapture(capturedPointerId.current);
+        }
+      } catch {}
+      capturedPointerId.current = null;
+    }
 
-    if (Math.abs(distance) > 80) {
-      if (distance < 0) {
+    const distanceX = currentX.current - startX.current;
+    const distanceY = currentY.current - startY.current;
+
+    // If user scrolled vertically, completely ignore and reset
+    if (isVerticalScroll.current || Math.abs(distanceY) > 8) {
+      setDragX(0);
+      isVerticalScroll.current = false;
+      isHorizontalSwipe.current = false;
+      return;
+    }
+
+    if (Math.abs(distanceX) > 60) {
+      if (distanceX < 0) {
         nextImage();
       } else {
         previousImage();
       }
     } else {
-      if (Math.abs(distance) < 8) {
-        onImageClick?.(currentIndex);
+      // Stationary tap / click check
+      if (Math.abs(distanceX) < 8 && Math.abs(distanceY) < 8) {
+        // On mobile or touch devices: DO NOT open image modal on touching the photo!
+        // Tapping/dragging on phone screen must never accidentally pop the lightbox.
+        // Users on mobile can tap the explicit zoom icon button in the bottom right corner.
+        const isMobileScreen =
+          typeof window !== "undefined" && window.innerWidth <= 768;
+        if (!isMobileScreen && e.pointerType !== "touch") {
+          onImageClick?.(currentIndex);
+        }
       }
       setDragX(0);
+    }
+
+    isHorizontalSwipe.current = false;
+    isVerticalScroll.current = false;
+  };
+
+  const handlePointerCancel = (
+    e: React.PointerEvent<HTMLDivElement>
+  ) => {
+    dragging.current = false;
+    isVerticalScroll.current = false;
+    isHorizontalSwipe.current = false;
+    setDragX(0);
+
+    if (capturedPointerId.current !== null) {
+      try {
+        if (e.currentTarget.hasPointerCapture(capturedPointerId.current)) {
+          e.currentTarget.releasePointerCapture(capturedPointerId.current);
+        }
+      } catch {}
+      capturedPointerId.current = null;
     }
   };
 
@@ -121,8 +215,8 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
     <div
       className={`product-image-swiper ${className}`}
       style={{
-        width: cardWidth + 100,
-        height: cardHeight + 80,
+        width: `var(--swiper-w, ${cardWidth + 100}px)`,
+        height: `var(--swiper-h, ${cardHeight + 80}px)`,
         position: "relative",
         touchAction: "pan-y",
         userSelect: "none",
@@ -134,10 +228,11 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
           className="swiper-back-image"
           style={{
             position: "absolute",
-            width: cardWidth,
-            height: cardHeight,
+            width: `var(--swiper-card-w, ${cardWidth}px)`,
+            height: `var(--swiper-card-h, ${cardHeight}px)`,
             left: "50%",
             top: "50%",
+            touchAction: "pan-y",
             transform:
               "translate(-50%, -50%) translateX(28px) scale(0.94)",
             opacity: 0.35,
@@ -167,13 +262,14 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
         style={{
           position: "absolute",
-          width: cardWidth,
-          height: cardHeight,
+          width: `var(--swiper-card-w, ${cardWidth}px)`,
+          height: `var(--swiper-card-h, ${cardHeight}px)`,
           left: "50%",
           top: "50%",
+          touchAction: "pan-y",
           transform: `
             translate(-50%, -50%)
             translateX(${dragX}px)
