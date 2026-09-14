@@ -18,14 +18,12 @@ export default function Header() {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [announcementText, setAnnouncementText] = useState(
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"
   );
   const accountRef = useRef<HTMLDivElement>(null);
-  const mobileAccountRef = useRef<HTMLDivElement>(null);
 
   const isHomePage = pathname === "/";
 
@@ -107,26 +105,21 @@ export default function Header() {
   // Close account menu on route change
   useEffect(() => {
     setAccountOpen(false);
-    setMobileAccountOpen(false);
   }, [pathname]);
 
   // Close account menu when clicking outside or pressing Escape
   useEffect(() => {
-    if (!accountOpen && !mobileAccountOpen) return;
+    if (!accountOpen) return;
 
     function handleClickOutside(e: MouseEvent | TouchEvent) {
       if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
         setAccountOpen(false);
-      }
-      if (mobileAccountRef.current && !mobileAccountRef.current.contains(e.target as Node)) {
-        setMobileAccountOpen(false);
       }
     }
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setAccountOpen(false);
-        setMobileAccountOpen(false);
       }
     }
 
@@ -139,7 +132,7 @@ export default function Header() {
       document.removeEventListener("touchstart", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [accountOpen, mobileAccountOpen]);
+  }, [accountOpen]);
 
   async function handleLogout() {
     try {
@@ -161,7 +154,6 @@ export default function Header() {
     }
     setIsLoggedIn(false);
     setAccountOpen(false);
-    setMobileAccountOpen(false);
     router.push("/login");
     router.refresh();
   }
@@ -364,69 +356,30 @@ export default function Header() {
             )}
           </Link>
 
-          {/* ACCOUNT */}
-          <div className="mobile-dock-account-wrapper" ref={mobileAccountRef}>
-            <button
-              type="button"
-              className={`mobile-dock-item ${
-                pathname.startsWith("/account") || pathname === "/login" || pathname === "/signup"
-                  ? "active"
-                  : ""
-              }`}
-              onClick={() => setMobileAccountOpen((open) => !open)}
-              aria-label="Account"
-              aria-expanded={mobileAccountOpen}
-              title="Account"
+          {/* ACCOUNT (Direct Link to Account Details Page) */}
+          <Link
+            href="/account"
+            className={`mobile-dock-item ${
+              pathname.startsWith("/account") || pathname === "/login" || pathname === "/signup"
+                ? "active"
+                : ""
+            }`}
+            aria-label="Account details"
+            title="Account details"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              >
-                <circle cx="12" cy="8" r="4" />
-                <path
-                  d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-
-            {mobileAccountOpen && (
-              <div className="mobile-dock-account-menu">
-                {isLoggedIn ? (
-                  <>
-                    <Link href="/account" onClick={() => setMobileAccountOpen(false)}>
-                      ACCOUNT DETAILS
-                    </Link>
-                    <Link href="/account?tab=orders" onClick={() => setMobileAccountOpen(false)}>
-                      MY ORDERS
-                    </Link>
-                    <button type="button" onClick={handleLogout}>
-                      LOG OUT
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login" onClick={() => setMobileAccountOpen(false)}>
-                      LOG IN
-                    </Link>
-                    <Link href="/signup" onClick={() => setMobileAccountOpen(false)}>
-                      CREATE ACCOUNT
-                    </Link>
-                  </>
-                )}
-                <div className="mobile-dock-menu-divider" />
-                <Link
-                  href="/admin"
-                  onClick={() => setMobileAccountOpen(false)}
-                  className="mobile-dock-menu-admin"
-                >
-                  ADMIN CONSOLE &rarr;
-                </Link>
-              </div>
-            )}
-          </div>
+              <circle cx="12" cy="8" r="4" />
+              <path
+                d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"
+                strokeLinecap="round"
+              />
+            </svg>
+          </Link>
 
           {/* CART */}
           <button
