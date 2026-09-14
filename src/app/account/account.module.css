@@ -33,7 +33,7 @@
 /* Outer Card Container */
 .accountCard {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 0px;
   border: 1px solid #eef0f3;
   box-shadow: 0 6px 30px rgba(0, 0, 0, 0.04);
   display: grid;
@@ -62,7 +62,7 @@
   font-size: 13.5px;
   font-weight: 500;
   text-align: left;
-  border-radius: 10px;
+  border-radius: 0px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -99,7 +99,7 @@
   font-size: 13.5px;
   font-weight: 500;
   text-align: left;
-  border-radius: 10px;
+  border-radius: 0px;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -155,7 +155,7 @@
 .fieldCard {
   background: #fbfbfb;
   border: 1px solid #f0f1f3;
-  border-radius: 10px;
+  border-radius: 0px;
   padding: 14px 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   display: flex;
@@ -189,7 +189,7 @@
 .fieldInput {
   flex: 1;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 0px;
   padding: 6px 12px;
   font-size: 13.5px;
   font-family: inherit;
@@ -216,7 +216,7 @@
   background: #111111;
   color: #ffffff;
   border: 1px solid #111111;
-  border-radius: 8px;
+  border-radius: 0px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -234,7 +234,7 @@
   background: transparent;
   color: #6b7280;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 0px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -257,7 +257,7 @@
 .orderCardItem {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 0px;
   padding: 18px 20px;
   margin-bottom: 14px;
   display: flex;
@@ -301,7 +301,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: 0px;
   background: #f3f4f6;
   color: #374151;
 }
@@ -339,7 +339,7 @@
   text-decoration: none;
   padding: 6px 12px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 0px;
   transition: all 0.2s;
   white-space: nowrap;
 }
@@ -354,7 +354,7 @@
 .addressBox {
   background: #fbfbfb;
   border: 1px solid #eef0f3;
-  border-radius: 12px;
+  border-radius: 0px;
   padding: 22px;
   max-width: 520px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
@@ -382,7 +382,7 @@
 .walletCard {
   background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
   color: #ffffff;
-  border-radius: 16px;
+  border-radius: 0px;
   padding: 28px;
   max-width: 440px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -420,7 +420,7 @@
 .walletNote {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 0px;
   padding: 16px;
   max-width: 440px;
   font-size: 13px;
