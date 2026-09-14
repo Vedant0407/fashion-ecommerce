@@ -2058,6 +2058,42 @@ select {
   flex-shrink: 0;
 }
 
+/* Product Swiper Arrows */
+.product-swiper-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111111;
+  cursor: pointer;
+  z-index: 12;
+  transition: all 0.2s ease;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.product-swiper-arrow:hover {
+  background: #ffffff;
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.product-swiper-arrow-left {
+  left: 6px;
+}
+
+.product-swiper-arrow-right {
+  right: 6px;
+}
+
 /* =========================================
    TABLET (769px - 900px)
 ========================================= */
@@ -2162,6 +2198,21 @@ select {
     background: #f4f4f4 !important;
     border-radius: 10px !important;
     touch-action: pan-y !important;
+  }
+
+  .product-swiper-arrow {
+    width: 28px !important;
+    height: 28px !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .product-swiper-arrow-left {
+    left: 4px !important;
+  }
+
+  .product-swiper-arrow-right {
+    right: 4px !important;
   }
 
   /* -----------------------------------------

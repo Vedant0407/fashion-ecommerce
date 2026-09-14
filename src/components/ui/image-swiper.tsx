@@ -28,6 +28,7 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
   const startY = useRef(0);
   const currentX = useRef(0);
   const currentY = useRef(0);
+  const startTime = useRef(0);
   const dragging = useRef(false);
   const isHorizontalSwipe = useRef(false);
   const isVerticalScroll = useRef(false);
@@ -61,6 +62,7 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
     startY.current = e.clientY;
     currentX.current = e.clientX;
     currentY.current = e.clientY;
+    startTime.current = Date.now();
     isHorizontalSwipe.current = false;
     isVerticalScroll.current = false;
     capturedPointerId.current = null;
@@ -90,15 +92,15 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
 
     // On touch devices, detect whether gesture is vertical page scroll or horizontal card swipe
     if (e.pointerType === "touch" && !isHorizontalSwipe.current) {
-      // If vertical movement exceeds 6px and vertical >= horizontal: it's a page scroll!
-      if (Math.abs(deltaY) > 6 && Math.abs(deltaY) >= Math.abs(deltaX)) {
+      // If vertical movement clearly dominates and is significant (> 8px and vertical > horizontal * 1.4): it's page scroll
+      if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX) * 1.4) {
         isVerticalScroll.current = true;
         setDragX(0);
         return;
       }
 
-      // If horizontal movement exceeds 10px and horizontal movement dominates: it's a card swipe!
-      if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+      // If user starts moving horizontally with even a slight flick (>= 5px): lock into horizontal swipe immediately!
+      if (Math.abs(deltaX) >= 5 && Math.abs(deltaX) >= Math.abs(deltaY) * 0.8) {
         isHorizontalSwipe.current = true;
         try {
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -110,7 +112,9 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
     }
 
     if (isHorizontalSwipe.current || e.pointerType === "mouse") {
-      setDragX(deltaX);
+      // On mobile touch, provide a responsive 1.15x multiplier so the card feels light and effortless
+      const multiplier = e.pointerType === "touch" ? 1.15 : 1;
+      setDragX(deltaX * multiplier);
     }
   };
 
@@ -133,16 +137,30 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
 
     const distanceX = currentX.current - startX.current;
     const distanceY = currentY.current - startY.current;
+    const elapsed = Math.max(1, Date.now() - startTime.current);
+    const velocityX = Math.abs(distanceX) / elapsed; // px per ms
 
     // If user scrolled vertically, completely ignore and reset
-    if (isVerticalScroll.current || Math.abs(distanceY) > 8) {
+    if (isVerticalScroll.current || (Math.abs(distanceY) > 10 && Math.abs(distanceY) > Math.abs(distanceX) * 1.5)) {
       setDragX(0);
       isVerticalScroll.current = false;
       isHorizontalSwipe.current = false;
       return;
     }
 
-    if (Math.abs(distanceX) > 60) {
+    const isMobileScreen =
+      typeof window !== "undefined" && window.innerWidth <= 768;
+    const isTouch = e.pointerType === "touch" || isMobileScreen;
+
+    // Mobile threshold: effortlessly sensitive!
+    // 1. Quick flick: distanceX > 14px with velocity > 0.15 px/ms
+    // 2. Short swipe: distanceX > 20px (down from 60px!)
+    // Desktop: standard 55px threshold
+    const shouldChange = isTouch
+      ? Math.abs(distanceX) > 20 || (Math.abs(distanceX) > 14 && velocityX > 0.15)
+      : Math.abs(distanceX) > 55;
+
+    if (shouldChange) {
       if (distanceX < 0) {
         nextImage();
       } else {
@@ -154,9 +172,7 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
         // On mobile or touch devices: DO NOT open image modal on touching the photo!
         // Tapping/dragging on phone screen must never accidentally pop the lightbox.
         // Users on mobile can tap the explicit zoom icon button in the bottom right corner.
-        const isMobileScreen =
-          typeof window !== "undefined" && window.innerWidth <= 768;
-        if (!isMobileScreen && e.pointerType !== "touch") {
+        if (!isTouch) {
           onImageClick?.(currentIndex);
         }
       }
@@ -282,7 +298,7 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
             : "grab",
           transition: dragging.current
             ? "none"
-            : "transform 0.45s cubic-bezier(.22,.61,.36,1), opacity 0.45s ease",
+            : "transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease",
           overflow: "hidden",
         }}
       >
@@ -347,6 +363,59 @@ export const ImageSwiper: React.FC<ImageSwiperProps> = ({
           </button>
         )}
       </div>
+
+      {/* NAVIGATION ARROWS (EFFORTLESS IMAGE SWITCHING) */}
+      {imageList.length > 1 && (
+        <>
+          <button
+            type="button"
+            className="product-swiper-arrow product-swiper-arrow-left"
+            onClick={(e) => {
+              e.stopPropagation();
+              previousImage();
+            }}
+            aria-label="Previous image"
+            title="Previous image"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            className="product-swiper-arrow product-swiper-arrow-right"
+            onClick={(e) => {
+              e.stopPropagation();
+              nextImage();
+            }}
+            aria-label="Next image"
+            title="Next image"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </>
+      )}
 
       {/* IMAGE COUNTER */}
       {imageList.length > 1 && (
