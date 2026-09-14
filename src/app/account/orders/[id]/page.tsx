@@ -168,7 +168,9 @@ export default function OrderDetailsPage() {
 
         // 1. Fetch via API route
         try {
-          const res = await fetch(`/api/orders/${orderId}`);
+          const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}?t=${Date.now()}`, {
+            cache: "no-store",
+          });
           if (res.status === 403) {
             setError("You are not authorized to view this order.");
             setOrder(null);

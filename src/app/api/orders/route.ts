@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { addStoreOrder, getStoreOrders } from "@/lib/store-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     let authenticatedUser: any = null;
@@ -95,19 +98,43 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Store orders take precedence because they contain admin status updates and items
+    // Merge store orders with DB orders: keep full item details and latest status synchronized
     for (const stOrder of storeUserOrders) {
-      orderMap.set(stOrder.id, stOrder);
+      const existingDb = orderMap.get(stOrder.id);
+      if (!existingDb) {
+        orderMap.set(stOrder.id, stOrder);
+      } else {
+        // If store order has an updated status from admin console, let it take precedence
+        const finalStatus =
+          stOrder.status && stOrder.status !== "confirmed"
+            ? stOrder.status
+            : existingDb.status || stOrder.status;
+
+        const finalPaymentStatus =
+          stOrder.payment_status && stOrder.payment_status !== "pending"
+            ? stOrder.payment_status
+            : existingDb.payment_status || stOrder.payment_status;
+
+        orderMap.set(stOrder.id, {
+          ...existingDb,
+          ...stOrder,
+          status: finalStatus,
+          payment_status: finalPaymentStatus,
+        });
+      }
     }
 
     const mergedOrders = Array.from(orderMap.values()).sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
-    return NextResponse.json({
-      success: true,
-      orders: mergedOrders,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        orders: mergedOrders,
+      },
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
+    );
   } catch (error: any) {
     console.error("GET /api/orders error:", error);
     return NextResponse.json(

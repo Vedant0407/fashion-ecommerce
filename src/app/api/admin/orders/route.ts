@@ -8,11 +8,14 @@ import {
 } from "@/lib/store-data";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
-    const storeOrders = await getStoreOrders();
+    const storeOrders = await getStoreOrders(true);
 
-    // Optionally merge with any orders from Supabase that aren't in store-data
+    // Optionally merge with any orders from Supabase and synchronize status
     try {
       const supabase = await createClient();
       const { data: dbOrders } = await supabase
@@ -23,11 +26,19 @@ export async function GET() {
         .order("created_at", { ascending: false });
 
       if (dbOrders && dbOrders.length > 0) {
-        const storeOrderIds = new Set(storeOrders.map((o) => o.id));
         for (const dbOrder of (dbOrders as any[])) {
-          if (!storeOrderIds.has(dbOrder.id)) {
-            const rawAddr = dbOrder.addresses;
-            const addr = (Array.isArray(rawAddr) ? rawAddr[0] : rawAddr) || {};
+          const rawAddr = dbOrder.addresses;
+          const addr = (Array.isArray(rawAddr) ? rawAddr[0] : rawAddr) || {};
+          const existing = storeOrders.find((o) => o.id === dbOrder.id);
+          if (existing) {
+            // Keep status synchronized from Supabase if changed in Supabase console
+            if (dbOrder.status && dbOrder.status !== "confirmed" && existing.status === "confirmed") {
+              existing.status = dbOrder.status as StoreOrder["status"];
+            }
+            if (dbOrder.payment_status && dbOrder.payment_status !== "pending" && existing.payment_status === "pending") {
+              existing.payment_status = dbOrder.payment_status as StoreOrder["payment_status"];
+            }
+          } else {
             storeOrders.push({
               id: dbOrder.id,
               created_at: dbOrder.created_at,
@@ -60,7 +71,10 @@ export async function GET() {
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
-    return NextResponse.json({ success: true, count: storeOrders.length, orders: storeOrders });
+    return NextResponse.json(
+      { success: true, count: storeOrders.length, orders: storeOrders },
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
+    );
   } catch (error: any) {
     console.error("GET /api/admin/orders error:", error);
     return NextResponse.json(

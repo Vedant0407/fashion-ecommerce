@@ -168,7 +168,10 @@ export default function OrdersPage() {
         // Query server API for this authenticated user's orders
         let serverOrders: Order[] = [];
         try {
-          const res = await fetch(`/api/orders?email=${encodeURIComponent(effectiveEmail)}`);
+          const res = await fetch(
+            `/api/orders?email=${encodeURIComponent(effectiveEmail)}&t=${Date.now()}`,
+            { cache: "no-store" }
+          );
           if (res.ok) {
             const data = await res.json();
             if (data.success && Array.isArray(data.orders)) {

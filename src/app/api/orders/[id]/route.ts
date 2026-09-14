@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStoreOrders } from "@/lib/store-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -32,7 +35,10 @@ export async function GET(
     if (!authEmail) {
       return NextResponse.json(
         { success: false, message: "Unauthorized. Please log in." },
-        { status: 401 }
+        {
+          status: 401,
+          headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+        }
       );
     }
 
@@ -47,8 +53,33 @@ export async function GET(
       if (orderCustomerEmail && orderCustomerEmail !== authEmail) {
         return NextResponse.json(
           { success: false, message: "Forbidden. You cannot view an order belonging to another account." },
-          { status: 403 }
+          {
+            status: 403,
+            headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+          }
         );
+      }
+
+      // Check if Supabase has an updated status (e.g. from Supabase dashboard)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+      if (isUuid) {
+        try {
+          const supabase = await createClient();
+          const { data: dbOrder } = await supabase
+            .from("orders")
+            .select("id, status, payment_status")
+            .eq("id", cleanId)
+            .maybeSingle();
+
+          if (dbOrder) {
+            if (dbOrder.status && dbOrder.status !== "confirmed" && matched.status === "confirmed") {
+              matched.status = dbOrder.status as any;
+            }
+            if (dbOrder.payment_status && dbOrder.payment_status !== "pending" && matched.payment_status === "pending") {
+              matched.payment_status = dbOrder.payment_status as any;
+            }
+          }
+        } catch {}
       }
 
       return NextResponse.json({
@@ -86,6 +117,8 @@ export async function GET(
             color: it.color,
           })),
         },
+      }, {
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
       });
     }
 
@@ -116,6 +149,8 @@ export async function GET(
               ...order,
               items: items || [],
             },
+          }, {
+            headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
           });
         }
       } catch {}

@@ -115,7 +115,7 @@ export default function AdminPage() {
       const [prodRes, catRes, orderRes, retRes, coupRes, setRes, userRes] = await Promise.all([
         fetch("/api/admin/products"),
         fetch("/api/admin/categories"),
-        fetch("/api/admin/orders"),
+        fetch(`/api/admin/orders?t=${Date.now()}`, { cache: "no-store" }),
         fetch("/api/returns"),
         fetch("/api/admin/coupons"),
         fetch("/api/admin/settings"),
@@ -219,6 +219,9 @@ export default function AdminPage() {
         );
 
         setOrders(mergedOrders);
+        try {
+          localStorage.setItem("greeno_all_orders", JSON.stringify(mergedOrders));
+        } catch {}
 
         // Sync local orders to server if missing
         if (hadMissing && missingToSync.length > 0) {
@@ -736,6 +739,19 @@ export default function AdminPage() {
           };
           updateLocalList("greeno_all_orders");
           updateLocalList("greeno_customer_orders");
+
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith("greeno_orders_")) {
+              updateLocalList(k);
+            }
+          }
+
+          if (existingOrder?.customer?.email) {
+            const cleanCustEmail = existingOrder.customer.email.trim().toLowerCase();
+            updateLocalList(`greeno_orders_${cleanCustEmail}`);
+          }
+
           const rawLast = localStorage.getItem("greeno_last_order");
           if (rawLast) {
             const last = JSON.parse(rawLast);

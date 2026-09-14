@@ -623,7 +623,7 @@ export async function deleteStoreCategory(categoryIdOrSlug: string): Promise<boo
 
 // ----------------- Order Helpers -----------------
 
-export async function getStoreOrders(forceFresh = false): Promise<StoreOrder[]> {
+export async function getStoreOrders(forceFresh = true): Promise<StoreOrder[]> {
   const data = await readStoreData(forceFresh);
   return data.orders.sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -649,34 +649,32 @@ export async function updateStoreOrderStatus(
   payment_status?: StoreOrder["payment_status"],
   fallbackOrder?: Partial<StoreOrder>
 ): Promise<StoreOrder | null> {
-  const data = await readStoreData();
+  const data = await readStoreData(true);
   let order = data.orders.find((o) => o.id === orderId);
 
   if (!order) {
-    if (
-      fallbackOrder &&
-      fallbackOrder.customer &&
-      fallbackOrder.items &&
-      fallbackOrder.items.length > 0
-    ) {
-      order = {
-        id: orderId,
-        created_at: fallbackOrder.created_at || new Date().toISOString(),
-        customer: fallbackOrder.customer as any,
-        items: fallbackOrder.items as any,
-        subtotal: fallbackOrder.subtotal || 0,
-        shipping: fallbackOrder.shipping !== undefined ? fallbackOrder.shipping : 0,
-        discount: fallbackOrder.discount || 0,
-        total: fallbackOrder.total || 0,
-        status,
-        payment_method: fallbackOrder.payment_method || "COD",
-        payment_status: payment_status || fallbackOrder.payment_status || "pending",
-      };
-      data.orders.unshift(order);
-    } else {
-      // Never create a hollow 0-item stub order that destroys real order records
-      return null;
-    }
+    order = {
+      id: orderId,
+      created_at: fallbackOrder?.created_at || new Date().toISOString(),
+      customer: (fallbackOrder?.customer as any) || {
+        fullName: "Customer",
+        email: "customer@example.com",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
+      },
+      items: (fallbackOrder?.items as any) || [],
+      subtotal: fallbackOrder?.subtotal || 0,
+      shipping: fallbackOrder?.shipping !== undefined ? fallbackOrder?.shipping : 0,
+      discount: fallbackOrder?.discount || 0,
+      total: fallbackOrder?.total || 0,
+      status,
+      payment_method: fallbackOrder?.payment_method || "COD",
+      payment_status: payment_status || fallbackOrder?.payment_status || "pending",
+    };
+    data.orders.unshift(order);
   } else {
     order.status = status;
     if (payment_status) {
@@ -707,10 +705,10 @@ export async function updateStoreOrderStatus(
 
 export async function syncStoreOrders(clientOrders: StoreOrder[]): Promise<StoreOrder[]> {
   if (!Array.isArray(clientOrders) || clientOrders.length === 0) {
-    return getStoreOrders();
+    return getStoreOrders(true);
   }
 
-  const data = await readStoreData();
+  const data = await readStoreData(true);
   const existingMap = new Map(data.orders.map((o) => [o.id, o]));
 
   for (const co of clientOrders) {
