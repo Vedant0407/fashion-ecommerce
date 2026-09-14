@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Package, User, Wallet, LogOut, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import styles from "../orders.module.css";
+import styles from "../../account.module.css";
 
 type Address = {
   full_name?: string;
@@ -71,7 +72,28 @@ export default function OrderDetailsPage() {
   const [submittingReturn, setSubmittingReturn] = useState<boolean>(false);
   const [returnSuccessMsg, setReturnSuccessMsg] = useState<string>("");
 
-  // Helper to find order in local storage
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {}
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("greeno_user_name");
+      localStorage.removeItem("greeno_user_email");
+      localStorage.removeItem("greeno_user_phone");
+      localStorage.removeItem("greeno_customer_orders");
+      localStorage.removeItem("greeno_last_order");
+      localStorage.removeItem("greeno_all_orders");
+      document.cookie = "greeno_session=; path=/; max-age=0";
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("greeno_auth_change"));
+    }
+    router.push("/login");
+    router.refresh();
+  }
+
   // Helper to find order in local storage strictly for this user
   function findLocalOrder(id: string, userEmail?: string): any | null {
     if (typeof window === "undefined") return null;
@@ -580,8 +602,10 @@ export default function OrderDetailsPage() {
     return (
       <main className={styles.page}>
         <div className={styles.container}>
-          <div className={styles.emptyState}>
-            <p>LOADING ORDER DETAILS...</p>
+          <p className={styles.breadcrumb}>GREENO / MY ACCOUNT / ORDERS</p>
+          <h1 className={styles.title}>MY ACCOUNT</h1>
+          <div className={styles.accountCard} style={{ padding: "60px 40px", textAlign: "center" }}>
+            <p className={styles.message}>LOADING ORDER DETAILS...</p>
           </div>
         </div>
       </main>
@@ -592,12 +616,24 @@ export default function OrderDetailsPage() {
     return (
       <main className={styles.page}>
         <div className={styles.container}>
-          <div className={styles.emptyState}>
-            <h2>{error || "ORDER NOT FOUND"}</h2>
-            <p>We could not retrieve this order from your account.</p>
-            <Link href="/account/orders" className={styles.primaryButton}>
-              BACK TO ORDERS
-            </Link>
+          <p className={styles.breadcrumb}>GREENO / MY ACCOUNT / ORDERS</p>
+          <h1 className={styles.title}>MY ACCOUNT</h1>
+          <div className={styles.accountCard} style={{ padding: "60px 40px", textAlign: "center" }}>
+            <div className={styles.emptyState}>
+              <h2 style={{ margin: "0 0 10px", fontSize: "20px", fontWeight: 700, color: "#111827" }}>
+                {error || "ORDER NOT FOUND"}
+              </h2>
+              <p style={{ margin: "0 0 20px", color: "#6b7280" }}>
+                We could not retrieve this order from your account.
+              </p>
+              <Link
+                href="/account?tab=orders"
+                className={styles.saveButton}
+                style={{ display: "inline-block", textDecoration: "none" }}
+              >
+                Back to Order History
+              </Link>
+            </div>
           </div>
         </div>
       </main>
@@ -621,537 +657,478 @@ export default function OrderDetailsPage() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
-        <Link href="/account/orders" className={styles.back}>
-          ← BACK TO ALL ORDERS
-        </Link>
+        <p className={styles.breadcrumb}>GREENO / MY ACCOUNT / ORDERS / {order.id}</p>
+        <h1 className={styles.title}>MY ACCOUNT</h1>
 
-        <p className={styles.crumb}>GREENO / ORDERS / {order.id}</p>
-        <h1 className={styles.title}>ORDER DETAILS</h1>
-
-        {/* Status Tracker */}
-        <div className={styles.timeline}>
-          <div className={`${styles.step} ${activeStep >= 1 ? styles.stepActive : ""}`}>
-            <div className={styles.stepDot} />
-            <span className={styles.stepLabel}>1. ORDER PLACED</span>
-          </div>
-
-          <div className={`${styles.step} ${activeStep >= 2 ? styles.stepActive : ""}`}>
-            <div className={styles.stepDot} />
-            <span className={styles.stepLabel}>
-              2. {order.status?.toLowerCase() === "processing" ? "PROCESSING" : "CONFIRMED"}
-            </span>
-          </div>
-
-          <div className={`${styles.step} ${activeStep >= 3 ? styles.stepActive : ""}`}>
-            <div className={styles.stepDot} />
-            <span className={styles.stepLabel}>3. SHIPPED / IN TRANSIT</span>
-          </div>
-
-          <div className={`${styles.step} ${activeStep >= 4 ? styles.stepActive : ""}`}>
-            <div className={styles.stepDot} />
-            <span className={styles.stepLabel}>
-              4. {order.status?.toLowerCase() === "reached" ? "REACHED" : "DELIVERED"}
-            </span>
-          </div>
-        </div>
-
-        {/* ==================== 3-DAY EXCHANGE & RETURN POLICY SECTION ==================== */}
-        {returnSuccessMsg && (
-          <div
-            style={{
-              background: "#ecfdf5",
-              border: "1px solid #10b981",
-              padding: "16px 20px",
-              marginBottom: "30px",
-              color: "#065f46",
-              fontSize: "13px",
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>✓ {returnSuccessMsg}</span>
+        {/* Main Reference Card Container */}
+        <div className={styles.accountCard}>
+          {/* Left Sidebar Navigation */}
+          <aside className={styles.sidebar}>
             <button
-              onClick={() => setReturnSuccessMsg("")}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "18px",
-                color: "#065f46",
-              }}
+              type="button"
+              className={`${styles.navButton} ${styles.navButtonActive}`}
+              onClick={() => router.push("/account?tab=orders")}
             >
-              &times;
+              <Package className={styles.navIcon} />
+              <span>Order history</span>
             </button>
-          </div>
-        )}
 
-        {existingReturn ? (
-          <div
-            style={{
-              background: "#fafafa",
-              border: "1px solid #000000",
-              padding: "24px 28px",
-              marginBottom: "36px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "12px",
-                borderBottom: "1px solid #e5e5e5",
-                paddingBottom: "14px",
-                marginBottom: "16px",
-              }}
+            <button
+              type="button"
+              className={styles.navButton}
+              onClick={() => router.push("/account?tab=address")}
             >
+              <User className={styles.navIcon} />
+              <span>Shipping Address</span>
+            </button>
+
+            <button
+              type="button"
+              className={styles.navButton}
+              onClick={() => router.push("/account?tab=wallet")}
+            >
+              <Wallet className={styles.navIcon} />
+              <span>Wallet Details</span>
+            </button>
+
+            <button
+              type="button"
+              className={styles.navButton}
+              onClick={() => router.push("/account?tab=account")}
+            >
+              <User className={styles.navIcon} />
+              <span>Account details</span>
+            </button>
+
+            <button
+              type="button"
+              className={styles.logoutButton}
+              onClick={handleLogout}
+            >
+              <LogOut className={styles.navIcon} />
+              <span>Log out</span>
+            </button>
+          </aside>
+
+          {/* Vertical Divider */}
+          <div className={styles.dividerLine} />
+
+          {/* Right Content Area */}
+          <section className={styles.contentArea}>
+            <Link href="/account?tab=orders" className={styles.backToOrdersBtn}>
+              <ArrowLeft style={{ width: 14, height: 14 }} />
+              <span>Back to Order History</span>
+            </Link>
+
+            <div className={styles.detailHeader}>
               <div>
-                <span
-                  style={{
-                    display: "inline-block",
-                    padding: "4px 10px",
-                    background: existingReturn.type === "exchange" ? "#000000" : "#4f46e5",
-                    color: "#ffffff",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    marginRight: "10px",
-                  }}
-                >
-                  {existingReturn.type.toUpperCase()} REQUESTED
-                </span>
-                <strong style={{ fontSize: "13px" }}>REF: {existingReturn.id}</strong>
+                <h2 className={styles.tabTitle}>Order {order.id}</h2>
+                <p className={styles.tabSubtitle}>
+                  Placed on{" "}
+                  {order.created_at
+                    ? new Date(order.created_at).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "Recent"}
+                  {" • "}
+                  Payment: {order.payment_method} ({order.payment_status || "Pending"})
+                </p>
               </div>
 
-              <div
-                style={{
-                  padding: "4px 12px",
-                  background:
-                    existingReturn.status === "approved"
-                      ? "#ecfdf5"
-                      : existingReturn.status === "completed"
-                      ? "#dcfce7"
-                      : existingReturn.status === "rejected"
-                      ? "#fee2e2"
-                      : "#fef3c7",
-                  color:
-                    existingReturn.status === "approved"
-                      ? "#065f46"
-                      : existingReturn.status === "completed"
-                      ? "#15803d"
-                      : existingReturn.status === "rejected"
-                      ? "#991b1b"
-                      : "#92400e",
-                  fontWeight: 700,
-                  fontSize: "11px",
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                }}
+              <span
+                className={`${styles.orderStatusBadge} ${
+                  (order.status || "").toLowerCase() === "delivered" ||
+                  (order.status || "").toLowerCase() === "reached"
+                    ? styles.statusDelivered
+                    : (order.status || "").toLowerCase() === "shipped"
+                    ? styles.statusShipped
+                    : (order.status || "").toLowerCase() === "cancelled"
+                    ? styles.statusCancelled
+                    : styles.statusConfirmed
+                }`}
               >
-                ● {existingReturn.status.replace("_", " ")}
+                {order.status || "Confirmed"}
+              </span>
+            </div>
+
+            {/* Tracker */}
+            <div className={styles.trackerBox}>
+              <div className={styles.trackerStep}>
+                <div
+                  className={`${styles.trackerDot} ${
+                    activeStep >= 1 ? styles.trackerDotActive : ""
+                  }`}
+                />
+                <span
+                  className={`${styles.trackerLabel} ${
+                    activeStep >= 1 ? styles.trackerLabelActive : ""
+                  }`}
+                >
+                  1. Order Placed
+                </span>
+              </div>
+              <div className={styles.trackerStep}>
+                <div
+                  className={`${styles.trackerDot} ${
+                    activeStep >= 2 ? styles.trackerDotActive : ""
+                  }`}
+                />
+                <span
+                  className={`${styles.trackerLabel} ${
+                    activeStep >= 2 ? styles.trackerLabelActive : ""
+                  }`}
+                >
+                  2. {order.status?.toLowerCase() === "processing" ? "Processing" : "Confirmed"}
+                </span>
+              </div>
+              <div className={styles.trackerStep}>
+                <div
+                  className={`${styles.trackerDot} ${
+                    activeStep >= 3 ? styles.trackerDotActive : ""
+                  }`}
+                />
+                <span
+                  className={`${styles.trackerLabel} ${
+                    activeStep >= 3 ? styles.trackerLabelActive : ""
+                  }`}
+                >
+                  3. Shipped / In Transit
+                </span>
+              </div>
+              <div className={styles.trackerStep}>
+                <div
+                  className={`${styles.trackerDot} ${
+                    activeStep >= 4 ? styles.trackerDotActive : ""
+                  }`}
+                />
+                <span
+                  className={`${styles.trackerLabel} ${
+                    activeStep >= 4 ? styles.trackerLabelActive : ""
+                  }`}
+                >
+                  4. {order.status?.toLowerCase() === "reached" ? "Reached" : "Delivered"}
+                </span>
               </div>
             </div>
 
-            <p style={{ fontSize: "13px", color: "#444", lineHeight: 1.6, margin: "0 0 10px" }}>
-              <strong>Reason:</strong> {existingReturn.reason_category}
-              {existingReturn.customer_notes ? ` — "${existingReturn.customer_notes}"` : ""}
-            </p>
-
-            {existingReturn.items && existingReturn.items.length > 0 && (
-              <div style={{ fontSize: "12px", color: "#555", marginTop: "8px" }}>
-                <strong>Items:</strong>{" "}
-                {existingReturn.items.map((it: any, i: number) => (
-                  <span key={i}>
-                    {it.name} (Current: {it.size || "M"}
-                    {it.exchange_size ? ` → Desired Exchange: ${it.exchange_size}` : ""})
-                    {i < existingReturn.items.length - 1 ? ", " : ""}
-                  </span>
-                ))}
+            {/* Return / Exchange Policy Banner */}
+            {returnSuccessMsg && (
+              <div
+                style={{
+                  background: "#ecfdf5",
+                  border: "1px solid #10b981",
+                  padding: "14px 18px",
+                  marginBottom: "24px",
+                  color: "#065f46",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span>✓ {returnSuccessMsg}</span>
+                <button
+                  onClick={() => setReturnSuccessMsg("")}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "18px",
+                    color: "#065f46",
+                  }}
+                >
+                  &times;
+                </button>
               </div>
             )}
 
-            <div
-              style={{
-                marginTop: "14px",
-                fontSize: "11px",
-                color: "#888",
-                borderTop: "1px solid #eee",
-                paddingTop: "12px",
-              }}
-            >
-              Pickup Address: {existingReturn.pickup_address || "On file"} • Requested on{" "}
-              {new Date(existingReturn.created_at).toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
-            </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              background: isEligible ? "#fafaf8" : "#fdfdfc",
-              border: `1px solid ${isEligible ? "#111" : "#e5e5e0"}`,
-              padding: "24px 28px",
-              marginBottom: "36px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "16px",
-              }}
-            >
-              <div>
+            {existingReturn ? (
+              <div className={styles.detailCard} style={{ background: "#fbfbfb", marginBottom: "28px" }}>
                 <div
                   style={{
                     display: "flex",
+                    justifyContent: "space-between",
                     alignItems: "center",
-                    gap: "10px",
-                    marginBottom: "6px",
+                    flexWrap: "wrap",
+                    gap: "12px",
+                    borderBottom: "1px solid #e5e7eb",
+                    paddingBottom: "12px",
+                    marginBottom: "14px",
                   }}
                 >
+                  <div>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "3px 8px",
+                        background: existingReturn.type === "exchange" ? "#111111" : "#4f46e5",
+                        color: "#ffffff",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        marginRight: "10px",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {existingReturn.type} Requested
+                    </span>
+                    <strong style={{ fontSize: "13px" }}>Ref: {existingReturn.id}</strong>
+                  </div>
+
                   <span
                     style={{
-                      fontSize: "10px",
+                      padding: "3px 10px",
+                      background:
+                        existingReturn.status === "approved" || existingReturn.status === "completed"
+                          ? "#ecfdf5"
+                          : existingReturn.status === "rejected"
+                          ? "#fee2e2"
+                          : "#fef3c7",
+                      color:
+                        existingReturn.status === "approved" || existingReturn.status === "completed"
+                          ? "#065f46"
+                          : existingReturn.status === "rejected"
+                          ? "#991b1b"
+                          : "#92400e",
                       fontWeight: 700,
-                      letterSpacing: "0.14em",
-                      color: isEligible ? "#111" : "#777",
+                      fontSize: "11px",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
                     }}
                   >
-                    3-DAY EXCHANGE &amp; RETURN POLICY
+                    ● {existingReturn.status.replace("_", " ")}
                   </span>
-                  {isEligible ? (
-                    <span
-                      style={{
-                        background: "#ecfdf5",
-                        color: "#065f46",
-                        fontSize: "10px",
-                        padding: "2px 8px",
-                        fontWeight: 700,
-                        borderRadius: "2px",
-                      }}
-                    >
-                      ● ACTIVE · {daysLeft} DAY{daysLeft > 1 ? "S" : ""} ({hoursLeft}H) LEFT
-                    </span>
-                  ) : isDelivered ? (
-                    <span
-                      style={{
-                        background: "#f3f4f6",
-                        color: "#6b7280",
-                        fontSize: "10px",
-                        padding: "2px 8px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      POLICY EXPIRED (3 DAYS POST DELIVERY)
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        background: "#fef3c7",
-                        color: "#92400e",
-                        fontSize: "10px",
-                        padding: "2px 8px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      AVAILABLE UPON ORDER DELIVERY
-                    </span>
-                  )}
                 </div>
 
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "13px",
-                    color: "#555",
-                    lineHeight: 1.5,
-                    maxWidth: "680px",
-                  }}
-                >
-                  {isEligible
-                    ? "Need a different size or wish to return? Orders are eligible for complimentary size exchanges or returns within 3 days of delivery."
-                    : isDelivered
-                    ? "The 3-day post-delivery exchange and return window for this order has expired. Items can no longer be exchanged or returned."
-                    : "Your order is en route. Exchange and return options will be available for 3 days as soon as your package is reached / delivered."}
+                <p style={{ fontSize: "13px", color: "#4b5563", lineHeight: 1.5, margin: "0 0 8px" }}>
+                  <strong>Reason:</strong> {existingReturn.reason_category}
+                  {existingReturn.customer_notes ? ` — "${existingReturn.customer_notes}"` : ""}
                 </p>
+
+                {existingReturn.items && existingReturn.items.length > 0 && (
+                  <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "6px" }}>
+                    <strong>Items:</strong>{" "}
+                    {existingReturn.items.map((it: any, i: number) => (
+                      <span key={i}>
+                        {it.name} (Current: {it.size || "M"}
+                        {it.exchange_size ? ` → Desired: ${it.exchange_size}` : ""})
+                        {i < existingReturn.items.length - 1 ? ", " : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
+            ) : (
+              <div className={styles.policyBanner}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", color: "#111827" }}>
+                      3-DAY EXCHANGE &amp; RETURN POLICY
+                    </span>
+                    {isEligible ? (
+                      <span className={styles.policyBadgeActive}>
+                        ● Active · {daysLeft} Day{daysLeft > 1 ? "s" : ""} ({hoursLeft}h) left
+                      </span>
+                    ) : isDelivered ? (
+                      <span className={styles.policyBadgeInactive}>Policy Expired</span>
+                    ) : (
+                      <span className={styles.policyBadgeInactive}>Available upon delivery</span>
+                    )}
+                  </div>
 
-              {isEligible && (
-                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                  <button
-                    onClick={() => openReturnModal("exchange")}
-                    style={{
-                      background: "#000000",
-                      color: "#ffffff",
-                      border: "1px solid #000000",
-                      padding: "10px 18px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      letterSpacing: "0.1em",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    REQUEST EXCHANGE
-                  </button>
-
-                  <button
-                    onClick={() => openReturnModal("return")}
-                    style={{
-                      background: "#ffffff",
-                      color: "#000000",
-                      border: "1px solid #000000",
-                      padding: "10px 18px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      letterSpacing: "0.1em",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    REQUEST RETURN
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className={styles.detailsGrid}>
-          <div>
-            {/* Items Box */}
-            <div className={styles.sectionBox}>
-              <h2 className={styles.sectionTitle}>
-                ORDERED ITEMS ({items.length})
-              </h2>
-
-              {items.length === 0 ? (
-                <div
-                  style={{
-                    padding: "24px",
-                    background: "#f9f9f9",
-                    border: "1px dashed #ddd",
-                    textAlign: "center",
-                    color: "#666",
-                  }}
-                >
-                  <p style={{ margin: "0 0 6px", fontWeight: 600, fontSize: "13px", letterSpacing: "0.08em" }}>
-                    PIECE DETAILS SYNCHRONIZING
-                  </p>
-                  <p style={{ margin: 0, fontSize: "12px", color: "#888" }}>
-                    Your streetwear drop is confirmed with warehouse fulfillment.
+                  <p style={{ margin: 0, fontSize: "12.5px", color: "#6b7280", lineHeight: 1.5, maxWidth: "620px" }}>
+                    {isEligible
+                      ? "Need a different size or wish to return? Streetwear drops are eligible for complimentary size exchanges or returns within 3 days of delivery."
+                      : isDelivered
+                      ? "The 3-day post-delivery exchange and return window for this order has expired."
+                      : "Exchange and return options will become available for 3 days as soon as your package is reached / delivered."}
                   </p>
                 </div>
-              ) : (
-                items.map((item, idx) => {
-                  const itName =
-                    (item as any).name || item.product_name || "Streetwear Piece";
-                  let unitPrice = parsePrice(
-                    (item as any).price ?? item.product_price
-                  );
-                  const itemQty = Number(item.quantity) || 1;
 
-                  // If unitPrice is missing or 0, fallback from order subtotal
-                  if (unitPrice === 0 && order?.subtotal) {
-                    const totalUnits = items.reduce(
-                      (sum, it) => sum + (Number(it.quantity) || 1),
-                      0
-                    );
-                    unitPrice = Math.round(
-                      parsePrice(order.subtotal) / (totalUnits || 1)
-                    );
-                  }
-
-                  const itemTotal = unitPrice * itemQty;
-
-                  return (
-                    <div className={styles.orderItem} key={item.id || idx}>
-                      <img
-                        src={(item as any).image || "/black-tee.jfif"}
-                        alt={itName}
-                        className={styles.itemImage}
-                      />
-
-                      <div className={styles.itemInfo}>
-                        <p className={styles.itemName}>{itName}</p>
-                        <p className={styles.itemMeta}>
-                          Quantity: {itemQty}
-                          {(item as any).size ? ` · Size: ${(item as any).size}` : ""}
-                          {(item as any).color
-                            ? ` · Color: ${(item as any).color}`
-                            : ""}
-                        </p>
-                      </div>
-
-                      <div style={{ textAlign: "right" }}>
-                        <span className={styles.itemPrice}>
-                          ₹{itemTotal.toLocaleString("en-IN")}
-                        </span>
-                        {itemQty > 1 && (
-                          <div
-                            style={{
-                              fontSize: "11px",
-                              color: "#888",
-                              marginTop: "2px",
-                            }}
-                          >
-                            ₹{unitPrice.toLocaleString("en-IN")} each
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Shipping Address Box */}
-            {address && (
-              <div className={styles.sectionBox}>
-                <h2 className={styles.sectionTitle}>SHIPPING ADDRESS</h2>
-                <p
-                  style={{
-                    margin: "0 0 6px",
-                    fontWeight: 600,
-                    fontSize: "14px",
-                  }}
-                >
-                  {address.full_name ||
-                    address.fullName ||
-                    address.name ||
-                    "Valued Customer"}
-                </p>
-                {(address.address_line1 || address.address) && (
-                  <p
-                    style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}
-                  >
-                    {address.address_line1 || address.address}
-                  </p>
-                )}
-                {[address.city, address.state].filter(Boolean).length > 0 && (
-                  <p
-                    style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}
-                  >
-                    {[address.city, address.state].filter(Boolean).join(", ")}
-                    {address.postal_code || address.pincode
-                      ? ` - ${address.postal_code || address.pincode}`
-                      : ""}
-                  </p>
-                )}
-                <p
-                  style={{ margin: "0 0 4px", fontSize: "13px", color: "#555" }}
-                >
-                  {address.country || "India"}
-                </p>
-                {(address.phone || (order as any).customer?.phone) && (
-                  <p
-                    style={{
-                      margin: "10px 0 0",
-                      fontSize: "12px",
-                      color: "#777",
-                    }}
-                  >
-                    Contact Phone:{" "}
-                    {address.phone || (order as any).customer?.phone}
-                  </p>
+                {isEligible && (
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    <button type="button" onClick={() => openReturnModal("exchange")} className={styles.policyBtnDark}>
+                      Request Exchange
+                    </button>
+                    <button type="button" onClick={() => openReturnModal("return")} className={styles.policyBtnLight}>
+                      Request Return
+                    </button>
+                  </div>
                 )}
               </div>
             )}
-          </div>
 
-          {/* Sidebar Summary */}
-          <aside>
-            <div className={styles.sectionBox}>
-              <h2 className={styles.sectionTitle}>ORDER SUMMARY</h2>
+            {/* Details Two-column Grid */}
+            <div className={styles.detailsGrid}>
+              <div>
+                {/* Items Card */}
+                <div className={styles.detailCard}>
+                  <h3 className={styles.detailCardTitle}>
+                    Ordered Items ({items.length})
+                  </h3>
 
-              <div className={styles.summaryRow}>
-                <span style={{ color: "#777" }}>ORDER ID</span>
-                <strong style={{ fontSize: "11px" }}>{order.id}</strong>
-              </div>
+                  {items.length === 0 ? (
+                    <div style={{ padding: "20px 0", color: "#6b7280", fontSize: "13px" }}>
+                      Piece details synchronizing with warehouse fulfillment...
+                    </div>
+                  ) : (
+                    items.map((item, idx) => {
+                      const itName = (item as any).name || item.product_name || "Streetwear Piece";
+                      let unitPrice = parsePrice((item as any).price ?? item.product_price);
+                      const itemQty = Number(item.quantity) || 1;
+                      if (unitPrice === 0 && order?.subtotal) {
+                        const totalUnits = items.reduce((sum, it) => sum + (Number(it.quantity) || 1), 0);
+                        unitPrice = Math.round(parsePrice(order.subtotal) / (totalUnits || 1));
+                      }
+                      const itemTotal = unitPrice * itemQty;
 
-              <div className={styles.summaryRow}>
-                <span style={{ color: "#777" }}>DATE PLACED</span>
-                <span>
-                  {new Date(order.created_at).toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                  {" at "}
-                  {new Date(order.created_at).toLocaleTimeString("en-IN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
+                      return (
+                        <div className={styles.itemRow} key={item.id || idx}>
+                          <img
+                            src={(item as any).image || "/black-tee.jfif"}
+                            alt={itName}
+                            className={styles.itemThumb}
+                          />
 
-              <div className={styles.summaryRow}>
-                <span style={{ color: "#777" }}>STATUS</span>
-                <span
-                  className={`${styles.statusBadge} ${getStatusBadgeClass(
-                    order.status
-                  )}`}
-                >
-                  {order.status}
-                </span>
-              </div>
+                          <div className={styles.itemDetails}>
+                            <p className={styles.itemTitle}>{itName}</p>
+                            <p className={styles.itemSub}>
+                              Qty: {itemQty}
+                              {(item as any).size ? ` · Size: ${(item as any).size}` : ""}
+                              {(item as any).color ? ` · Color: ${(item as any).color}` : ""}
+                            </p>
+                          </div>
 
-              <div className={styles.summaryRow}>
-                <span style={{ color: "#777" }}>PAYMENT</span>
-                <span>{order.payment_method}</span>
-              </div>
-
-              <div
-                style={{
-                  margin: "18px 0",
-                  borderTop: "1px solid #e5e5e0",
-                }}
-              />
-
-              <div className={styles.summaryRow}>
-                <span style={{ color: "#777" }}>SUBTOTAL</span>
-                <span>₹{parsePrice(order.subtotal).toLocaleString("en-IN")}</span>
-              </div>
-
-              {parsePrice((order as any).discount) > 0 && (
-                <div className={styles.summaryRow} style={{ color: "#16a34a" }}>
-                  <span>DISCOUNT</span>
-                  <span>-₹{parsePrice((order as any).discount).toLocaleString("en-IN")}</span>
+                          <div style={{ textAlign: "right" }}>
+                            <span className={styles.itemPriceText}>
+                              ₹{itemTotal.toLocaleString("en-IN")}
+                            </span>
+                            {itemQty > 1 && (
+                              <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "2px" }}>
+                                ₹{unitPrice.toLocaleString("en-IN")} each
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
-              )}
 
-              <div className={styles.summaryRow}>
-                <span style={{ color: "#777" }}>DELIVERY</span>
-                <span>
-                  {parsePrice(order.shipping) === 0
-                    ? "FREE"
-                    : `₹${parsePrice(order.shipping).toLocaleString("en-IN")}`}
-                </span>
+                {/* Shipping Address Card */}
+                {address && (
+                  <div className={styles.detailCard}>
+                    <h3 className={styles.detailCardTitle}>Shipping Address</h3>
+                    <div style={{ fontSize: "13.5px", color: "#374151", lineHeight: 1.6 }}>
+                      <p style={{ margin: "0 0 6px", fontWeight: 700, color: "#111827" }}>
+                        {address.full_name || address.fullName || address.name || "Valued Customer"}
+                      </p>
+                      {(address.address_line1 || address.address) && (
+                        <p style={{ margin: "0 0 2px" }}>
+                          {address.address_line1 || address.address}
+                        </p>
+                      )}
+                      {[address.city, address.state].filter(Boolean).length > 0 && (
+                        <p style={{ margin: "0 0 2px" }}>
+                          {[address.city, address.state].filter(Boolean).join(", ")}
+                          {address.postal_code || address.pincode ? ` - ${address.postal_code || address.pincode}` : ""}
+                        </p>
+                      )}
+                      <p style={{ margin: "0 0 2px" }}>{address.country || "India"}</p>
+                      {(address.phone || (order as any).customer?.phone) && (
+                        <p style={{ margin: "8px 0 0", color: "#6b7280", fontSize: "12.5px" }}>
+                          Phone: {address.phone || (order as any).customer?.phone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className={styles.summaryTotal}>
-                <span>TOTAL</span>
-                <span>₹{parsePrice(order.total).toLocaleString("en-IN")}</span>
-              </div>
-            </div>
+              {/* Order Summary Column */}
+              <aside>
+                <div className={styles.detailCard}>
+                  <h3 className={styles.detailCardTitle}>Order Summary</h3>
 
-            <div className={styles.sectionBox} style={{ textAlign: "center" }}>
-              <p style={{ fontSize: "12px", color: "#666", margin: "0 0 16px" }}>
-                Need support with this order? Have your Order ID handy.
-              </p>
-              <Link href="/account" className={styles.primaryButton} style={{ width: "100%" }}>
-                ACCOUNT DASHBOARD
-              </Link>
+                  <div className={styles.summaryRowItem}>
+                    <span>Order ID</span>
+                    <strong className={styles.summaryRowVal}>{order.id}</strong>
+                  </div>
+
+                  <div className={styles.summaryRowItem}>
+                    <span>Date Placed</span>
+                    <span className={styles.summaryRowVal}>
+                      {new Date(order.created_at).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+
+                  <div className={styles.summaryRowItem}>
+                    <span>Payment Method</span>
+                    <span className={styles.summaryRowVal}>{order.payment_method}</span>
+                  </div>
+
+                  <div className={styles.summaryRowItem}>
+                    <span>Payment Status</span>
+                    <span className={styles.summaryRowVal} style={{ textTransform: "capitalize" }}>
+                      {order.payment_status || "Pending"}
+                    </span>
+                  </div>
+
+                  <div style={{ margin: "14px 0", borderTop: "1px solid #f3f4f6" }} />
+
+                  <div className={styles.summaryRowItem}>
+                    <span>Subtotal</span>
+                    <span className={styles.summaryRowVal}>
+                      ₹{parsePrice(order.subtotal).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  {parsePrice((order as any).discount) > 0 && (
+                    <div className={styles.summaryRowItem} style={{ color: "#059669" }}>
+                      <span>Discount</span>
+                      <span style={{ fontWeight: 600 }}>
+                        -₹{parsePrice((order as any).discount).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className={styles.summaryRowItem}>
+                    <span>Delivery</span>
+                    <span className={styles.summaryRowVal}>
+                      {parsePrice(order.shipping) === 0
+                        ? "FREE"
+                        : `₹${parsePrice(order.shipping).toLocaleString("en-IN")}`}
+                    </span>
+                  </div>
+
+                  <div className={styles.summaryTotalRow}>
+                    <span>Total</span>
+                    <span>₹{parsePrice(order.total).toLocaleString("en-IN")}</span>
+                  </div>
+                </div>
+
+                <div className={styles.detailCard} style={{ textAlign: "center" }}>
+                  <p style={{ fontSize: "12.5px", color: "#6b7280", margin: "0 0 14px", lineHeight: 1.5 }}>
+                    Need assistance or return pickup details? Our concierge team is here to help.
+                  </p>
+                  <Link
+                    href="/account?tab=orders"
+                    className={styles.saveButton}
+                    style={{ display: "block", textAlign: "center", textDecoration: "none" }}
+                  >
+                    Back to Order History
+                  </Link>
+                </div>
+              </aside>
             </div>
-          </aside>
+          </section>
         </div>
 
         {/* ==================== RETURN / EXCHANGE REQUEST MODAL ==================== */}
