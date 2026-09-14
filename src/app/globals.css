@@ -453,7 +453,7 @@ select {
 
 .category-section {
   width: 100%;
-  padding: 20px 2px 4px;
+  padding: 24px 20px 16px;
   background: #ffffff;
   overflow: hidden;
 }
@@ -466,7 +466,7 @@ select {
 }
 
 .category-heading {
-  padding: 0 clamp(16px, 2vw, 32px);
+  padding: 0 4px;
 }
 
 .category-kicker {
@@ -602,7 +602,7 @@ select {
 
 .trending-section {
   width: 100%;
-  padding: 4px 2px 24px;
+  padding: 16px 20px 32px;
   background: #ffffff;
   overflow: hidden;
 }
@@ -1332,16 +1332,16 @@ select {
     padding-right: 0;
   }
   .category-section {
-    padding-top: 16px;
-    padding-bottom: 4px;
-    padding-left: 2px;
-    padding-right: 2px;
+    padding-top: 20px;
+    padding-bottom: 14px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
   .trending-section {
-    padding-top: 4px;
-    padding-bottom: 20px;
-    padding-left: 2px;
-    padding-right: 2px;
+    padding-top: 14px;
+    padding-bottom: 24px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
   .products-section,
   .about-section {
