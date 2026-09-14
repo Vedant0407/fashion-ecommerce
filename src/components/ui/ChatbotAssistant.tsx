@@ -8,7 +8,6 @@ import {
   MessageSquare,
   X,
   Send,
-  Sparkles,
   ShoppingBag,
   RotateCcw,
   Check,
@@ -363,22 +362,18 @@ export default function ChatbotAssistant() {
         className={`chatbot-launcher ${isOpen ? "open" : ""}`}
         onClick={() => setIsOpen(!isOpen)}
         aria-label={isOpen ? "Close GreenO Assistant" : "Open GreenO Assistant"}
-        title="GreenO AI Assistant"
+        title="GreenO Assistant"
       >
         <span className="chatbot-launcher-inner">
           {isOpen ? (
-            <X size={22} className="launcher-icon-close" />
+            <X size={20} className="launcher-icon-close" />
           ) : (
-            <>
-              <MessageSquare size={20} className="launcher-icon-msg" />
-              <Sparkles size={11} className="launcher-icon-sparkle" />
-            </>
+            <MessageSquare size={20} className="launcher-icon-msg" />
           )}
         </span>
-        {!isOpen && <span className="chatbot-pulse-dot" />}
       </button>
 
-      {/* Modern AI Chat Window */}
+      {/* Modern Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -405,7 +400,7 @@ export default function ChatbotAssistant() {
                   <div className="chatbot-title-group">
                     <div className="chatbot-title-row">
                       <span className="chatbot-title">GreenO Assistant</span>
-                      <span className="chatbot-badge">AI</span>
+                      <span className="chatbot-badge">CONCIERGE</span>
                     </div>
                     <span className="chatbot-subtitle">Luxury Streetwear Concierge</span>
                   </div>

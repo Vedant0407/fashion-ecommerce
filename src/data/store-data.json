@@ -237,6 +237,30 @@
   ],
   "orders": [
     {
+      "id": "66b7d37f-6206-48fd-899d-291c75de89c7",
+      "status": "delivered",
+      "total": 4197,
+      "created_at": "13 Sept 2026",
+      "items": [
+        {
+          "product_id": "urban-grey-hoodie",
+          "product_name": "Urban Grey Hoodie",
+          "price": 4197,
+          "quantity": 1
+        }
+      ],
+      "customer": {
+        "fullName": "Customer",
+        "address": "",
+        "city": "",
+        "state": "",
+        "pincode": "",
+        "phone": "",
+        "email": ""
+      },
+      "subtotal": 0
+    },
+    {
       "id": "GO-9482-A1",
       "created_at": "2026-09-09T02:53:22.599Z",
       "customer": {
