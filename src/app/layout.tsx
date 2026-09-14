@@ -4,6 +4,7 @@ import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import Header from "@/components/Header";
+import ChatbotAssistant from "@/components/ui/ChatbotAssistant";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
           <WishlistProvider>
             <Header />
             {children}
+            <ChatbotAssistant />
           </WishlistProvider>
         </CartProvider>
       </body>

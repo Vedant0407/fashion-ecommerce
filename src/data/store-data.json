@@ -241,12 +241,12 @@
       "created_at": "2026-09-09T02:53:22.599Z",
       "customer": {
         "fullName": "Arjun Sharma",
-        "email": "arjun.sharma@example.com",
-        "phone": "+91 98201 12345",
         "address": "Flat 402, Signature Heights, Bandra West",
         "city": "Mumbai",
         "state": "Maharashtra",
-        "pincode": "400050"
+        "pincode": "400050",
+        "phone": "+91 98201 12345",
+        "email": "arjun.sharma@example.com"
       },
       "items": [
         {
@@ -281,12 +281,12 @@
       "created_at": "2026-09-08T06:53:22.599Z",
       "customer": {
         "fullName": "Priya Nair",
-        "email": "priya.nair@example.com",
-        "phone": "+91 94471 98765",
         "address": "12/4 Lotus Villa, Indiranagar",
         "city": "Bengaluru",
         "state": "Karnataka",
-        "pincode": "560038"
+        "pincode": "560038",
+        "phone": "+91 94471 98765",
+        "email": "priya.nair@example.com"
       },
       "items": [
         {
@@ -312,12 +312,12 @@
       "created_at": "2026-09-07T06:53:22.599Z",
       "customer": {
         "fullName": "Kabir Mehta",
-        "email": "kabir.mehta@example.com",
-        "phone": "+91 99100 55432",
         "address": "House 88, Sector 15",
         "city": "Gurugram",
         "state": "Haryana",
-        "pincode": "122001"
+        "pincode": "122001",
+        "phone": "+91 99100 55432",
+        "email": "kabir.mehta@example.com"
       },
       "items": [
         {
@@ -337,6 +337,40 @@
       "status": "delivered",
       "payment_method": "Credit Card",
       "payment_status": "paid"
+    }
+  ],
+  "returns": [
+    {
+      "id": "EXC-9482-1",
+      "order_id": "GO-9482-A1",
+      "created_at": "2026-09-14T00:30:00.493Z",
+      "type": "exchange",
+      "status": "pending",
+      "customer": {
+        "fullName": "Arjun Sharma",
+        "email": "arjun.sharma@example.com",
+        "phone": "+91 98201 12345",
+        "address": "Flat 402, Signature Heights, Bandra West",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400050"
+      },
+      "items": [
+        {
+          "product_id": "oversized-black-tee",
+          "name": "Oversized Black Tee",
+          "price": 2499,
+          "quantity": 1,
+          "size": "L",
+          "color": "BLACK",
+          "image": "/black-tee.jfif",
+          "exchange_size": "XL",
+          "reason": "Need a looser fit in the chest"
+        }
+      ],
+      "reason_category": "Size too small / tight",
+      "customer_notes": "Please arrange an exchange for size XL. Tee is unworn with original tags intact.",
+      "pickup_address": "Flat 402, Signature Heights, Bandra West, Mumbai, Maharashtra - 400050"
     }
   ],
   "coupons": [

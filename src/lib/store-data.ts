@@ -394,9 +394,21 @@ export function getInitialData(): StoreData {
   };
 }
 
+let lastDataFileMtime = 0;
+
 export async function readStoreData(forceFresh = false): Promise<StoreData> {
   loadOrderStatusOverrides();
-  if (memoryData && !forceFresh) {
+
+  let fileMtime = 0;
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      fileMtime = fs.statSync(DATA_FILE).mtimeMs;
+    }
+  } catch {}
+
+  const shouldForce = forceFresh || fileMtime > lastDataFileMtime;
+
+  if (memoryData && !shouldForce) {
     try {
       if (fs.existsSync(DATA_FILE)) {
         const raw = fs.readFileSync(DATA_FILE, "utf-8");
@@ -428,6 +440,10 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
     return memoryData;
   }
 
+  if (fileMtime > 0) {
+    lastDataFileMtime = fileMtime;
+  }
+
   const initial = getInitialData();
   let fileData: Partial<StoreData> | null = null;
   let tmpData: Partial<StoreData> | null = null;
@@ -450,14 +466,14 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
     console.warn("Notice: could not read TMP_FILE:", err);
   }
 
-  // Merge products so custom products created by admin are preserved AT THE FRONT
+  // Merge products: prioritize fileData (primary persistent DB) over tmpData
   const initialIds = new Set(initial.products.map((p) => p.id));
   const productMap = new Map<string, Product>();
 
-  // 1. First add any custom products found in tmpData or fileData
+  // 1. First add any custom products found in fileData or tmpData
   const allStored = [
-    ...(tmpData?.products && Array.isArray(tmpData.products) ? tmpData.products : []),
     ...(fileData?.products && Array.isArray(fileData.products) ? fileData.products : []),
+    ...(tmpData?.products && Array.isArray(tmpData.products) ? tmpData.products : []),
   ];
 
   for (const p of allStored) {
@@ -466,7 +482,7 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
     }
   }
 
-  // 2. Then add initial products (overwritten by any fileData/tmpData updates to stock/flags)
+  // 2. Then add initial products (overwritten by any fileData/tmpData updates to stock/price/flags)
   for (const p of initial.products) {
     if (p?.id && !productMap.has(p.id)) {
       const stored = allStored.find((s) => s?.id === p.id);
@@ -605,13 +621,13 @@ export async function writeStoreData(data: StoreData): Promise<void> {
 
 // ----------------- Product Helpers -----------------
 
-export async function getStoreProducts(): Promise<Product[]> {
-  const data = await readStoreData();
+export async function getStoreProducts(forceFresh = true): Promise<Product[]> {
+  const data = await readStoreData(forceFresh);
   return data.products;
 }
 
 export async function saveStoreProduct(product: Product): Promise<Product> {
-  const data = await readStoreData();
+  const data = await readStoreData(true);
   const index = data.products.findIndex((p) => p.id === product.id);
 
   if (index >= 0) {
