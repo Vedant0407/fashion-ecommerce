@@ -5548,5 +5548,123 @@ select {
   }
 }
 
+/* =========================================
+   MOBILE ONLY: COMPACT PRODUCT BOX LOWER PART & FONT SIZES
+   ========================================= */
+@media (max-width: 768px) {
+  /* Product Card Lower Part */
+  .product-info {
+    padding: 8px 10px 10px !important;
+  }
+
+  .product-name {
+    font-size: 11px !important;
+    margin: 0 0 3px !important;
+    line-height: 1.25 !important;
+    letter-spacing: 0.03em !important;
+  }
+
+  .product-price {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  .product-add-to-cart-btn {
+    padding: 8px 0 !important;
+    font-size: 9.5px !important;
+    letter-spacing: 0.12em !important;
+  }
+
+  /* New In Card Lower Part */
+  .new-in-info {
+    padding: 8px 10px 10px !important;
+  }
+
+  .new-in-name {
+    font-size: 11px !important;
+    margin: 0 0 3px !important;
+    line-height: 1.25 !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  .new-in-price {
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+  }
+
+  /* All Products Grid Lower Part */
+  .all-product-info {
+    padding: 8px 4px 0 !important;
+  }
+
+  .all-product-info p {
+    font-size: 11px !important;
+    margin: 0 0 3px !important;
+    line-height: 1.25 !important;
+  }
+
+  .all-product-info span {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+  }
+
+  /* More / Similar Products Lower Part */
+  .more-product-info {
+    padding-top: 6px !important;
+    gap: 8px !important;
+  }
+
+  .more-product-info h3 {
+    font-size: 11px !important;
+  }
+
+  .more-product-info p {
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-info {
+    padding: 6px 8px 8px !important;
+  }
+
+  .product-name {
+    font-size: 10.5px !important;
+    margin: 0 0 2px !important;
+  }
+
+  .product-price {
+    font-size: 10.5px !important;
+  }
+
+  .product-add-to-cart-btn {
+    padding: 7px 0 !important;
+    font-size: 9px !important;
+  }
+
+  .new-in-info {
+    padding: 6px 8px 8px !important;
+  }
+
+  .new-in-name {
+    font-size: 10.5px !important;
+    margin: 0 0 2px !important;
+  }
+
+  .new-in-price {
+    font-size: 10px !important;
+  }
+
+  .all-product-info p {
+    font-size: 10.5px !important;
+  }
+
+  .all-product-info span {
+    font-size: 10.5px !important;
+  }
+}
+
+
 
 
