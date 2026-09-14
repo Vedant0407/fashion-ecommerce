@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Package, User, Wallet, LogOut, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { formatShortOrderId, isOrderMatch } from "@/lib/order-utils";
 import styles from "../../account.module.css";
 
 type Address = {
@@ -115,7 +116,7 @@ export default function OrderDetailsPage() {
       if (scopedRaw) {
         const list = JSON.parse(scopedRaw);
         const match = Array.isArray(list)
-          ? list.find((o: any) => o?.id && o.id.trim().toLowerCase() === cleanId)
+          ? list.find((o: any) => o?.id && (o.id.trim().toLowerCase() === cleanId || isOrderMatch(o.id, cleanId)))
           : null;
         if (match) return match;
       }
@@ -126,7 +127,7 @@ export default function OrderDetailsPage() {
         const parsed = JSON.parse(rawLast);
         if (
           parsed?.id &&
-          parsed.id.trim().toLowerCase() === cleanId &&
+          (parsed.id.trim().toLowerCase() === cleanId || isOrderMatch(parsed.id, cleanId)) &&
           parsed.customer?.email?.trim().toLowerCase() === cleanEmail
         ) {
           return parsed;
@@ -141,7 +142,7 @@ export default function OrderDetailsPage() {
           ? list.find(
               (o: any) =>
                 o?.id &&
-                o.id.trim().toLowerCase() === cleanId &&
+                (o.id.trim().toLowerCase() === cleanId || isOrderMatch(o.id, cleanId)) &&
                 o.customer?.email?.trim().toLowerCase() === cleanEmail
             )
           : null;
@@ -676,7 +677,7 @@ export default function OrderDetailsPage() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
-        <p className={styles.breadcrumb}>GREENO / MY ACCOUNT / ORDERS / {order.id}</p>
+        <p className={styles.breadcrumb}>GREENO / MY ACCOUNT / ORDERS / {formatShortOrderId(order.id)}</p>
         <h1 className={styles.title}>MY ACCOUNT</h1>
 
         {/* Main Reference Card Container */}
@@ -741,7 +742,7 @@ export default function OrderDetailsPage() {
 
             <div className={styles.detailHeader}>
               <div>
-                <h2 className={styles.tabTitle}>Order {order.id}</h2>
+                <h2 className={styles.tabTitle}>Order {formatShortOrderId(order.id)}</h2>
                 <p className={styles.tabSubtitle}>
                   Placed on{" "}
                   {order.created_at

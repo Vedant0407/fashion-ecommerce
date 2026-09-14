@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { addStoreOrder, getStoreOrders } from "@/lib/store-data";
+import { formatShortOrderId, isOrderMatch } from "@/lib/order-utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -215,9 +216,9 @@ export async function POST(request: NextRequest) {
     const finalShipping = shipping !== undefined ? shipping : calculatedShipping;
     const finalTotal = Math.max(0, calculatedSubtotal + finalShipping - discount);
 
-    let createdOrderId = `GO-${Date.now().toString(36).toUpperCase()}-${Math.random()
+    let createdOrderId = `GO-${Math.floor(1000 + Math.random() * 9000)}-${Math.random()
       .toString(36)
-      .substring(2, 6)
+      .substring(2, 4)
       .toUpperCase()}`;
 
     if (authenticatedUser) {
@@ -313,10 +314,15 @@ export async function POST(request: NextRequest) {
       payment_status: paymentMethod === "COD" ? "pending" : "paid",
     });
 
+    const shortOrderId = formatShortOrderId(createdOrderId);
     const response = NextResponse.json({
       success: true,
-      orderId: createdOrderId,
-      order: savedStoreOrder,
+      orderId: shortOrderId,
+      rawOrderId: createdOrderId,
+      order: {
+        ...savedStoreOrder,
+        short_id: shortOrderId,
+      },
     });
 
     // Ensure session cookie matches this order's owner

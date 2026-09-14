@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Package, User, Wallet, LogOut, Check, Pencil } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
+import { formatShortOrderId } from "@/lib/order-utils";
 import styles from "./account.module.css";
 
 type TabKey = "account" | "orders" | "address" | "wallet";
@@ -551,7 +552,7 @@ function AccountPageContent() {
                       return (
                         <div key={o.id} className={styles.orderCardItem}>
                           <div className={styles.orderInfo}>
-                            <span className={styles.orderIdText}>{o.id}</span>
+                            <span className={styles.orderIdText}>{formatShortOrderId(o.id)}</span>
                             <span className={styles.orderDateText}>Placed on {formattedDate}</span>
                           </div>
 

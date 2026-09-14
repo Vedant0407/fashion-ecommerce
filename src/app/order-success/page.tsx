@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import styles from "@/app/account/orders/orders.module.css";
+import { formatShortOrderId } from "@/lib/order-utils";
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
@@ -77,7 +78,7 @@ function OrderSuccessContent() {
                     YOUR ORDER REFERENCE
                   </span>
                   <div style={{ fontSize: "16px", fontWeight: 600, marginTop: "4px" }}>
-                    {orderId}
+                    {formatShortOrderId(orderId)}
                   </div>
                 </div>
               )}

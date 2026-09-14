@@ -5,6 +5,7 @@ import Link from "next/link";
 import styles from "./admin.module.css";
 import { Product, Category } from "@/lib/catalog";
 import { StoreOrder, StoreCoupon, StoreSettings, ReturnExchangeRequest } from "@/lib/store-data";
+import { formatShortOrderId } from "@/lib/order-utils";
 
 export default function AdminPage() {
   // Authentication State
@@ -1159,6 +1160,7 @@ export default function AdminPage() {
       const q = orderSearch.toLowerCase();
       const matchesSearch =
         o.id.toLowerCase().includes(q) ||
+        formatShortOrderId(o.id).toLowerCase().includes(q) ||
         o.customer.fullName.toLowerCase().includes(q) ||
         (o.customer.email && o.customer.email.toLowerCase().includes(q)) ||
         o.customer.phone.includes(orderSearch) ||
@@ -1177,6 +1179,7 @@ export default function AdminPage() {
       const matchesSearch =
         r.id.toLowerCase().includes(q) ||
         r.order_id.toLowerCase().includes(q) ||
+        formatShortOrderId(r.order_id).toLowerCase().includes(q) ||
         r.customer.fullName.toLowerCase().includes(q) ||
         (r.customer.email && r.customer.email.toLowerCase().includes(q)) ||
         r.customer.phone.includes(returnSearch) ||
@@ -1967,7 +1970,9 @@ export default function AdminPage() {
                     <tbody>
                       {filteredOrders.map((o) => (
                         <tr key={o.id}>
-                          <td style={{ fontFamily: "monospace", fontWeight: 700 }}>{o.id}</td>
+                          <td style={{ fontFamily: "monospace", fontWeight: 700 }} title={o.id}>
+                            {formatShortOrderId(o.id)}
+                          </td>
                           <td style={{ fontSize: "11px", color: "#888888" }}>
                             {new Date(o.created_at).toLocaleDateString("en-IN", {
                               day: "numeric",
@@ -2178,9 +2183,9 @@ export default function AdminPage() {
                                     textDecoration: "underline",
                                     color: "#38bdf8",
                                   }}
-                                  title="Click to view full original order"
+                                  title={`Click to view full original order (${req.order_id})`}
                                 >
-                                  {req.order_id}
+                                  {formatShortOrderId(req.order_id)}
                                 </span>
                               </td>
 
@@ -4228,7 +4233,9 @@ export default function AdminPage() {
         <div className={styles.modalBackdrop}>
           <div className={styles.modalWindow} style={{ maxWidth: "780px" }}>
             <div className={styles.modalHeader}>
-              <div className={styles.modalTitle}>ORDER BREAKDOWN: {selectedOrder.id}</div>
+              <div className={styles.modalTitle}>
+                ORDER BREAKDOWN: {formatShortOrderId(selectedOrder.id)}
+              </div>
               <button className={styles.modalCloseBtn} onClick={() => setSelectedOrder(null)}>
                 &times;
               </button>

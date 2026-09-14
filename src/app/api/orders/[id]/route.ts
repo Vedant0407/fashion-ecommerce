@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStoreOrders } from "@/lib/store-data";
+import { isOrderMatch } from "@/lib/order-utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -66,7 +67,7 @@ export async function GET(
 
     // Check store-data first to get full item options and latest admin status
     const allStoreOrders = await getStoreOrders(true);
-    const matched = allStoreOrders.find((o) => o.id === cleanId);
+    const matched = allStoreOrders.find((o) => o.id === cleanId || isOrderMatch(o.id, cleanId));
 
     if (matched) {
       const orderCustomerEmail = matched.customer?.email?.trim().toLowerCase();

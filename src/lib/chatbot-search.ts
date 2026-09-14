@@ -1,5 +1,6 @@
 import { Product } from "@/lib/catalog";
 import { getStoreProducts, getStoreOrders, StoreOrder } from "@/lib/store-data";
+import { formatShortOrderId, isOrderMatch } from "@/lib/order-utils";
 
 export type ChatAction = {
   type: "add_to_cart" | "navigate" | "view_product";
@@ -613,7 +614,9 @@ function formatOrderStatusResponse(order: StoreOrder, orderedProducts: Product[]
       ? [order.customer.city, order.customer.state].filter(Boolean).join(", ") || order.customer.address || "Your Address"
       : "Your registered delivery address";
 
-  const reply = `Here is the current status of your order **#${order.id}**:
+  const shortId = formatShortOrderId(order.id);
+
+  const reply = `Here is the current status of your order **#${shortId}**:
 
 ${statusEmoji} **Status: ${statusBadge}**
 ${statusExplanation}
@@ -629,7 +632,7 @@ You can view complete tracking, updates, and invoice anytime on your [Order Deta
     reply,
     products: orderedProducts.slice(0, 4),
     suggestions: [
-      `Track order #${order.id}`,
+      `Track order #${shortId}`,
       "Return or exchange policy",
       "Show me new arrivals",
       "Contact customer care",
@@ -711,16 +714,14 @@ export async function generateGreenOResponse(
 
     // A. Search by explicit order ID if provided in query
     if (intent.orderQuery.orderId) {
-      const qId = intent.orderQuery.orderId.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const qId = intent.orderQuery.orderId;
       matchedOrder =
-        allOrders.find((o) => {
-          const oId = (o.id || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-          return oId === qId || oId.includes(qId) || qId.includes(oId);
-        }) || null;
+        allOrders.find((o) => isOrderMatch(o.id, qId)) || null;
 
       if (!matchedOrder) {
+        const displayQueryId = formatShortOrderId(intent.orderQuery.orderId);
         return {
-          reply: `I searched our database but could not find an order matching **#${intent.orderQuery.orderId}**. Please double-check your Order ID or view all past purchases on your [Orders](/account/orders) page.`,
+          reply: `I searched our database but could not find an order matching **#${displayQueryId}**. Please double-check your Order ID or view all past purchases on your [Orders](/account/orders) page.`,
           products: [],
           suggestions: ["View my orders", "Track another order", "Contact concierge"],
         };

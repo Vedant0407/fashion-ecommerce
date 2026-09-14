@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { formatShortOrderId } from "@/lib/order-utils";
 import styles from "./orders.module.css";
 
 type OrderItem = {
@@ -406,7 +407,7 @@ export default function OrdersPage() {
                   <div className={styles.cardMeta}>
                     <div className={styles.metaItem}>
                       <span className={styles.metaLabel}>ORDER ID</span>
-                      <strong className={styles.metaValue}>{order.id}</strong>
+                      <strong className={styles.metaValue}>{formatShortOrderId(order.id)}</strong>
                     </div>
 
                     <div className={styles.metaItem}>
