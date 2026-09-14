@@ -5225,3 +5225,62 @@ select {
     display: none;
   }
 }
+
+/* =========================================
+   MOBILE ONLY: DISCOVER MORE & VIEW ALL PIECES BUTTONS
+   ========================================= */
+@media (max-width: 768px) {
+  .discover-more {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 9px !important;
+    font-weight: 500 !important;
+    padding: 4px 11px !important;
+    letter-spacing: 0.07em !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    border-radius: 999px !important;
+  }
+
+  .new-in-heading,
+  .products-header-row {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+  }
+
+  .new-in-heading > div,
+  .products-header-row > div {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .discover-more {
+    font-size: 8px !important;
+    padding: 3.5px 8.5px !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  .new-in-heading,
+  .products-header-row {
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .discover-more {
+    font-size: 7.5px !important;
+    padding: 3px 7px !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  .new-in-heading,
+  .products-header-row {
+    gap: 6px !important;
+  }
+}
+
