@@ -7038,7 +7038,10 @@ select {
 
 /* --- Atelier Hero Section --- */
 .atelier-hero-section {
-  padding: 76px 28px 16px;
+  padding-top: 118px;
+  padding-bottom: 24px;
+  padding-left: clamp(16px, 2.5vw, 36px);
+  padding-right: clamp(16px, 2.5vw, 36px);
   background: #F7F6F2;
   width: 100%;
   display: flex;
@@ -7054,9 +7057,8 @@ select {
 .atelier-hero-image-wrap {
   position: relative;
   width: 100%;
-  height: calc(100vh - 220px);
-  min-height: 480px;
-  max-height: 680px;
+  height: 85vh;
+  min-height: 600px;
   overflow: hidden;
   border-radius: 4px;
   background: #EFECE6;
@@ -7412,14 +7414,16 @@ select {
 
 @media (max-width: 768px) {
   .atelier-hero-section {
-    padding: 70px 14px 12px;
+    padding-top: 104px;
+    padding-bottom: 16px;
+    padding-left: 14px;
+    padding-right: 14px;
     min-height: auto;
   }
 
   .atelier-hero-image-wrap {
-    height: 58vh;
-    min-height: 380px;
-    max-height: 520px;
+    height: 85vh;
+    min-height: 520px;
   }
 
   .atelier-hero-meta {
