@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Heart, ShoppingBag, ArrowRight } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import { Product, getAllProducts } from "@/lib/catalog";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -320,14 +320,6 @@ export default function AtelierProductGrid() {
               </div>
             );
           })}
-        </div>
-
-        {/* Bottom CTA to Full Catalog */}
-        <div className="atelier-bottom-explore">
-          <Link href="/shop" className="atelier-explore-all">
-            <span>EXPLORE FULL ARCHIVE</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
         </div>
       </div>
     </section>
