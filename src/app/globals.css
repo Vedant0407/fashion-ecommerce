@@ -7205,14 +7205,16 @@ select {
   margin-bottom: 20px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   padding-bottom: 18px;
+  touch-action: pan-y;
 }
 
 .atelier-filter-tabs {
   display: flex;
   align-items: center;
   gap: 36px;
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: visible;
+  flex-shrink: 0;
+  touch-action: pan-y;
 }
 
 .atelier-filter-tabs::-webkit-scrollbar {
@@ -7233,6 +7235,10 @@ select {
   transition: color 0.2s ease;
   outline: none;
   font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .atelier-filter-btn:hover {
@@ -7488,6 +7494,7 @@ select {
 
   .atelier-filter-tabs {
     gap: 20px;
+    overflow: visible;
   }
 
   .atelier-grid {
