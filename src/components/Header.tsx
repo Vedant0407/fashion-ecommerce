@@ -174,17 +174,7 @@ export default function Header() {
         </div>
 
         <nav className="navbar atelier-navbar">
-          <div className="header-side nav-links-left">
-            <Link href="/shop" className="nav-link">
-              COLLECTIONS
-            </Link>
-            <Link href="#catalog" className="nav-link">
-              ATELIER
-            </Link>
-            <Link href="#about" className="nav-link">
-              JOURNAL
-            </Link>
-          </div>
+          <div className="header-side nav-links-left" />
 
           <Link href="/" className="logo atelier-logo font-serif">
             GREENO
