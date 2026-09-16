@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -9,11 +9,11 @@ import { useWishlist } from "@/context/WishlistContext";
 
 const ATELIER_CATEGORIES = [
   { label: "ALL", slug: "all" },
+  { label: "PANTS", slug: "pants" },
   { label: "TOPS", slug: "tops" },
   { label: "OUTERWEAR", slug: "outerwear" },
   { label: "BAGS", slug: "bags" },
   { label: "FOOTWEAR", slug: "footwear" },
-  { label: "PANTS", slug: "pants" },
 ];
 
 const CURATED_ATELIER_PRODUCTS: Product[] = [
@@ -50,6 +50,23 @@ const CURATED_ATELIER_PRODUCTS: Product[] = [
     material: "100% Virgin wool",
     fabric: "Heavyweight rib",
     fit: "Relaxed drape",
+  },
+  {
+    id: "pleated-wool-trousers",
+    name: "Pleated Wool Trousers",
+    price: 4299,
+    description: "Architectural wide-leg tailored trousers in tropical virgin wool with double front pleats and fluid drape.",
+    category_slug: "pants",
+    category_name: "PANTS",
+    image: "/cargo-pants.jfif",
+    images: ["/cargo-pants.jfif"],
+    stock: 25,
+    is_featured: true,
+    is_new: true,
+    is_trending: true,
+    material: "100% Tropical Wool",
+    fabric: "Virgin Wool Weave",
+    fit: "Relaxed Wide Leg",
   },
   {
     id: "polished-calfskin-derbies",
@@ -112,17 +129,82 @@ export default function AtelierProductGrid() {
       }
     }
     loadCatalog();
+
+    // Listen to real-time events triggered when products are edited or saved from the Admin Console
+    const handleUpdate = () => {
+      loadCatalog();
+    };
+
+    window.addEventListener("greeno_products_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    return () => {
+      window.removeEventListener("greeno_products_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, []);
 
   const filteredProducts = products.filter((item) => {
     if (activeTab === "all") return true;
-    const cat = (item.category_slug || item.category_name || "").toLowerCase();
-    if (activeTab === "tops") return cat.includes("top") || cat.includes("tee") || cat.includes("shirt");
-    if (activeTab === "outerwear") return cat.includes("outer") || cat.includes("hoodie") || cat.includes("coat");
-    if (activeTab === "bags") return cat.includes("bag");
-    if (activeTab === "footwear") return cat.includes("foot") || cat.includes("shoe");
-    if (activeTab === "pants") return cat.includes("pant") || cat.includes("cargo");
-    return cat.includes(activeTab);
+    const slug = (item.category_slug || "").toLowerCase();
+    const cat = (item.category_name || "").toLowerCase();
+    const title = (item.name || "").toLowerCase();
+
+    if (activeTab === "pants") {
+      return (
+        slug === "pants" ||
+        slug.includes("pant") ||
+        slug.includes("trouser") ||
+        cat.includes("pant") ||
+        cat.includes("trouser") ||
+        title.includes("pant") ||
+        title.includes("trouser") ||
+        title.includes("cargo")
+      );
+    }
+    if (activeTab === "tops") {
+      return (
+        slug.includes("top") ||
+        slug.includes("tee") ||
+        slug.includes("shirt") ||
+        cat.includes("top") ||
+        cat.includes("tee") ||
+        cat.includes("shirt") ||
+        title.includes("tee") ||
+        title.includes("turtleneck")
+      );
+    }
+    if (activeTab === "outerwear") {
+      return (
+        slug.includes("outer") ||
+        slug.includes("hoodie") ||
+        slug.includes("coat") ||
+        cat.includes("outer") ||
+        cat.includes("hoodie") ||
+        title.includes("coat") ||
+        title.includes("jacket") ||
+        title.includes("hoodie")
+      );
+    }
+    if (activeTab === "bags") {
+      return (
+        slug.includes("bag") ||
+        cat.includes("bag") ||
+        title.includes("bag") ||
+        title.includes("tote")
+      );
+    }
+    if (activeTab === "footwear") {
+      return (
+        slug.includes("foot") ||
+        slug.includes("shoe") ||
+        cat.includes("foot") ||
+        cat.includes("shoe") ||
+        title.includes("derb") ||
+        title.includes("shoe")
+      );
+    }
+    return slug === activeTab || cat === activeTab || title.includes(activeTab);
   });
 
   const handleQuickAdd = (e: React.MouseEvent, product: Product) => {

@@ -24,6 +24,120 @@
       "fit": "Oversized Fit"
     },
     {
+      "id": "pleated-wool-trousers",
+      "name": "Pleated Wool Trousers",
+      "price": 4299,
+      "description": "Architectural wide-leg tailored trousers in tropical virgin wool with double front pleats and fluid drape.",
+      "category_id": "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
+      "category_name": "PANTS",
+      "category_slug": "pants",
+      "image": "/cargo-pants.jfif",
+      "images": [
+        "/cargo-pants.jfif",
+        "/atelier-knitwear.jpg"
+      ],
+      "stock": 25,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "CHARCOAL",
+      "product_no": "AT-PNT-01",
+      "material": "100% Tropical Wool",
+      "fabric": "Virgin Wool Weave",
+      "fit": "Relaxed Wide Leg"
+    },
+    {
+      "id": "envelope-tote-bag",
+      "name": "Envelope Tote",
+      "price": 4499,
+      "description": "Architectural slouchy shoulder tote crafted from vegetable-tanned full-grain calfskin leather.",
+      "category_id": "0e60c6fa-3368-4d27-b827-57c2ae2cbcff",
+      "category_name": "BAGS",
+      "category_slug": "bags",
+      "image": "/atelier-bag.jpg",
+      "images": [
+        "/atelier-bag.jpg",
+        "/cargo-pants.jfif"
+      ],
+      "stock": 20,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "NOIR",
+      "product_no": "AT-BAG-01",
+      "material": "Calfskin Leather",
+      "fabric": "Vegetable Tanned",
+      "fit": "Structured slouch"
+    },
+    {
+      "id": "knit-turtleneck-no-3",
+      "name": "Knit Turtleneck No. 3",
+      "price": 3899,
+      "description": "Relaxed high-neck sweater knitted from 100% fine virgin wool in an oatmeal ribbed texture.",
+      "category_id": "cat-tops",
+      "category_name": "TOPS",
+      "category_slug": "tops",
+      "image": "/atelier-knitwear.jpg",
+      "images": [
+        "/atelier-knitwear.jpg",
+        "/white-tee.jfif"
+      ],
+      "stock": 30,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "OATMEAL",
+      "product_no": "AT-KNIT-03",
+      "material": "100% Virgin wool",
+      "fabric": "Heavyweight rib",
+      "fit": "Relaxed drape"
+    },
+    {
+      "id": "polished-calfskin-derbies",
+      "name": "Calfskin Derbies",
+      "price": 5299,
+      "description": "Minimalist low-profile derby shoes shaped from polished black calfskin with hand-finished leather soles.",
+      "category_id": "cat-footwear",
+      "category_name": "FOOTWEAR",
+      "category_slug": "footwear",
+      "image": "/atelier-derbies.jpg",
+      "images": [
+        "/atelier-derbies.jpg"
+      ],
+      "stock": 18,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "NOIR",
+      "product_no": "AT-SHOE-01",
+      "material": "Polished calfskin",
+      "fabric": "Leather sole",
+      "fit": "Classic European"
+    },
+    {
+      "id": "tailored-wool-coat",
+      "name": "Double-Breasted Wool Coat",
+      "price": 6999,
+      "description": "Sharp architectural double-breasted long coat in heavyweight charcoal melange wool.",
+      "category_id": "cat-outerwear",
+      "category_name": "OUTERWEAR",
+      "category_slug": "outerwear",
+      "image": "/atelier-coat.jpg",
+      "images": [
+        "/atelier-coat.jpg",
+        "/grey-hoodie.jfif"
+      ],
+      "stock": 15,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "CHARCOAL",
+      "product_no": "AT-COAT-01",
+      "material": "Heavyweight wool melange",
+      "fabric": "Satin lining",
+      "fit": "Tailored silhouette"
+    },
+    {
       "id": "oversized-black-tee",
       "name": "Oversized Black Tee",
       "price": 2499,
@@ -233,6 +347,27 @@
       "slug": "accessories",
       "image": "/white-tee.jfif",
       "description": "Everyday essentials, keychains, stainless jewelry, and socks."
+    },
+    {
+      "id": "cat-tops",
+      "name": "TOPS",
+      "slug": "tops",
+      "image": "/atelier-knitwear.jpg",
+      "description": "Fine knitwear, minimal tees, and structured shirting."
+    },
+    {
+      "id": "cat-outerwear",
+      "name": "OUTERWEAR",
+      "slug": "outerwear",
+      "image": "/atelier-coat.jpg",
+      "description": "Tailored long coats, architectural blazers, and luxury woolens."
+    },
+    {
+      "id": "cat-footwear",
+      "name": "FOOTWEAR",
+      "slug": "footwear",
+      "image": "/atelier-derbies.jpg",
+      "description": "Hand-finished calfskin derbies and European leather shoes."
     }
   ],
   "orders": [
