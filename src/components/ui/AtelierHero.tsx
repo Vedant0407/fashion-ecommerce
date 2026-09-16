@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
@@ -33,19 +33,6 @@ export default function AtelierHero() {
           <div className="atelier-hero-indicator">
             <span className="atelier-hero-index">01 &mdash; 04</span>
             <span className="atelier-hero-scroll">SCROLL &#8595;</span>
-          </div>
-        </div>
-
-        {/* Under-Hero Atelier Brandmark Banner */}
-        <div className="atelier-brand-banner">
-          <div className="atelier-brand-main">
-            <h1 className="atelier-brand-title font-serif">GREENO ATELIER</h1>
-            <p className="atelier-brand-subtitle">Crafted for those who know.</p>
-          </div>
-          <div className="atelier-brand-purity">
-            <span>PARIS / NEW DELHI</span>
-            <span>&bull;</span>
-            <span>LIMITED PRODUCTION RUNS</span>
           </div>
         </div>
       </div>

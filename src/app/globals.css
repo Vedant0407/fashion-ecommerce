@@ -6989,23 +6989,30 @@ select {
 
 /* --- Atelier Hero Section --- */
 .atelier-hero-section {
-  padding: 104px 40px 48px;
+  padding: 86px 28px 36px;
   background: #F7F6F2;
   width: 100%;
+  min-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .atelier-hero-frame {
-  max-width: 1440px;
+  max-width: 1600px;
   margin: 0 auto;
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .atelier-hero-image-wrap {
   position: relative;
   width: 100%;
-  height: calc(100vh - 200px);
-  min-height: 540px;
-  max-height: 780px;
+  height: calc(100vh - 144px);
+  min-height: 680px;
+  max-height: 960px;
   overflow: hidden;
   border-radius: 4px;
   background: #EFECE6;
@@ -7398,13 +7405,14 @@ select {
 
 @media (max-width: 768px) {
   .atelier-hero-section {
-    padding: 80px 16px 28px;
+    padding: 76px 14px 20px;
+    min-height: auto;
   }
 
   .atelier-hero-image-wrap {
-    height: 68vh;
-    min-height: 420px;
-    max-height: 560px;
+    height: calc(100dvh - 100px);
+    min-height: 520px;
+    max-height: 720px;
   }
 
   .atelier-hero-meta {
@@ -7421,17 +7429,6 @@ select {
 
   .atelier-hero-indicator {
     display: none;
-  }
-
-  .atelier-brand-banner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 32px 0 16px;
-  }
-
-  .atelier-brand-title {
-    font-size: 38px;
   }
 
   .atelier-catalog-section {
