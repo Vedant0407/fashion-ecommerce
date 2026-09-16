@@ -5800,7 +5800,7 @@ select {
   .mobile-bottom-dock {
     display: flex !important;
     position: fixed !important;
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     left: 14px !important;
     right: auto !important;
     transform: none !important;
@@ -6871,7 +6871,7 @@ select {
 @media (max-width: 768px) {
   /* Position floating launcher neatly on the right, aligned with bottom-left dock */
   .chatbot-launcher {
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     right: 14px !important;
     width: 50px !important;
     height: 50px !important;
@@ -6989,30 +6989,25 @@ select {
 
 /* --- Atelier Hero Section --- */
 .atelier-hero-section {
-  padding: 86px 28px 36px;
+  padding: 76px 28px 16px;
   background: #F7F6F2;
   width: 100%;
-  min-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
 .atelier-hero-frame {
-  max-width: 1600px;
+  max-width: 1560px;
   margin: 0 auto;
   width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
 .atelier-hero-image-wrap {
   position: relative;
   width: 100%;
-  height: calc(100vh - 144px);
-  min-height: 680px;
-  max-height: 960px;
+  height: calc(100vh - 220px);
+  min-height: 480px;
+  max-height: 680px;
   overflow: hidden;
   border-radius: 4px;
   background: #EFECE6;
@@ -7041,7 +7036,7 @@ select {
 
 .atelier-hero-meta {
   position: absolute;
-  bottom: 44px;
+  bottom: 52px;
   left: 48px;
   max-width: 440px;
   color: #ffffff;
@@ -7090,7 +7085,7 @@ select {
 
 .atelier-hero-indicator {
   position: absolute;
-  bottom: 44px;
+  bottom: 52px;
   right: 48px;
   display: flex;
   flex-direction: column;
@@ -7103,46 +7098,9 @@ select {
   font-weight: 500;
 }
 
-.atelier-brand-banner {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 48px 0 24px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.atelier-brand-title {
-  font-family: var(--font-cormorant), 'Didot', 'Bodoni MT', 'Cinzel', serif !important;
-  font-size: clamp(40px, 6vw, 76px);
-  font-weight: 400;
-  letter-spacing: 0.12em;
-  margin: 0 0 8px;
-  color: #121212;
-  line-height: 1;
-}
-
-.atelier-brand-subtitle {
-  font-size: 13.5px;
-  letter-spacing: 0.08em;
-  color: #666666;
-  margin: 0;
-  font-weight: 400;
-  text-transform: none;
-}
-
-.atelier-brand-purity {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 10.5px;
-  letter-spacing: 0.22em;
-  font-weight: 600;
-  color: #777777;
-}
-
 /* --- Atelier Catalog & Product Grid --- */
 .atelier-catalog-section {
-  padding: 56px 40px 120px;
+  padding: 24px 40px 120px;
   background: #F7F6F2;
   width: 100%;
 }
@@ -7405,18 +7363,18 @@ select {
 
 @media (max-width: 768px) {
   .atelier-hero-section {
-    padding: 76px 14px 20px;
+    padding: 70px 14px 12px;
     min-height: auto;
   }
 
   .atelier-hero-image-wrap {
-    height: calc(100dvh - 100px);
-    min-height: 520px;
-    max-height: 720px;
+    height: 58vh;
+    min-height: 380px;
+    max-height: 520px;
   }
 
   .atelier-hero-meta {
-    bottom: 24px;
+    bottom: 32px;
     left: 20px;
     right: 20px;
     max-width: 100%;
@@ -7432,7 +7390,7 @@ select {
   }
 
   .atelier-catalog-section {
-    padding: 36px 16px 90px;
+    padding: 20px 14px 90px;
   }
 
   .atelier-filter-bar {
