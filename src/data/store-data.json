@@ -31,10 +31,10 @@
       "category_id": "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
       "category_name": "PANTS",
       "category_slug": "pants",
-      "image": "/cargo-pants.jfif",
+      "image": "/atelier-trousers.jpg",
       "images": [
-        "/cargo-pants.jfif",
-        "/atelier-knitwear.jpg"
+        "/atelier-trousers.jpg",
+        "/atelier-trousers-detail.jpg"
       ],
       "stock": 25,
       "is_featured": true,
@@ -57,7 +57,7 @@
       "image": "/atelier-bag.jpg",
       "images": [
         "/atelier-bag.jpg",
-        "/cargo-pants.jfif"
+        "/atelier-bag-detail.jpg"
       ],
       "stock": 20,
       "is_featured": true,

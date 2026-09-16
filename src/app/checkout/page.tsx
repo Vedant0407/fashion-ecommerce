@@ -435,8 +435,8 @@ export default function CheckoutPage() {
       <main className={styles.page}>
         <div className={styles.success}>
           <div>
-            <h1>ORDER PLACED</h1>
-            <p>Redirecting to your order confirmation...</p>
+            <h1>ATELIER ORDER PLACED</h1>
+            <p>Preparing your bespoke atelier order confirmation...</p>
           </div>
         </div>
       </main>
@@ -448,9 +448,9 @@ export default function CheckoutPage() {
       <main className={styles.page}>
         <div className={styles.empty}>
           <div>
-            <p className={styles.crumb}>GREENO / CHECKOUT</p>
-            <h1>YOUR CART IS EMPTY</h1>
-            <Link href="/shop">CONTINUE SHOPPING</Link>
+            <p className={styles.crumb}>GREENO ATELIER / CONCIERGE CHECKOUT</p>
+            <h1>YOUR ATELIER BAG IS EMPTY</h1>
+            <Link href="/shop">EXPLORE ATELIER COLLECTION</Link>
           </div>
         </div>
       </main>
@@ -688,7 +688,7 @@ export default function CheckoutPage() {
             <Link href="/cart" className={`${styles.back} page-back-button`}>
               ← BAG
             </Link>
-            <h1 className={styles.compactTitle}>CHECKOUT</h1>
+            <h1 className={styles.compactTitle}>CONCIERGE CHECKOUT</h1>
           </div>
           <div className={styles.secureBadge}>
             <svg
@@ -710,7 +710,7 @@ export default function CheckoutPage() {
 
         {!isLoggedIn && (
           <div className={styles.guestNotice}>
-            <span>Ordering as guest · Want to save this order to your profile?</span>
+            <span>Ordering as guest · Want to save this order to your client dossier?</span>
             <Link href="/login?redirect=/checkout">LOG IN →</Link>
           </div>
         )}
@@ -719,8 +719,8 @@ export default function CheckoutPage() {
           {/* Left Column: Delivery & Payment Details */}
           <section className={styles.card}>
             <div className={styles.cardHeader}>
-              <span className={styles.stepNum}>1</span>
-              <h2 className={styles.cardTitle}>Delivery &amp; Contact Details</h2>
+              <span className={styles.stepNum}>01</span>
+              <h2 className={styles.cardTitle}>Client &amp; Concierge Delivery</h2>
             </div>
 
             <div className={styles.fieldsGrid}>
@@ -875,8 +875,8 @@ export default function CheckoutPage() {
             {/* Payment Method */}
             <div className={styles.paymentSection}>
               <div className={styles.cardHeader} style={{ marginBottom: "10px" }}>
-                <span className={styles.stepNum}>2</span>
-                <h2 className={styles.cardTitle}>Payment Method</h2>
+                <span className={styles.stepNum}>02</span>
+                <h2 className={styles.cardTitle}>Atelier Settlement Method</h2>
               </div>
 
               <div className={styles.codBox}>
@@ -904,10 +904,10 @@ export default function CheckoutPage() {
           {/* Right Column: Compact Order Summary Card */}
           <aside className={styles.summaryCard}>
             <div className={styles.summaryHeader}>
-              <h2 className={styles.summaryTitle}>Order Summary</h2>
+              <h2 className={styles.summaryTitle}>Atelier Summary</h2>
               <span className={styles.itemCount}>
                 {cart.reduce((s, i) => s + i.quantity, 0)}{" "}
-                {cart.reduce((s, i) => s + i.quantity, 0) === 1 ? "Item" : "Items"}
+                {cart.reduce((s, i) => s + i.quantity, 0) === 1 ? "Piece" : "Pieces"}
               </span>
             </div>
 
@@ -975,7 +975,7 @@ export default function CheckoutPage() {
               disabled={loading}
               onClick={placeOrder}
             >
-              {loading ? "PLACING ORDER..." : "PLACE ORDER (COD)"}
+              {loading ? "PLACING ORDER..." : "CONFIRM & PLACE ATELIER ORDER (COD)"}
             </button>
 
             <div className={styles.trustBadges}>

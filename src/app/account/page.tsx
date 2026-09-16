@@ -361,8 +361,8 @@ function AccountPageContent() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
-        <p className={styles.breadcrumb}>GREENO / MY ACCOUNT</p>
-        <h1 className={styles.title}>MY ACCOUNT</h1>
+        <p className={styles.breadcrumb}>GREENO ATELIER // CLIENT PORTAL</p>
+        <h1 className={styles.title}>CLIENT PORTAL</h1>
 
         {/* Main Reference Card Container */}
         <div className={styles.accountCard}>
@@ -374,7 +374,7 @@ function AccountPageContent() {
               onClick={() => switchTab("orders")}
             >
               <Package className={styles.navIcon} />
-              <span>Order history</span>
+              <span>Order Archive</span>
             </button>
 
             <button
@@ -383,7 +383,7 @@ function AccountPageContent() {
               onClick={() => switchTab("address")}
             >
               <User className={styles.navIcon} />
-              <span>Shipping Address</span>
+              <span>Delivery Concierge</span>
             </button>
 
             <button
@@ -392,7 +392,7 @@ function AccountPageContent() {
               onClick={() => switchTab("wallet")}
             >
               <Wallet className={styles.navIcon} />
-              <span>Wallet Details</span>
+              <span>Atelier Credits</span>
             </button>
 
             <button
@@ -401,7 +401,7 @@ function AccountPageContent() {
               onClick={() => switchTab("account")}
             >
               <User className={styles.navIcon} />
-              <span>Account details</span>
+              <span>Client Dossier</span>
             </button>
 
             <button
@@ -423,8 +423,8 @@ function AccountPageContent() {
             {activeTab === "account" && (
               <div>
                 <div className={styles.tabHeader}>
-                  <h2 className={styles.tabTitle}>Account Details</h2>
-                  <p className={styles.tabSubtitle}>Manage your personal contact details.</p>
+                  <h2 className={styles.tabTitle}>Client Dossier</h2>
+                  <p className={styles.tabSubtitle}>Manage your bespoke delivery contacts and authentication details.</p>
                 </div>
 
                 <div className={styles.fieldList}>
@@ -515,8 +515,8 @@ function AccountPageContent() {
             {activeTab === "orders" && (
               <div>
                 <div className={styles.tabHeader}>
-                  <h2 className={styles.tabTitle}>Order History</h2>
-                  <p className={styles.tabSubtitle}>Review your recent orders and shipment status.</p>
+                  <h2 className={styles.tabTitle}>Order Archive</h2>
+                  <p className={styles.tabSubtitle}>Permanent archive of your acquired pieces and concierge transit status.</p>
                 </div>
 
                 {ordersLoading ? (
@@ -525,7 +525,7 @@ function AccountPageContent() {
                   <div className={styles.emptyState}>
                     <p>No orders placed yet.</p>
                     <Link href="/shop" className={styles.saveButton} style={{ display: "inline-block", marginTop: 12, textDecoration: "none" }}>
-                      Explore Collection
+                      Explore Atelier Collection
                     </Link>
                   </div>
                 ) : (
@@ -579,8 +579,8 @@ function AccountPageContent() {
             {activeTab === "address" && (
               <div>
                 <div className={styles.tabHeader}>
-                  <h2 className={styles.tabTitle}>Shipping Address</h2>
-                  <p className={styles.tabSubtitle}>Your primary delivery destination for orders.</p>
+                  <h2 className={styles.tabTitle}>Delivery Concierge</h2>
+                  <p className={styles.tabSubtitle}>Primary private destination for bespoke dispatches.</p>
                 </div>
 
                 {isEditingAddress ? (
@@ -690,24 +690,24 @@ function AccountPageContent() {
             {activeTab === "wallet" && (
               <div>
                 <div className={styles.tabHeader}>
-                  <h2 className={styles.tabTitle}>Wallet Details</h2>
-                  <p className={styles.tabSubtitle}>View your GreenO Credits and store balance.</p>
+                  <h2 className={styles.tabTitle}>Atelier Credits</h2>
+                  <p className={styles.tabSubtitle}>Available store credit and private client balance.</p>
                 </div>
 
                 <div className={styles.walletCard}>
                   <div className={styles.walletHeader}>
-                    <span className={styles.walletBrand}>GREENO CASH</span>
+                    <span className={styles.walletBrand}>ATELIER PRIVILEGE</span>
                     <Wallet style={{ width: 22, height: 22, color: "#e4e4e7" }} />
                   </div>
                   <h3 className={styles.walletAmount}>₹0.00</h3>
-                  <p className={styles.walletSub}>Available Store Balance & Refund Credits</p>
+                  <p className={styles.walletSub}>Private client account balance &amp; exchange credit</p>
                 </div>
 
                 <div className={styles.walletNote}>
                   <p style={{ margin: "0 0 6px", fontWeight: 600, color: "#111827" }}>
                     How it works
                   </p>
-                  Any approved return refunds or promotional store credits are automatically deposited into your GreenO Cash wallet and can be instantly applied at checkout.
+                  Any approved return refunds or promotional concierge store credits are automatically deposited into your Atelier Privilege balance and can be instantly applied at checkout.
                 </div>
               </div>
             )}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, ShoppingBag } from "lucide-react";
 
 import { useWishlist, WishlistItem } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
@@ -13,22 +13,20 @@ function getWishlistImages(item: WishlistItem): string[] {
   const cat = (item.category || item.name || "").toLowerCase();
 
   let pool: string[];
-  if (cat.includes("tee") || cat.includes("t-shirt") || cat.includes("shirt")) {
-    pool = [baseImg, "/white-tee.jfif", "/grey-hoodie.jfif", "/hero.jfif"];
-  } else if (cat.includes("hoodie") || cat.includes("sweat")) {
-    pool = [baseImg, "/black-tee.jfif", "/hero.jfif", "/white-tee.jfif"];
-  } else if (cat.includes("pant") || cat.includes("cargo") || cat.includes("trouser")) {
-    pool = [baseImg, "/grey-hoodie.jfif", "/black-tee.jfif"];
-  } else if (cat.includes("cap") || cat.includes("hat")) {
-    pool = [baseImg, "/black-tee.jfif", "/white-tee.jfif"];
-  } else if (cat.includes("bag") || cat.includes("crossbody")) {
-    pool = [baseImg, "/cargo-pants.jfif", "/black-tee.jfif"];
+  if (cat.includes("pant") || cat.includes("trouser")) {
+    pool = [baseImg, "/atelier-trousers-detail.jpg", "/atelier-trousers.jpg"];
+  } else if (cat.includes("bag") || cat.includes("tote")) {
+    pool = [baseImg, "/atelier-bag-detail.jpg", "/atelier-tote-bag.jpg"];
+  } else if (cat.includes("tee") || cat.includes("t-shirt") || cat.includes("shirt")) {
+    pool = [baseImg, "/white-tee.jfif", "/grey-hoodie.jfif"];
+  } else if (cat.includes("hoodie") || cat.includes("knit") || cat.includes("sweater")) {
+    pool = [baseImg, "/atelier-knitwear.jpg", "/grey-hoodie.jfif"];
   } else {
-    pool = [baseImg, "/white-tee.jfif", "/black-tee.jfif", "/grey-hoodie.jfif"];
+    pool = [baseImg, "/atelier-hero-model.jpg", "/atelier-coat.jpg"];
   }
 
   const unique = pool.filter((img, idx, arr) => arr.indexOf(img) === idx);
-  return unique.length > 1 ? unique : [baseImg, "/black-tee.jfif", "/white-tee.jfif"];
+  return unique.length > 1 ? unique : [baseImg];
 }
 
 function WishlistItemCard({
@@ -43,7 +41,7 @@ function WishlistItemCard({
   const [isAdded, setIsAdded] = useState(false);
 
   const images = getWishlistImages(item);
-  const currentImage = images[photoIndex] || images[0] || item.image || "/black-tee.jfif";
+  const currentImage = images[photoIndex] || images[0] || item.image || "/atelier-trousers.jpg";
 
   const handlePrevPhoto = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -79,24 +77,26 @@ function WishlistItemCard({
   };
 
   return (
-    <article className="wishlist-card product-card">
-      {/* Wishlist Remove Button */}
+    <article className="atelier-card" style={{ position: "relative" }}>
+      {/* Remove from Wishlist Button */}
       <button
         type="button"
-        className="product-wishlist-btn"
+        className="atelier-wishlist-btn"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           onRemove(item.id);
         }}
         aria-label="Remove from wishlist"
-        title="Remove from wishlist"
+        title="Remove piece from wishlist"
       >
         <svg
           viewBox="0 0 24 24"
-          fill="#000000"
-          stroke="#000000"
-          strokeWidth="1.6"
+          width="16"
+          height="16"
+          fill="#121212"
+          stroke="#121212"
+          strokeWidth="1.5"
         >
           <path
             strokeLinecap="round"
@@ -106,124 +106,125 @@ function WishlistItemCard({
         </svg>
       </button>
 
-      {/* Image with Left/Right Photo Slide Animation */}
-      <div className="product-image-container">
+      {/* 3:4 Editorial Image Container */}
+      <div className="atelier-image-box">
         <Link
           href={`/products/${item.id}?from=wishlist`}
-          className="product-image-link"
+          style={{ display: "block", width: "100%", height: "100%" }}
         >
-          <div
-            className="product-image-track"
-            style={{
-              display: "flex",
-              width: "100%",
-              height: "100%",
-              transform: `translateX(-${photoIndex * 100}%)`,
-              transition: "transform 0.38s cubic-bezier(0.22, 1, 0.36, 1)",
-            }}
-          >
-            {images.map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`${item.name} - Angle ${idx + 1}`}
-                className="product-card-img"
-                style={{
-                  flex: "0 0 100%",
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-            ))}
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={currentImage}
+            alt={item.name}
+            className="atelier-product-img"
+          />
         </Link>
 
-        {/* Photo count indicator on hover */}
+        {/* Multi-angle slide controls if available */}
         {images.length > 1 && (
-          <span className="product-photo-indicator">
-            {photoIndex + 1} / {images.length}
-          </span>
+          <>
+            <button
+              type="button"
+              onClick={handlePrevPhoto}
+              style={{
+                position: "absolute",
+                left: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "rgba(255, 255, 255, 0.85)",
+                backdropFilter: "blur(6px)",
+                border: "none",
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                zIndex: 4,
+                color: "#121212",
+              }}
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={16} strokeWidth={2} />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNextPhoto}
+              style={{
+                position: "absolute",
+                right: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "rgba(255, 255, 255, 0.85)",
+                backdropFilter: "blur(6px)",
+                border: "none",
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                zIndex: 4,
+                color: "#121212",
+              }}
+              aria-label="Next image"
+            >
+              <ChevronRight size={16} strokeWidth={2} />
+            </button>
+          </>
         )}
 
-        {/* Photo dots indicator on hover */}
-        {images.length > 1 && (
-          <div className="product-photo-dots">
-            {images.map((_, dotIdx) => (
-              <span
-                key={dotIdx}
-                className={`product-photo-dot ${
-                  dotIdx === photoIndex ? "active" : ""
-                }`}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Left Arrow Button */}
-        <button
-          type="button"
-          className="product-card-arrow product-card-arrow-left"
-          onClick={handlePrevPhoto}
-          aria-label="Previous photo"
-          title="Previous photo"
-        >
-          <ChevronLeft size={20} strokeWidth={2.2} />
-        </button>
-
-        {/* Right Arrow Button */}
-        <button
-          type="button"
-          className="product-card-arrow product-card-arrow-right"
-          onClick={handleNextPhoto}
-          aria-label="Next photo"
-          title="Next photo"
-        >
-          <ChevronRight size={20} strokeWidth={2.2} />
-        </button>
-
-        {/* Hover Pop-Up ADD TO CART Button on Bottom of Photo */}
-        <button
-          type="button"
-          className={`product-add-to-cart-btn ${isAdded ? "added" : ""}`}
-          onClick={handleAddToCart}
-          aria-label={isAdded ? "Added to cart" : `Add ${item.name} to cart`}
-        >
-          {isAdded ? (
-            <>
-              <Check size={14} /> ADDED TO CART
-            </>
-          ) : (
-            "ADD TO CART"
-          )}
-        </button>
+        {/* Hover Quick Add to Bag */}
+        <div className="atelier-quick-add">
+          <button
+            type="button"
+            className="atelier-quick-btn"
+            onClick={handleAddToCart}
+          >
+            {isAdded ? (
+              <>
+                <Check size={13} strokeWidth={2.5} /> ADDED TO BAG
+              </>
+            ) : (
+              <>
+                <ShoppingBag size={13} strokeWidth={2} /> ADD TO SHOPPING BAG
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Product Info */}
-      <Link
-        href={`/products/${item.id}?from=wishlist`}
-        className="product-info-link"
-      >
-        <div className="product-info">
-          <span
-            style={{
-              fontSize: "9px",
-              letterSpacing: "0.18em",
-              color: "#888888",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              display: "block",
-              marginBottom: "4px",
-            }}
+      {/* Piece Information */}
+      <div className="atelier-details">
+        <span
+          style={{
+            fontSize: "9.5px",
+            letterSpacing: "0.2em",
+            color: "#777777",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            display: "block",
+            marginBottom: "2px",
+          }}
+        >
+          {item.category || "ATELIER EDITION"}
+        </span>
+
+        <div className="atelier-title-row">
+          <Link
+            href={`/products/${item.id}?from=wishlist`}
+            style={{ textDecoration: "none", color: "inherit", flex: 1 }}
           >
-            {item.category || "GREENO"}
-          </span>
-          <p className="product-name">{item.name}</p>
-          <span className="product-price">
+            <h3 className="atelier-product-name">{item.name}</h3>
+          </Link>
+          <span className="atelier-product-price">
             ₹{Number(item.price).toLocaleString("en-IN")}
           </span>
         </div>
-      </Link>
+      </div>
     </article>
   );
 }
@@ -236,15 +237,15 @@ export default function WishlistPage() {
     <main
       style={{
         minHeight: "100vh",
-        padding: "135px 5vw 90px",
-        background: "#ffffff",
-        color: "#000000",
+        padding: "130px 5vw 90px",
+        background: "#F7F6F2",
+        color: "#121212",
+        boxSizing: "border-box",
       }}
     >
-      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        {/* Breadcrumb & Back */}
+      <div style={{ maxWidth: "1360px", margin: "0 auto" }}>
+        {/* Navigation & Breadcrumb */}
         <div
-          className="wishlist-header-nav"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -254,43 +255,48 @@ export default function WishlistPage() {
         >
           <button
             onClick={() => router.back()}
-            className="wishlist-back-button page-back-button"
             style={{
               background: "transparent",
               border: "none",
-              fontSize: "10px",
-              letterSpacing: "0.2em",
+              fontSize: "10.5px",
+              letterSpacing: "0.18em",
               color: "#777777",
               cursor: "pointer",
               padding: 0,
               fontWeight: 600,
+              textTransform: "uppercase",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              transition: "color 0.2s ease",
             }}
           >
-            &larr; BACK
+            ← BACK
           </button>
           <span
             style={{
               fontSize: "10px",
               letterSpacing: "0.22em",
-              color: "#999999",
+              color: "#777777",
               fontWeight: 600,
+              textTransform: "uppercase",
             }}
           >
-            GREENO / WISHLIST
+            GREENO ATELIER // WISHLIST
           </span>
         </div>
 
-        {/* Heading */}
+        {/* Heading & Counter */}
         <div
           style={{
-            borderBottom: "1px solid #e5e5e5",
-            paddingBottom: "25px",
-            marginBottom: "40px",
+            borderBottom: "1px solid #E7E5DF",
+            paddingBottom: "22px",
+            marginBottom: "44px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-end",
             flexWrap: "wrap",
-            gap: "15px",
+            gap: "16px",
           }}
         >
           <div>
@@ -301,6 +307,7 @@ export default function WishlistPage() {
                 letterSpacing: "0.22em",
                 color: "#777777",
                 fontWeight: 600,
+                textTransform: "uppercase",
               }}
             >
               SAVED PIECES
@@ -308,27 +315,29 @@ export default function WishlistPage() {
             <h1
               style={{
                 margin: 0,
-                fontSize: "28px",
-                letterSpacing: "-0.02em",
-                fontWeight: 800,
-                lineHeight: 1.1,
+                fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
+                fontSize: "36px",
+                letterSpacing: "0.02em",
+                fontWeight: 400,
+                lineHeight: 1.15,
                 textTransform: "uppercase",
-                color: "#111111",
+                color: "#121212",
               }}
             >
-              MY WISHLIST
+              CURATED WISHLIST
             </h1>
           </div>
 
           <span
             style={{
-              fontSize: "11px",
-              letterSpacing: "0.15em",
-              color: "#777777",
-              fontWeight: 500,
+              fontSize: "10.5px",
+              letterSpacing: "0.18em",
+              color: "#555555",
+              fontWeight: 600,
+              textTransform: "uppercase",
             }}
           >
-            {wishlist.length} {wishlist.length === 1 ? "SAVED PIECE" : "SAVED PIECES"}
+            {wishlist.length} {wishlist.length === 1 ? "PIECE" : "PIECES"}
           </span>
         </div>
 
@@ -336,61 +345,68 @@ export default function WishlistPage() {
           <div
             style={{
               textAlign: "center",
-              padding: "100px 20px",
-              background: "#fafafa",
-              border: "1px solid #e5e5e5",
+              padding: "100px 30px",
+              background: "#FFFFFF",
+              border: "1px solid #E7E5DF",
+              borderRadius: "2px",
+              maxWidth: "680px",
+              margin: "0 auto",
             }}
           >
             <p
               style={{
-                fontSize: "11px",
-                letterSpacing: "0.25em",
+                fontSize: "10px",
+                letterSpacing: "0.22em",
                 color: "#777777",
                 fontWeight: 600,
                 marginBottom: "12px",
+                textTransform: "uppercase",
               }}
             >
-              NO SAVED ITEMS
+              CURATION VACANT
             </p>
             <h2
               style={{
                 margin: "0 0 16px",
-                fontSize: "20px",
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                color: "#111111",
+                fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
+                fontSize: "26px",
+                fontWeight: 400,
+                letterSpacing: "0.02em",
+                color: "#121212",
+                textTransform: "uppercase",
               }}
             >
-              Your wishlist is currently empty.
+              Your wishlist is currently unpopulated
             </h2>
             <p
               style={{
-                margin: "0 auto 30px",
-                maxWidth: "480px",
+                margin: "0 auto 32px",
+                maxWidth: "460px",
                 color: "#666666",
-                fontSize: "14px",
+                fontSize: "13px",
                 lineHeight: 1.6,
               }}
             >
-              Tap the heart icon on any piece across the catalogue to keep track of your favorite drops.
+              Preserve your favorite silhouettes, tailoring, and leather goods from the Atelier collection for future acquisition.
             </p>
             <Link
               href="/shop"
               style={{
                 display: "inline-block",
-                padding: "14px 34px",
-                background: "#000000",
-                color: "#ffffff",
-                border: "1px solid #000000",
-                borderRadius: "0px",
+                padding: "14px 36px",
+                background: "#121212",
+                color: "#FFFFFF",
+                border: "1px solid #121212",
+                borderRadius: "2px",
                 fontSize: "11px",
-                letterSpacing: "0.18em",
-                fontWeight: 700,
+                letterSpacing: "0.2em",
+                fontWeight: 600,
                 textDecoration: "none",
+                textTransform: "uppercase",
                 transition: "all 0.25s ease",
               }}
             >
-              DISCOVER CATALOGUE &rarr;
+              DISCOVER ATELIER COLLECTION &rarr;
             </Link>
           </div>
         ) : (
@@ -398,7 +414,7 @@ export default function WishlistPage() {
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-              gap: "35px 20px",
+              gap: "48px 24px",
             }}
           >
             {wishlist.map((item) => (

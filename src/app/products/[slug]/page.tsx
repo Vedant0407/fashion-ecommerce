@@ -3,11 +3,11 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { Heart, ShoppingBag, ArrowLeft, ChevronLeft, ChevronRight, ShieldCheck, Truck, RefreshCw, ZoomIn } from "lucide-react";
 
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import AboutSection from "@/components/ui/AboutSection";
-import { ImageSwiper } from "@/components/ui/image-swiper";
 import ProductImageLightbox from "@/components/ProductImageLightbox";
 import { Product, getProductByIdOrSlug, getAllProducts } from "@/lib/catalog";
 
@@ -19,26 +19,26 @@ function getCategoryGroup(item?: Product | null): string {
   const title = item.name?.toLowerCase().trim() || "";
   const text = `${slug} ${name} ${id} ${title}`;
 
-  if (slug === "t-shirts" || text.includes("tee") || text.includes("t-shirt") || text.includes("tshirt")) {
-    return "t-shirts";
-  }
-  if (slug === "hoodies" || text.includes("hoodie") || text.includes("fleece") || text.includes("sweatshirt")) {
-    return "hoodies";
-  }
   if (slug === "pants" || text.includes("pant") || text.includes("cargo") || text.includes("trouser")) {
     return "pants";
   }
-  if (slug === "caps" || text.includes("cap") || text.includes("hat") || text.includes("beanie")) {
-    return "caps";
+  if (slug === "tops" || slug === "t-shirts" || text.includes("tee") || text.includes("t-shirt") || text.includes("shirt") || text.includes("turtleneck")) {
+    return "tops";
+  }
+  if (slug === "outerwear" || slug === "hoodies" || text.includes("hoodie") || text.includes("coat") || text.includes("jacket")) {
+    return "outerwear";
   }
   if (slug === "bags" || text.includes("bag") || text.includes("tote") || text.includes("crossbody")) {
     return "bags";
   }
-  if (slug === "accessories" || text.includes("chain") || text.includes("accessory") || text.includes("jewelry") || text.includes("sock")) {
+  if (slug === "footwear" || text.includes("shoe") || text.includes("derb") || text.includes("foot")) {
+    return "footwear";
+  }
+  if (slug === "accessories" || text.includes("chain") || text.includes("accessory") || text.includes("cap") || text.includes("hat")) {
     return "accessories";
   }
 
-  return slug || name || "other";
+  return slug || name || "atelier";
 }
 
 function isSameCategory(a?: Product | null, b?: Product | null): boolean {
@@ -55,28 +55,28 @@ function isSameCategory(a?: Product | null, b?: Product | null): boolean {
 }
 
 function getCategoryDisplayName(item?: Product | null): string {
-  if (!item) return "PIECES";
+  if (!item) return "ATELIER";
   const group = getCategoryGroup(item);
   switch (group) {
-    case "t-shirts":
-      return "T-SHIRTS";
-    case "hoodies":
-      return "HOODIES";
     case "pants":
-      return "PANTS & CARGOS";
-    case "caps":
-      return "CAPS & HEADWEAR";
+      return "PANTS & TROUSERS";
+    case "tops":
+      return "TOPS & KNITWEAR";
+    case "outerwear":
+      return "OUTERWEAR & COATS";
     case "bags":
       return "BAGS & TOTES";
+    case "footwear":
+      return "FOOTWEAR & SHOES";
     case "accessories":
       return "ACCESSORIES";
     default:
-      return item.category_name?.toUpperCase() || "SIMILAR PIECES";
+      return item.category_name?.toUpperCase() || "ATELIER COLLECTION";
   }
 }
 
 export default function ProductPage() {
-  const { addToCart } = useCart();
+  const { addToCart, openCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const params = useParams();
   const router = useRouter();
@@ -99,22 +99,10 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("M");
   const [selectedColor, setSelectedColor] = useState<string>("BLACK");
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-
-  // Navigation context: 'newin' | 'trending' | 'products'
-  const [browseContext, setBrowseContext] = useState<string | null>(null);
-  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const sp = new URLSearchParams(window.location.search);
-      const from = sp.get("from") || sp.get("section") || sp.get("ref");
-      if (from) {
-        setBrowseContext(from.toLowerCase());
-      }
-    }
-  }, [slug]);
+  const [openAccordion, setOpenAccordion] = useState<string | null>("details");
 
   useEffect(() => {
     if (!slug) return;
@@ -129,6 +117,7 @@ export default function ProductPage() {
               ? found.colors[0]
               : found.color || "BLACK";
           setSelectedColor(defaultColor);
+          setActiveImageIndex(0);
 
           // If size_stock is present and "M" has 0 units, pick first in-stock size
           if (found.size_stock && typeof found.size_stock === "object") {
@@ -188,90 +177,19 @@ export default function ProductPage() {
     };
   }, []);
 
-  // Determine effective context: "search" | "newin" | "trending" | "products"
-  const activeContext: "search" | "newin" | "trending" | "products" = useMemo(() => {
-    if (browseContext === "search") return "search";
-    if (browseContext === "newin" || browseContext === "new") return "newin";
-    if (browseContext === "trending") return "trending";
-    if (browseContext === "products" || browseContext === "catalogue" || browseContext === "category") return "products";
-
-    // If no explicit query param, determine from product's own tags/flags
-    if (product?.is_new) return "newin";
-    if (product?.is_trending) return "trending";
-    return "products";
-  }, [browseContext, product]);
-
-  // Under-the-product items tailored exclusively to the context
-  const underProducts = useMemo(() => {
+  const complementaryProducts = useMemo(() => {
     if (!product) return [];
-
-    if (activeContext === "search") {
-      // ONLY pieces from the exact same category as the opened product (e.g. only T-Shirts under T-Shirts)
-      return allProducts.filter(
-        (item) => item.id !== product.id && isSameCategory(product, item)
-      );
-    }
-
-    if (activeContext === "newin") {
-      // ONLY New In products, excluding current product
-      const news = allProducts.filter(
-        (item) => item.id !== product.id && Boolean(item.is_new)
-      );
-      return news.length > 0 ? news : allProducts.filter((item) => item.id !== product.id).slice(0, 4);
-    }
-
-    if (activeContext === "trending") {
-      // ONLY Trending products, excluding current product
-      const trends = allProducts.filter(
-        (item) => item.id !== product.id && Boolean(item.is_trending)
-      );
-      return trends.length > 0 ? trends : allProducts.filter((item) => item.id !== product.id).slice(0, 4);
-    }
-
-    // Standard product/collection: pieces from the exact same category
+    // Prioritize pieces from same category or curated atelier pieces
     const sameCategory = allProducts.filter(
       (item) => item.id !== product.id && isSameCategory(product, item)
     );
-    if (sameCategory.length > 0) {
-      return sameCategory;
+    if (sameCategory.length >= 4) {
+      return sameCategory.slice(0, 4);
     }
+    const otherPieces = allProducts.filter((item) => item.id !== product.id && !sameCategory.some((s) => s.id === item.id));
+    return [...sameCategory, ...otherPieces].slice(0, 4);
+  }, [allProducts, product]);
 
-    return allProducts.filter((item) => item.id !== product.id).slice(0, 4);
-  }, [allProducts, product, activeContext]);
-
-  // Section header for recommended pieces under the product
-  const sectionHeaderInfo = useMemo(() => {
-    const catDisplayName = getCategoryDisplayName(product);
-
-    if (activeContext === "search") {
-      return {
-        kicker: `SEARCH RESULTS // ${catDisplayName}`,
-        title: `MORE ${catDisplayName}`,
-        subtitle: `Explore other ${catDisplayName.toLowerCase()} matching your selection.`,
-      };
-    }
-    if (activeContext === "newin") {
-      return {
-        kicker: "SPRING / SUMMER 2026 // NEW ARRIVALS",
-        title: "MORE NEW IN PIECES",
-        subtitle: "Explore other recently released streetwear drops.",
-      };
-    }
-    if (activeContext === "trending") {
-      return {
-        kicker: "SEASON ESSENTIALS // TRENDING NOW",
-        title: "MORE TRENDING PIECES",
-        subtitle: "Most coveted streetwear styles of the week.",
-      };
-    }
-    return {
-      kicker: `GREENO // ${catDisplayName}`,
-      title: `MORE ${catDisplayName}`,
-      subtitle: `Curated streetwear pieces designed to complete the look.`,
-    };
-  }, [activeContext, product]);
-
-  // Size-wise stock calculation (Placed before conditional returns to adhere to React Rules of Hooks)
   const currentSizeQty = useMemo(() => {
     if (!product) return 0;
     if (product.size_stock && typeof product.size_stock === "object") {
@@ -287,9 +205,10 @@ export default function ProductPage() {
 
   if (loading) {
     return (
-      <main className="product-page">
-        <div className="product-not-found">
-          <h1>LOADING PRODUCT...</h1>
+      <main className="atelier-pdp-page">
+        <div className="atelier-pdp-loading">
+          <div className="atelier-pdp-spinner" />
+          <p>LOADING SILHOUETTE...</p>
         </div>
       </main>
     );
@@ -297,24 +216,25 @@ export default function ProductPage() {
 
   if (!product) {
     return (
-      <main className="product-page">
-        <div className="product-not-found">
-          <h1>PRODUCT NOT FOUND</h1>
-
-          <Link href="/products">
-            BACK TO PRODUCTS
+      <main className="atelier-pdp-page">
+        <div className="atelier-pdp-not-found">
+          <h2>PIECE NOT FOUND</h2>
+          <p>This silhouette is either archived or no longer available in current runs.</p>
+          <Link href="/" className="atelier-pdp-btn-return">
+            RETURN TO ATELIER
           </Link>
         </div>
       </main>
     );
   }
 
-  const image = product.image || "/black-tee.jfif";
-
+  const primaryImage = product.image || "/atelier-bag.jpg";
   const productImages =
     product.images && product.images.length > 0
       ? product.images
-      : [image];
+      : [primaryImage];
+
+  const currentDisplayImage = productImages[activeImageIndex] || productImages[0] || primaryImage;
 
   const handleAddToCart = () => {
     if (isSizeOutOfStock) return;
@@ -323,594 +243,507 @@ export default function ProductPage() {
         id: product.id,
         name: product.name,
         price: Number(product.price),
-        image: image,
+        image: currentDisplayImage,
         size: selectedSize,
         color: selectedColor || product.color || "BLACK",
       },
       quantity
     );
     setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    openCart();
+    setTimeout(() => setAdded(false), 2200);
+  };
+
+  const handleWishlistClick = () => {
+    toggleWishlist({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: currentDisplayImage,
+      category: product.category_name || "ATELIER",
+    });
   };
 
   return (
     <>
-      <main className="product-page">
+      <main className="atelier-pdp-page">
+        <div className="atelier-pdp-container">
+          
+          {/* Top Breadcrumbs & Back Navigation */}
+          <nav className="atelier-pdp-nav" aria-label="Breadcrumb">
+            <button
+              type="button"
+              className="atelier-pdp-back-link"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft size={13} strokeWidth={1.75} />
+              <span>BACK</span>
+            </button>
+            <div className="atelier-pdp-breadcrumb-trail">
+              <Link href="/">ATELIER</Link>
+              <span className="atelier-breadcrumb-sep">/</span>
+              <span className="atelier-breadcrumb-curr">{getCategoryDisplayName(product)}</span>
+              <span className="atelier-breadcrumb-sep">/</span>
+              <span className="atelier-breadcrumb-piece">{product.name}</span>
+            </div>
+          </nav>
 
-        {/* BACK BUTTON */}
-        <button
-          className="product-back-button"
-          onClick={() => router.back()}
-        >
-          ← BACK
-        </button>
+          {/* Main 2-Column Luxury Layout */}
+          <div className="atelier-pdp-layout">
+            
+            {/* Left: Editorial Imagery Showcase */}
+            <div className="atelier-pdp-gallery-col">
+              <div className="atelier-pdp-main-image-wrap">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={currentDisplayImage}
+                  alt={product.name}
+                  className="atelier-pdp-main-image"
+                  onClick={() => {
+                    setLightboxIndex(activeImageIndex);
+                    setLightboxOpen(true);
+                  }}
+                />
 
-        <div className="product-detail">
-
-          {/* LEFT - PRODUCT DETAILS (ONLY THE SELECTED PRODUCT) */}
-          <div className="product-left">
-
-            {/* 1. PRODUCT HEADER BLOCK (CATEGORY, TITLE, PRICE) */}
-            <div className="product-header-block">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "8px" }}>
-                <p className="product-category" style={{ margin: 0 }}>
-                  {activeContext === "newin"
-                    ? "GREENO // NEW IN"
-                    : activeContext === "trending"
-                    ? "GREENO // TRENDING"
-                    : `GREENO // ${product.category_name || "COLLECTION"}`}
-                </p>
-                {product.collection_tag && (
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      letterSpacing: "0.1em",
-                      background: "#000000",
-                      color: "#ffffff",
-                      padding: "2px 8px",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    COLLECTION: {product.collection_tag}
+                {/* Subtle Image Counter & Zoom Indicator */}
+                <div className="atelier-pdp-image-meta">
+                  <span className="atelier-pdp-slide-counter">
+                    {String(activeImageIndex + 1).padStart(2, "0")} &mdash; {String(productImages.length).padStart(2, "0")}
                   </span>
+                  <button
+                    type="button"
+                    className="atelier-pdp-zoom-trigger"
+                    onClick={() => {
+                      setLightboxIndex(activeImageIndex);
+                      setLightboxOpen(true);
+                    }}
+                    title="Inspect high-resolution details"
+                  >
+                    <ZoomIn size={14} strokeWidth={1.75} />
+                    <span>ZOOM</span>
+                  </button>
+                </div>
+
+                {/* Arrow Navigation if multiple images */}
+                {productImages.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="atelier-pdp-nav-arrow prev"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIndex((prev) => (prev === 0 ? productImages.length - 1 : prev - 1));
+                      }}
+                      aria-label="Previous photo"
+                    >
+                      <ChevronLeft size={16} strokeWidth={1.5} />
+                    </button>
+                    <button
+                      type="button"
+                      className="atelier-pdp-nav-arrow next"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIndex((prev) => (prev === productImages.length - 1 ? 0 : prev + 1));
+                      }}
+                      aria-label="Next photo"
+                    >
+                      <ChevronRight size={16} strokeWidth={1.5} />
+                    </button>
+                  </>
                 )}
               </div>
 
-              <h1>{product.name}</h1>
-
-              <div className="product-price-row">
-                <p className="product-price">
-                  ₹{Number(product.price).toLocaleString("en-IN")}
-                </p>
-                <span className="product-tax-note">MRP incl. of all taxes</span>
-              </div>
+              {/* Thumbnails Row */}
+              {productImages.length > 1 && (
+                <div className="atelier-pdp-thumbs">
+                  {productImages.map((thumb, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className={`atelier-pdp-thumb-btn ${activeImageIndex === idx ? "active" : ""}`}
+                      onClick={() => setActiveImageIndex(idx)}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={thumb} alt={`${product.name} detail view ${idx + 1}`} />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* 2. PRODUCT SPECIFICATIONS BLOCK (DESCRIPTION, MATERIAL, FIT) */}
-            <div className="product-specs-block">
-              <div className="product-left-section">
-                <h3>DESCRIPTION</h3>
+            {/* Right: Editorial Information & Checkout Controls */}
+            <div className="atelier-pdp-info-col">
+              <div className="atelier-pdp-info-sticky">
+                
+                {/* Header Block */}
+                <div className="atelier-pdp-header">
+                  <div className="atelier-pdp-edition-kicker">
+                    <span>SS&apos;26 &mdash; ATELIER</span>
+                    {product.product_no && (
+                      <span className="atelier-pdp-sku">NO. {product.product_no}</span>
+                    )}
+                  </div>
 
-                <p style={{ whiteSpace: "pre-line", lineHeight: "1.6" }}>
-                  {product.description ||
-                    `Exclusive ${product.name} designed with premium streetwear styling, heavyweight construction, and relaxed silhouette.`}
-                </p>
-              </div>
+                  <h1 className="atelier-pdp-title">{product.name}</h1>
 
-              <div className="product-left-section">
-                <h3>MATERIAL &amp; FABRIC</h3>
-                <p>
-                  {product.material
-                    ? product.fabric
-                      ? `${product.material} • ${product.fabric}`
-                      : product.material
-                    : product.fabric || "Heavyweight Premium Combed Cotton"}
-                </p>
-              </div>
+                  <div className="atelier-pdp-price-wrap">
+                    <span className="atelier-pdp-price">
+                      ₹{Number(product.price).toLocaleString("en-IN")}
+                    </span>
+                    <span className="atelier-pdp-price-note">
+                      MRP INCL. OF ALL TAXES &bull; COMPLIMENTARY COURIER
+                    </span>
+                  </div>
+                </div>
 
-              <div className="product-left-section">
-                <h3>FIT SPECIFICATION</h3>
-                <p>
-                  {product.fit || "Relaxed Boxy Fit"}
-                </p>
-              </div>
-            </div>
+                {/* Editorial Description */}
+                <div className="atelier-pdp-desc">
+                  <p>
+                    {product.description ||
+                      "Architectural silhouette crafted with heavyweight texture, refined proportions, and fluid drape. Designed for quiet timeless elegance."}
+                  </p>
+                </div>
 
-            {/* DETAILS ACCORDIONS */}
-            <div className="product-accordions">
+                {/* Micro Specification Grid */}
+                <div className="atelier-pdp-specs-grid">
+                  <div className="atelier-pdp-spec-item">
+                    <span className="spec-label">COMPOSITION</span>
+                    <span className="spec-val">{product.material || "100% Virgin Wool / Calfskin"}</span>
+                  </div>
+                  <div className="atelier-pdp-spec-item">
+                    <span className="spec-label">FABRIC</span>
+                    <span className="spec-val">{product.fabric || "Heavyweight Rib / Fine Grain"}</span>
+                  </div>
+                  <div className="atelier-pdp-spec-item">
+                    <span className="spec-label">SILHOUETTE</span>
+                    <span className="spec-val">{product.fit || "Relaxed Architectural Drape"}</span>
+                  </div>
+                </div>
 
-              {/* 1. PRODUCT DETAILS */}
-              <div className="product-accordion">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenAccordion(openAccordion === "details" ? null : "details")
-                  }
-                >
-                  <span>PRODUCT DETAILS &amp; SPECIFICATIONS</span>
-                  <span>{openAccordion === "details" ? "−" : "+"}</span>
-                </button>
+                {/* Divider Rule */}
+                <div className="atelier-pdp-rule" />
 
-                <div
-                  className="accordion-content"
-                  style={{
-                    display: openAccordion === "details" ? "block" : "none",
-                    paddingBottom: "18px",
-                  }}
-                >
-                  <ul
-                    style={{
-                      margin: "6px 0 0 0",
-                      paddingLeft: "18px",
-                      fontSize: "12px",
-                      color: "#666666",
-                      lineHeight: "1.7",
-                    }}
+                {/* Color Selection */}
+                <div className="atelier-pdp-option-group">
+                  <div className="atelier-pdp-option-label-row">
+                    <span className="option-title">COLORWAY</span>
+                    <span className="option-selected-val">{selectedColor}</span>
+                  </div>
+                  <div className="atelier-pdp-color-swatches">
+                    {(Array.isArray(product.colors) && product.colors.length > 0
+                      ? product.colors
+                      : [product.color || "BLACK"]
+                    ).map((col) => {
+                      const COLOR_MAP: Record<string, string> = {
+                        BLACK: "#121212",
+                        NOIR: "#121212",
+                        WHITE: "#FAF9F6",
+                        GREY: "#71717A",
+                        GRAY: "#71717A",
+                        OLIVE: "#4B5320",
+                        BEIGE: "#D7CFBD",
+                        CREAM: "#F7F5EE",
+                        NAVY: "#1B263B",
+                        BROWN: "#4A3525",
+                        CHARCOAL: "#242426",
+                        OATMEAL: "#E6DEC8",
+                        SAGE: "#9FAF90",
+                      };
+                      const hex = COLOR_MAP[col.toUpperCase()] || "#2D2D2D";
+                      const isSelected = selectedColor.toUpperCase() === col.toUpperCase();
+
+                      return (
+                        <button
+                          key={col}
+                          type="button"
+                          className={`atelier-color-chip ${isSelected ? "active" : ""}`}
+                          onClick={() => setSelectedColor(col)}
+                          title={`Select ${col}`}
+                        >
+                          <span
+                            className="swatch-dot"
+                            style={{
+                              backgroundColor: hex,
+                              border: col.toUpperCase() === "WHITE" ? "1px solid #D1CEC7" : undefined,
+                            }}
+                          />
+                          <span className="swatch-text">{col.toUpperCase()}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Size Selection */}
+                <div className="atelier-pdp-option-group">
+                  <div className="atelier-pdp-option-label-row">
+                    <span className="option-title">CHOOSE SIZE</span>
+                    {isSizeLowStock && (
+                      <span className="option-warning">ONLY {currentSizeQty} UNITS REMAINING</span>
+                    )}
+                    {isSizeOutOfStock && (
+                      <span className="option-danger">SIZE {selectedSize} OUT OF STOCK</span>
+                    )}
+                  </div>
+                  <div className="atelier-pdp-size-tiles">
+                    {(["S", "M", "L", "XL", "XXL"] as const).map((sz) => {
+                      const qty =
+                        product.size_stock && typeof product.size_stock === "object"
+                          ? product.size_stock[sz] !== undefined
+                            ? Number(product.size_stock[sz]) || 0
+                            : Number(product.stock) || 0
+                          : Number(product.stock ?? 10);
+                      const isOut = qty <= 0;
+                      const isSelected = selectedSize === sz;
+
+                      return (
+                        <button
+                          key={sz}
+                          type="button"
+                          disabled={isOut}
+                          className={`atelier-size-tile ${isSelected ? "active" : ""} ${isOut ? "disabled" : ""}`}
+                          onClick={() => setSelectedSize(sz)}
+                        >
+                          {sz}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Quantity Selector */}
+                <div className="atelier-pdp-option-group">
+                  <div className="atelier-pdp-option-label-row">
+                    <span className="option-title">QUANTITY</span>
+                  </div>
+                  <div className="atelier-pdp-qty-stepper">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      &minus;
+                    </button>
+                    <span>{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(quantity + 1)}
+                    >
+                      &#43;
+                    </button>
+                  </div>
+                </div>
+
+                {/* Action Buttons: Add to Bag & Wishlist */}
+                <div className="atelier-pdp-actions">
+                  <button
+                    type="button"
+                    className="atelier-pdp-add-btn"
+                    onClick={handleAddToCart}
+                    disabled={isSizeOutOfStock}
                   >
-                    <li>
-                      <strong>Material / Composition:</strong>{" "}
-                      {product.material || "100% Combed Cotton"}
-                    </li>
-                    <li>
-                      <strong>Fabric Construction:</strong>{" "}
-                      {product.fabric || "Heavyweight Premium Knit"}
-                    </li>
-                    <li>
-                      <strong>Fit Silhouette:</strong>{" "}
-                      {product.fit || "Relaxed Boxy Streetwear Fit"}
-                    </li>
-                    <li>
-                      <strong>Colorway:</strong> {product.color || "Black"}
-                    </li>
-                    <li>
-                      <strong>Product Code / SKU:</strong>{" "}
-                      {product.product_no || product.id}
-                    </li>
-                    {product.is_new && (
-                      <li style={{ color: "#000000", fontWeight: 700 }}>
-                        ✦ Spring / Summer 2026 New Arrival
-                      </li>
+                    <ShoppingBag size={15} strokeWidth={1.75} />
+                    <span>
+                      {isSizeOutOfStock
+                        ? `SIZE ${selectedSize} OUT OF STOCK`
+                        : added
+                        ? "ADDED TO ATELIER BAG ✓"
+                        : "ADD TO SHOPPING BAG"}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`atelier-pdp-wish-btn ${isInWishlist(product.id) ? "active" : ""}`}
+                    onClick={handleWishlistClick}
+                    title="Save to Wishlist"
+                  >
+                    <Heart
+                      size={18}
+                      strokeWidth={1.75}
+                      fill={isInWishlist(product.id) ? "#121212" : "none"}
+                    />
+                  </button>
+                </div>
+
+                {/* Trust & Guarantee Perks */}
+                <div className="atelier-pdp-perks">
+                  <div className="atelier-perk-row">
+                    <Truck size={14} strokeWidth={1.5} className="perk-icon" />
+                    <span><strong>Complimentary Express Delivery</strong> &mdash; Dispatched within 24h across India</span>
+                  </div>
+                  <div className="atelier-perk-row">
+                    <RefreshCw size={14} strokeWidth={1.5} className="perk-icon" />
+                    <span><strong>3-Day Atelier Exchange Guarantee</strong> &mdash; Effortless reverse pickups from account</span>
+                  </div>
+                  <div className="atelier-perk-row">
+                    <ShieldCheck size={14} strokeWidth={1.5} className="perk-icon" />
+                    <span><strong>Heirloom Craftsmanship</strong> &mdash; 100% genuine virgin wool, leather &amp; cotton</span>
+                  </div>
+                </div>
+
+                {/* Luxury Hairline Accordions */}
+                <div className="atelier-pdp-accordions">
+                  
+                  {/* Accordion 1: Tailoring & Specifications */}
+                  <div className="atelier-accordion-item">
+                    <button
+                      type="button"
+                      className="atelier-accordion-header"
+                      onClick={() => setOpenAccordion(openAccordion === "details" ? null : "details")}
+                    >
+                      <span>TAILORING &amp; SPECIFICATIONS</span>
+                      <span className="accordion-toggle">{openAccordion === "details" ? "—" : "+"}</span>
+                    </button>
+                    {openAccordion === "details" && (
+                      <div className="atelier-accordion-body">
+                        <ul>
+                          <li><strong>Silhouette:</strong> {product.fit || "Architectural Tailored Drape"}</li>
+                          <li><strong>Composition:</strong> {product.material || "100% Virgin Wool / Calfskin Leather"}</li>
+                          <li><strong>Fabric Weave:</strong> {product.fabric || "Italian Textile Mill Weave"}</li>
+                          <li><strong>Colorway:</strong> {selectedColor}</li>
+                          <li><strong>Reference Code:</strong> {product.product_no || product.id}</li>
+                        </ul>
+                      </div>
                     )}
-                    {product.is_trending && (
-                      <li style={{ color: "#000000", fontWeight: 700 }}>
-                        ★ Trending Season Essential
-                      </li>
+                  </div>
+
+                  {/* Accordion 2: Care Instructions */}
+                  <div className="atelier-accordion-item">
+                    <button
+                      type="button"
+                      className="atelier-accordion-header"
+                      onClick={() => setOpenAccordion(openAccordion === "care" ? null : "care")}
+                    >
+                      <span>COMPOSITION &amp; ATELIER CARE</span>
+                      <span className="accordion-toggle">{openAccordion === "care" ? "—" : "+"}</span>
+                    </button>
+                    {openAccordion === "care" && (
+                      <div className="atelier-accordion-body">
+                        <p>
+                          Specialist dry clean only for virgin wool and tailored outerwear. Leather goods should be conditioned with neutral natural beeswax balm and protected from extended moisture. Store on contoured wooden hangers in a breathable cotton garment cover.
+                        </p>
+                      </div>
                     )}
-                  </ul>
+                  </div>
+
+                  {/* Accordion 3: Shipping & Returns */}
+                  <div className="atelier-accordion-item">
+                    <button
+                      type="button"
+                      className="atelier-accordion-header"
+                      onClick={() => setOpenAccordion(openAccordion === "shipping" ? null : "shipping")}
+                    >
+                      <span>COMPLIMENTARY SHIPPING &amp; 3-DAY RETURNS</span>
+                      <span className="accordion-toggle">{openAccordion === "shipping" ? "—" : "+"}</span>
+                    </button>
+                    {openAccordion === "shipping" && (
+                      <div className="atelier-accordion-body">
+                        <p>
+                          Complimentary express courier service across India. Dispatched from New Delhi atelier within 24 hours. Delivered within 2&ndash;4 business days with real-time SMS tracking. Unworn pieces with security tags intact are eligible for seamless 3-day return or size exchange directly via your Client Portal.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
+
               </div>
-
-              {/* 2. DELIVERY & RETURNS */}
-              <div className="product-accordion">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenAccordion(openAccordion === "delivery" ? null : "delivery")
-                  }
-                >
-                  <span>DELIVERY &amp; 3-DAY RETURNS</span>
-                  <span>{openAccordion === "delivery" ? "−" : "+"}</span>
-                </button>
-
-                <div
-                  className="accordion-content"
-                  style={{
-                    display: openAccordion === "delivery" ? "block" : "none",
-                    paddingBottom: "18px",
-                  }}
-                >
-                  <p style={{ marginBottom: "8px", lineHeight: "1.5" }}>
-                    <strong>Complimentary Express Shipping:</strong> Dispatched within 24 hours. Delivered across India within 2–4 business days with live courier tracking.
-                  </p>
-                  <p style={{ margin: 0, lineHeight: "1.5" }}>
-                    <strong>3-Day Exchange &amp; Return Guarantee:</strong> Items are eligible for complimentary size exchanges or returns within 3 days (72 hours) of delivery directly from your Account Orders dashboard.
-                  </p>
-                </div>
-              </div>
-
-              {/* 3. CARE INSTRUCTIONS */}
-              <div className="product-accordion">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenAccordion(openAccordion === "care" ? null : "care")
-                  }
-                >
-                  <span>CARE INSTRUCTIONS</span>
-                  <span>{openAccordion === "care" ? "−" : "+"}</span>
-                </button>
-
-                <div
-                  className="accordion-content"
-                  style={{
-                    display: openAccordion === "care" ? "block" : "none",
-                    paddingBottom: "18px",
-                  }}
-                >
-                  <p style={{ lineHeight: "1.6" }}>
-                    Machine wash cold (30°C) inside out with similar colors. Use mild detergent. Do not bleach. Tumble dry on low or line dry in the shade to preserve garment shape and longevity. Cool iron inside out.
-                  </p>
-                </div>
-              </div>
-
             </div>
 
           </div>
 
-          {/* CENTER - PRODUCT IMAGES */}
-          <div className="product-center">
+          {/* Bottom Recommendations Section: Complementary Atelier Pieces */}
+          {complementaryProducts.length > 0 && (
+            <section className="atelier-pdp-recommendations">
+              <div className="atelier-recommendations-header">
+                <span className="atelier-rec-kicker">CURATED COLLECTION</span>
+                <h2 className="atelier-rec-title">COMPLEMENTARY PIECES</h2>
+                <p className="atelier-rec-sub">
+                  Silhouettes designed to pair seamlessly across the wardrobe.
+                </p>
+              </div>
 
-            <ImageSwiper
-              images={productImages.join(",")}
-              cardWidth={420}
-              cardHeight={560}
-              onImageClick={(idx) => {
-                setLightboxIndex(idx);
-                setLightboxOpen(true);
-              }}
-            />
-
-          </div>
-
-          {/* RIGHT - PRODUCT OPTIONS */}
-          <div className="product-right">
-
-            {/* PRODUCT OPTIONS BLOCK (COLOR, SIZE, QUANTITY) */}
-            <div className="product-options-block">
-
-              {/* COLOR */}
-              <div className="right-option">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <h3 style={{ margin: 0 }}>
-                    COLOR: <span style={{ color: "#000000", fontWeight: 700 }}>{selectedColor}</span>
-                  </h3>
-                </div>
-
-                <div className="color-options">
-                  {(Array.isArray(product.colors) && product.colors.length > 0
-                    ? product.colors
-                    : [product.color || "BLACK"]
-                  ).map((col) => {
-                    const COLOR_MAP: Record<string, string> = {
-                      BLACK: "#111111",
-                      WHITE: "#f8f9fa",
-                      GREY: "#71717a",
-                      GRAY: "#71717a",
-                      OLIVE: "#556b2f",
-                      BEIGE: "#d4c5b9",
-                      CREAM: "#fef9e7",
-                      NAVY: "#0f172a",
-                      BROWN: "#582f0e",
-                      RED: "#dc2626",
-                      CHARCOAL: "#27272a",
-                      SAGE: "#9caf88",
-                      KHAKI: "#c3b091",
-                    };
-                    const hex = COLOR_MAP[col.toUpperCase()] || "#333333";
-                    const isSelected = selectedColor.toUpperCase() === col.toUpperCase();
-
-                    return (
-                      <button
-                        key={col}
-                        type="button"
-                        className={`color-option ${isSelected ? "active" : ""}`}
-                        onClick={() => setSelectedColor(col)}
-                      >
-                        <span
-                          className="color-dot"
-                          style={{
-                            backgroundColor: hex,
-                            border: col.toUpperCase() === "WHITE" ? "1px solid #cccccc" : undefined,
-                          }}
+              <div className="atelier-grid">
+                {complementaryProducts.map((item) => (
+                  <div key={item.id} className="atelier-card-wrap">
+                    <Link href={`/products/${item.id}`} className="atelier-card">
+                      <div className="atelier-image-box">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="atelier-product-img"
                         />
-                        {col.toUpperCase()}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
 
-              {/* SIZE */}
-              <div className="right-option">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <h3 style={{ margin: 0 }}>CHOOSE SIZE</h3>
-                  {isSizeLowStock && (
-                    <span style={{ fontSize: "11px", color: "#dc2626", fontWeight: 700, letterSpacing: "0.05em" }}>
-                      🔥 ONLY {currentSizeQty} LEFT!
-                    </span>
-                  )}
-                  {isSizeOutOfStock && (
-                    <span style={{ fontSize: "11px", color: "#b91c1c", fontWeight: 700, letterSpacing: "0.05em" }}>
-                      ✕ OUT OF STOCK
-                    </span>
-                  )}
-                </div>
+                        {/* Quick Add CTA */}
+                        <div className="atelier-quick-add">
+                          <button
+                            type="button"
+                            className="atelier-quick-btn"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              addToCart({
+                                id: item.id,
+                                name: item.name,
+                                price: item.price,
+                                image: item.image,
+                                size: "M",
+                              });
+                              openCart();
+                            }}
+                          >
+                            <ShoppingBag size={12} />
+                            <span>QUICK ADD &bull; M</span>
+                          </button>
+                        </div>
+                      </div>
 
-                <div className="size-options">
-                  {(["S", "M", "L", "XL", "XXL"] as const).map((size) => {
-                    const sizeQty =
-                      product.size_stock && typeof product.size_stock === "object"
-                        ? product.size_stock[size] !== undefined
-                          ? Number(product.size_stock[size]) || 0
-                          : Number(product.stock) || 0
-                        : Number(product.stock ?? 10);
-                    const isOut = sizeQty <= 0;
-                    const isLow = sizeQty > 0 && sizeQty <= 5;
-                    const isSelected = selectedSize === size;
+                      <div className="atelier-details">
+                        <div className="atelier-title-row">
+                          <h3 className="atelier-product-name">{item.name}</h3>
+                          <span className="atelier-product-price">
+                            ₹{Number(item.price).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                        <p className="atelier-product-sub">
+                          {item.material || item.category_name || "Atelier Edition"}
+                        </p>
+                      </div>
+                    </Link>
 
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        className={`size-button ${isSelected ? "active" : ""} ${isOut ? "disabled" : ""} ${isLow ? "has-low-stock" : ""}`}
-                        onClick={() => setSelectedSize(size)}
-                        title={
-                          isOut
-                            ? `Size ${size}: Out of stock`
-                            : isLow
-                            ? `Size ${size}: Only ${sizeQty} left!`
-                            : `Size ${size}: In stock`
-                        }
-                      >
-                        <span>{size}</span>
-                        {isLow && <span className="size-low-indicator" title={`Only ${sizeQty} left`}>•</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* URGENCY BANNER IF <= 5 UNITS */}
-                {isSizeLowStock && (
-                  <div
-                    style={{
-                      marginTop: "12px",
-                      padding: "10px 14px",
-                      background: "#fff1f2",
-                      border: "1px solid #fecdd3",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <span style={{ fontSize: "14px" }}>⚠️</span>
-                    <div style={{ fontSize: "11px", color: "#be123c", letterSpacing: "0.04em", lineHeight: "1.4" }}>
-                      <strong>ONLY {currentSizeQty} LEFT IN SIZE {selectedSize}</strong> &mdash; Order soon before it sells out!
-                    </div>
+                    {/* Wishlist Button */}
+                    <button
+                      type="button"
+                      className="atelier-wishlist-btn"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleWishlist({
+                          id: item.id,
+                          name: item.name,
+                          price: item.price,
+                          image: item.image,
+                          category: item.category_name,
+                        });
+                      }}
+                      title="Save to Wishlist"
+                    >
+                      <Heart
+                        size={15}
+                        fill={isInWishlist(item.id) ? "#121212" : "none"}
+                        stroke="#121212"
+                        strokeWidth={1.75}
+                      />
+                    </button>
                   </div>
-                )}
-
-                {/* OUT OF STOCK BANNER */}
-                {isSizeOutOfStock && (
-                  <div
-                    style={{
-                      marginTop: "12px",
-                      padding: "10px 14px",
-                      background: "#fef2f2",
-                      border: "1px solid #f87171",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <span style={{ fontSize: "14px" }}>✕</span>
-                    <div style={{ fontSize: "11px", color: "#b91c1c", letterSpacing: "0.04em", lineHeight: "1.4" }}>
-                      <strong>SIZE {selectedSize} IS CURRENTLY OUT OF STOCK.</strong> Please select another size.
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
-
-              {/* QUANTITY */}
-              <div className="right-option">
-                <h3>QUANTITY</h3>
-                <div className="quantity-selector">
-                  <button
-                    onClick={() =>
-                      setQuantity(
-                        Math.max(1, quantity - 1)
-                      )
-                    }
-                  >
-                    −
-                  </button>
-                  <span>{quantity}</span>
-                  <button
-                    onClick={() =>
-                      setQuantity(quantity + 1)
-                    }
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-            {/* PRODUCT ACTIONS BLOCK (ADD TO BAG, WISHLIST, TRUST PERKS) */}
-            <div className="product-actions-block">
-              <div className="product-actions">
-                <button
-                  className="add-to-cart-button"
-                  onClick={handleAddToCart}
-                  disabled={isSizeOutOfStock}
-                  style={{
-                    background: isSizeOutOfStock
-                      ? "#999999"
-                      : added
-                      ? "#16a34a"
-                      : "#111",
-                    color: "#fff",
-                    cursor: isSizeOutOfStock ? "not-allowed" : "pointer",
-                    transition: "background 0.2s ease",
-                    opacity: isSizeOutOfStock ? 0.7 : 1,
-                  }}
-                >
-                  {isSizeOutOfStock
-                    ? `OUT OF STOCK IN SIZE ${selectedSize}`
-                    : added
-                    ? "ADDED TO BAG ✓"
-                    : "ADD TO SHOPPING BAG"}
-                </button>
-
-                <button
-                  className="wishlist-button"
-                  onClick={() =>
-                    toggleWishlist({
-                      id: product.id,
-                      name: product.name,
-                      price: product.price,
-                      image: image,
-                      category: product.category_name,
-                    })
-                  }
-                  style={{
-                    color: isInWishlist(product.id) ? "#e53e3e" : "inherit",
-                  }}
-                  aria-label="Toggle wishlist"
-                >
-                  {isInWishlist(product.id) ? "♥" : "♡"}
-                </button>
-              </div>
-
-              {/* TRUST / GUARANTEE PERKS */}
-              <div className="product-perks-strip">
-                <div className="product-perk-item">
-                  <span className="product-perk-icon">⚡</span>
-                  <div><strong>Complimentary Express Shipping</strong> &mdash; Delivered in 2–4 days across India</div>
-                </div>
-                <div className="product-perk-item">
-                  <span className="product-perk-icon">🔄</span>
-                  <div><strong>3-Day Exchange &amp; Return Guarantee</strong> &mdash; Easy request from your account</div>
-                </div>
-                <div className="product-perk-item">
-                  <span className="product-perk-icon">🛡️</span>
-                  <div><strong>100% Genuine Quality</strong> &mdash; Heavyweight premium combed cotton fabric</div>
-                </div>
-              </div>
-            </div>
-
-          </div>
+            </section>
+          )}
 
         </div>
-
-        {/* ============================================================
-            RECOMMENDED PRODUCTS SECTION
-            Exclusively filtered:
-            - If New In: Only other New In pieces
-            - If Trending: Only other Trending pieces
-            - If Product/Category: Only pieces from same collection
-        ============================================================ */}
-        <section className="more-products">
-
-          <div className="more-products-header">
-            <p>{sectionHeaderInfo.kicker}</p>
-            <h2>{sectionHeaderInfo.title}</h2>
-            {sectionHeaderInfo.subtitle && (
-              <span
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  color: "#777777",
-                  marginTop: "4px",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {sectionHeaderInfo.subtitle}
-              </span>
-            )}
-          </div>
-
-          <div className="more-products-grid">
-
-            {underProducts.length === 0 ? (
-              <div style={{ padding: "40px 0", color: "#888888", fontSize: "13px" }}>
-                No other pieces available in this section at the moment.
-              </div>
-            ) : (
-              underProducts.map((item) => (
-                <Link
-                  href={`/products/${item.id}?from=${activeContext}`}
-                  key={item.id}
-                  className="more-product-card"
-                >
-
-                  <div className="more-product-image" style={{ position: "relative" }}>
-
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                    />
-
-                    {item.is_new && activeContext === "newin" && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: "10px",
-                          left: "10px",
-                          background: "#000000",
-                          color: "#ffffff",
-                          fontSize: "9px",
-                          fontWeight: 800,
-                          padding: "2px 7px",
-                          letterSpacing: "0.1em",
-                        }}
-                      >
-                        NEW
-                      </span>
-                    )}
-
-                    {item.is_trending && activeContext === "trending" && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: "10px",
-                          left: "10px",
-                          background: "#000000",
-                          color: "#ffffff",
-                          fontSize: "9px",
-                          fontWeight: 800,
-                          padding: "2px 7px",
-                          letterSpacing: "0.1em",
-                        }}
-                      >
-                        TRENDING
-                      </span>
-                    )}
-
-                  </div>
-
-                  <div className="more-product-info">
-
-                    <span
-                      style={{
-                        fontSize: "9px",
-                        letterSpacing: "0.14em",
-                        color: "#888888",
-                        textTransform: "uppercase",
-                        marginBottom: "4px",
-                        display: "block",
-                      }}
-                    >
-                      {item.category_name || "GREENO"}
-                    </span>
-
-                    <h3>{item.name}</h3>
-
-                    <p>
-                      ₹{Number(item.price).toLocaleString("en-IN")}
-                    </p>
-
-                  </div>
-
-                </Link>
-              ))
-            )}
-
-          </div>
-
-        </section>
-
       </main>
 
       <ProductImageLightbox
