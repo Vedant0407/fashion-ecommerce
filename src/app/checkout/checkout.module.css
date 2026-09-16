@@ -46,10 +46,10 @@
 
 .compactTitle {
   margin: 0;
-  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  font-size: 30px;
-  font-weight: 400;
-  letter-spacing: 0.02em;
+  font-family: var(--font-geist-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #121212;
 }
@@ -102,9 +102,9 @@
 .card {
   background: #FFFFFF;
   border: 1px solid #E5E3DC;
-  border-radius: 2px;
-  padding: 32px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
 }
 
 .cardHeader {
@@ -119,7 +119,7 @@
 .stepNum {
   width: 24px;
   height: 24px;
-  border-radius: 2px;
+  border-radius: 50%;
   background: #121212;
   color: #FFFFFF;
   font-size: 10.5px;
@@ -131,10 +131,10 @@
 
 .cardTitle {
   margin: 0;
-  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-family: var(--font-geist-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #121212;
 }
@@ -398,10 +398,10 @@
 
 .summaryTitle {
   margin: 0;
-  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-family: var(--font-geist-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #121212;
 }
@@ -458,14 +458,15 @@
 }
 
 .itemName {
-  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  font-size: 15px;
-  font-weight: 500;
+  font-family: var(--font-geist-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
   color: #121212;
   margin: 0 0 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-transform: uppercase;
 }
 
 .itemMeta {
@@ -581,9 +582,10 @@
 
 .empty h1 {
   margin: 0 0 16px;
-  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  font-size: 32px;
-  font-weight: 400;
+  font-family: var(--font-geist-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .empty a {
@@ -608,9 +610,10 @@
 
 .success h1 {
   margin: 0 0 10px;
-  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  font-size: 36px;
-  font-weight: 400;
+  font-family: var(--font-geist-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .success p {

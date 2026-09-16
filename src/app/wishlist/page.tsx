@@ -315,10 +315,10 @@ export default function WishlistPage() {
             <h1
               style={{
                 margin: 0,
-                fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
-                fontSize: "36px",
-                letterSpacing: "0.02em",
-                fontWeight: 400,
+                fontFamily: "var(--font-geist-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                fontSize: "28px",
+                letterSpacing: "0.04em",
+                fontWeight: 700,
                 lineHeight: 1.15,
                 textTransform: "uppercase",
                 color: "#121212",
@@ -368,10 +368,10 @@ export default function WishlistPage() {
             <h2
               style={{
                 margin: "0 0 16px",
-                fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
-                fontSize: "26px",
-                fontWeight: 400,
-                letterSpacing: "0.02em",
+                fontFamily: "var(--font-geist-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                fontSize: "20px",
+                fontWeight: 600,
+                letterSpacing: "0.04em",
                 color: "#121212",
                 textTransform: "uppercase",
               }}
