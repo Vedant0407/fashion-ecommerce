@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Package, User, Wallet, LogOut, Check, Pencil } from "lucide-react";
+import { Package, User, Wallet, LogOut, Check, Pencil, MapPin } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { formatShortOrderId } from "@/lib/order-utils";
@@ -361,8 +361,8 @@ function AccountPageContent() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
-        <p className={styles.breadcrumb}>GREENO ATELIER // CLIENT PORTAL</p>
-        <h1 className={styles.title}>CLIENT PORTAL</h1>
+        <p className={styles.breadcrumb}>GREENO / MY ACCOUNT</p>
+        <h1 className={styles.title}>ACCOUNT DETAILS</h1>
 
         {/* Main Reference Card Container */}
         <div className={styles.accountCard}>
@@ -370,11 +370,20 @@ function AccountPageContent() {
           <aside className={styles.sidebar}>
             <button
               type="button"
+              className={`${styles.navButton} ${activeTab === "account" ? styles.navButtonActive : ""}`}
+              onClick={() => switchTab("account")}
+            >
+              <User className={styles.navIcon} />
+              <span>Account details</span>
+            </button>
+
+            <button
+              type="button"
               className={`${styles.navButton} ${activeTab === "orders" ? styles.navButtonActive : ""}`}
               onClick={() => switchTab("orders")}
             >
               <Package className={styles.navIcon} />
-              <span>Order Archive</span>
+              <span>Order history</span>
             </button>
 
             <button
@@ -382,8 +391,8 @@ function AccountPageContent() {
               className={`${styles.navButton} ${activeTab === "address" ? styles.navButtonActive : ""}`}
               onClick={() => switchTab("address")}
             >
-              <User className={styles.navIcon} />
-              <span>Delivery Concierge</span>
+              <MapPin className={styles.navIcon} />
+              <span>Shipping Address</span>
             </button>
 
             <button
@@ -392,16 +401,7 @@ function AccountPageContent() {
               onClick={() => switchTab("wallet")}
             >
               <Wallet className={styles.navIcon} />
-              <span>Atelier Credits</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${styles.navButton} ${activeTab === "account" ? styles.navButtonActive : ""}`}
-              onClick={() => switchTab("account")}
-            >
-              <User className={styles.navIcon} />
-              <span>Client Dossier</span>
+              <span>Wallet Details</span>
             </button>
 
             <button
@@ -419,12 +419,12 @@ function AccountPageContent() {
 
           {/* Right Content Area */}
           <section className={styles.contentArea}>
-            {/* 1. Account Details (Default View matching Screenshot) */}
+            {/* 1. Account Details */}
             {activeTab === "account" && (
               <div>
                 <div className={styles.tabHeader}>
-                  <h2 className={styles.tabTitle}>Client Dossier</h2>
-                  <p className={styles.tabSubtitle}>Manage your bespoke delivery contacts and authentication details.</p>
+                  <h2 className={styles.tabTitle}>Account details</h2>
+                  <p className={styles.tabSubtitle}>Manage your personal details, email and phone number.</p>
                 </div>
 
                 <div className={styles.fieldList}>
@@ -515,8 +515,8 @@ function AccountPageContent() {
             {activeTab === "orders" && (
               <div>
                 <div className={styles.tabHeader}>
-                  <h2 className={styles.tabTitle}>Order Archive</h2>
-                  <p className={styles.tabSubtitle}>Permanent archive of your acquired pieces and concierge transit status.</p>
+                  <h2 className={styles.tabTitle}>Order history</h2>
+                  <p className={styles.tabSubtitle}>Review your previous orders and check delivery status.</p>
                 </div>
 
                 {ordersLoading ? (
@@ -525,7 +525,7 @@ function AccountPageContent() {
                   <div className={styles.emptyState}>
                     <p>No orders placed yet.</p>
                     <Link href="/shop" className={styles.saveButton} style={{ display: "inline-block", marginTop: 12, textDecoration: "none" }}>
-                      Explore Atelier Collection
+                      Start Shopping
                     </Link>
                   </div>
                 ) : (
@@ -579,8 +579,8 @@ function AccountPageContent() {
             {activeTab === "address" && (
               <div>
                 <div className={styles.tabHeader}>
-                  <h2 className={styles.tabTitle}>Delivery Concierge</h2>
-                  <p className={styles.tabSubtitle}>Primary private destination for bespoke dispatches.</p>
+                  <h2 className={styles.tabTitle}>Shipping Address</h2>
+                  <p className={styles.tabSubtitle}>Your primary delivery destination for orders.</p>
                 </div>
 
                 {isEditingAddress ? (
@@ -690,24 +690,24 @@ function AccountPageContent() {
             {activeTab === "wallet" && (
               <div>
                 <div className={styles.tabHeader}>
-                  <h2 className={styles.tabTitle}>Atelier Credits</h2>
-                  <p className={styles.tabSubtitle}>Available store credit and private client balance.</p>
+                  <h2 className={styles.tabTitle}>Wallet Details</h2>
+                  <p className={styles.tabSubtitle}>View your GreenO Credits and store balance.</p>
                 </div>
 
                 <div className={styles.walletCard}>
                   <div className={styles.walletHeader}>
-                    <span className={styles.walletBrand}>ATELIER PRIVILEGE</span>
+                    <span className={styles.walletBrand}>GREENO CASH</span>
                     <Wallet style={{ width: 22, height: 22, color: "#e4e4e7" }} />
                   </div>
                   <h3 className={styles.walletAmount}>₹0.00</h3>
-                  <p className={styles.walletSub}>Private client account balance &amp; exchange credit</p>
+                  <p className={styles.walletSub}>Available Store Balance &amp; Refund Credits</p>
                 </div>
 
                 <div className={styles.walletNote}>
                   <p style={{ margin: "0 0 6px", fontWeight: 600, color: "#111827" }}>
                     How it works
                   </p>
-                  Any approved return refunds or promotional concierge store credits are automatically deposited into your Atelier Privilege balance and can be instantly applied at checkout.
+                  Any approved return refunds or promotional store credits are automatically deposited into your GreenO Cash wallet and can be instantly applied at checkout.
                 </div>
               </div>
             )}

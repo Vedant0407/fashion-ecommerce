@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Package, User, Wallet, LogOut, ArrowLeft } from "lucide-react";
+import { Package, User, Wallet, LogOut, ArrowLeft, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatShortOrderId, isOrderMatch } from "@/lib/order-utils";
 import styles from "../../account.module.css";
@@ -686,6 +686,15 @@ export default function OrderDetailsPage() {
           <aside className={styles.sidebar}>
             <button
               type="button"
+              className={styles.navButton}
+              onClick={() => router.push("/account?tab=account")}
+            >
+              <User className={styles.navIcon} />
+              <span>Account details</span>
+            </button>
+
+            <button
+              type="button"
               className={`${styles.navButton} ${styles.navButtonActive}`}
               onClick={() => router.push("/account?tab=orders")}
             >
@@ -698,7 +707,7 @@ export default function OrderDetailsPage() {
               className={styles.navButton}
               onClick={() => router.push("/account?tab=address")}
             >
-              <User className={styles.navIcon} />
+              <MapPin className={styles.navIcon} />
               <span>Shipping Address</span>
             </button>
 
@@ -709,15 +718,6 @@ export default function OrderDetailsPage() {
             >
               <Wallet className={styles.navIcon} />
               <span>Wallet Details</span>
-            </button>
-
-            <button
-              type="button"
-              className={styles.navButton}
-              onClick={() => router.push("/account?tab=account")}
-            >
-              <User className={styles.navIcon} />
-              <span>Account details</span>
             </button>
 
             <button
