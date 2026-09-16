@@ -6379,24 +6379,52 @@ select {
   justify-content: center;
   width: 100%;
   height: 100%;
-  z-index: 2;
+  z-index: 20;
+  color: #ffffff;
+  pointer-events: auto;
 }
 
 .launcher-icon-sparkle {
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
+  display: block;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  color: #ffffff;
+  stroke: #ffffff;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
   animation: sparkle-glow 3s ease-in-out infinite;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chatbot-launcher:hover .launcher-icon-sparkle {
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+}
+
+.launcher-icon-close {
+  display: block;
+  width: 20px;
+  height: 20px;
+  color: #ffffff;
+  stroke: #ffffff;
+  transition: transform 0.2s ease;
+}
+
+.chatbot-launcher:hover .launcher-icon-close {
+  transform: rotate(90deg);
 }
 
 @keyframes sparkle-glow {
   0%, 100% {
     transform: scale(1);
-    opacity: 0.92;
-    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.35));
+    opacity: 0.95;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
   }
   50% {
-    transform: scale(1.06);
+    transform: scale(1.08);
     opacity: 1;
-    filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.65));
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.75));
   }
 }
 

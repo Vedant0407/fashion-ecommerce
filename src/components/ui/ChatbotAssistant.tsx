@@ -13,6 +13,7 @@ import {
   Check,
   ChevronRight,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { Product, getProductByIdOrSlug } from "@/lib/catalog";
@@ -23,34 +24,6 @@ const MetalFx = dynamic(
   { ssr: false }
 );
 
-function AiSparkleIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Central 4-pointed curved star */}
-      <path
-        d="M12 3.5c0 4.2-3.8 7.5-8 7.5 4.2 0 8 3.3 8 7.5 0-4.2 3.8-7.5 8-7.5-4.2 0-8-3.3-8-7.5z"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Top right mini sparkle star */}
-      <path
-        d="M19.5 4.5c0 1.2-.9 2-2 2 1.1 0 2 .8 2 2 0-1.2.9-2 2-2-1.1 0-2-.8-2-2z"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Bottom left small circular star dot */}
-      <circle cx="6.5" cy="18" r="1.1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
 
 type Message = {
   id: string;
@@ -408,31 +381,11 @@ export default function ChatbotAssistant() {
             title="GreenO Assistant"
           >
             <span className="chatbot-launcher-inner">
-              <AnimatePresence mode="wait" initial={false}>
-                {isOpen ? (
-                  <motion.span
-                    key="close"
-                    initial={{ rotate: -90, opacity: 0, scale: 0.8 }}
-                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                    exit={{ rotate: 90, opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center justify-center"
-                  >
-                    <X size={19} className="launcher-icon-close text-white" />
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="sparkle"
-                    initial={{ rotate: 90, opacity: 0, scale: 0.8 }}
-                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                    exit={{ rotate: -90, opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center justify-center"
-                  >
-                    <AiSparkleIcon className="w-5 h-5 launcher-icon-sparkle text-white/95" />
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              {isOpen ? (
+                <X size={20} color="#ffffff" strokeWidth={2.4} className="launcher-icon-close" />
+              ) : (
+                <Sparkles size={22} color="#ffffff" strokeWidth={2.2} className="launcher-icon-sparkle" />
+              )}
             </span>
           </button>
         </MetalFx>
