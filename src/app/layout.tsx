@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import Header from "@/components/Header";
 import ChatbotAssistant from "@/components/ui/ChatbotAssistant";
+
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,8 +23,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GreenO | Luxury Streetwear",
-  description: "Modern minimalist streetwear, heavyweight oversized apparel, and accessories.",
+  title: "GreenO Atelier | Crafted for Those Who Know",
+  description: "Modern luxury atelier, heavyweight oversized silhouettes, and refined essentials.",
 };
 
 export default function RootLayout({
@@ -29,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={`${cormorant.variable} ${geistSans.variable} ${geistMono.variable}`}
     >
       <body>
         <CartProvider>

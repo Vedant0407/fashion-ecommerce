@@ -173,79 +173,50 @@ export default function Header() {
           </div>
         </div>
 
-        <nav className="navbar">
+        <nav className="navbar atelier-navbar">
           <div className="header-side nav-links-left">
             <Link href="/shop" className="nav-link">
-              SHOP ALL
+              COLLECTIONS
+            </Link>
+            <Link href="#catalog" className="nav-link">
+              ATELIER
+            </Link>
+            <Link href="#about" className="nav-link">
+              JOURNAL
             </Link>
           </div>
 
-          <Link href="/" className="logo">
+          <Link href="/" className="logo atelier-logo font-serif">
             GREENO
           </Link>
 
-          <div className="header-actions">
+          <div className="header-actions atelier-header-actions">
             <button
-              className="header-icon"
+              type="button"
+              className="header-text-action"
               aria-label="Search"
               onClick={() => setSearchOpen(true)}
-              title="Search catalogue"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              >
-                <circle cx="11" cy="11" r="7" />
-                <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
-              </svg>
+              SEARCH
             </button>
 
             <Link
               href="/wishlist"
-              className="header-icon"
+              className="header-text-action"
               aria-label="Wishlist"
-              style={{ position: "relative" }}
-              title="Saved items"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                />
-              </svg>
-              {wishlistCount > 0 && (
-                <span className="cart-count">{wishlistCount}</span>
-              )}
+              SAVED {wishlistCount > 0 && `(${wishlistCount})`}
             </Link>
 
             <div className="account-wrapper" ref={accountRef}>
               <button
-                className="header-icon"
+                type="button"
+                className="header-text-action"
                 onClick={() => setAccountOpen((open) => !open)}
                 aria-label="Account"
                 aria-expanded={accountOpen}
-                title="Account"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                >
-                  <circle cx="12" cy="8" r="4" />
-                  <path
-                    d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                ACCOUNT
               </button>
 
               {accountOpen && (
@@ -285,23 +256,10 @@ export default function Header() {
             <button
               type="button"
               onClick={openCart}
-              className="header-icon cart-icon"
+              className="header-text-action bag-action"
               aria-label="Shopping bag"
-              title="Shopping bag"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              >
-                <path d="M6 7h12l1 14H5L6 7Z" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M9 8V6a3 3 0 0 1 6 0v2" strokeLinecap="round" />
-              </svg>
-
-              {cartCount > 0 && (
-                <span className="cart-count">{cartCount}</span>
-              )}
+              BAG ({cartCount})
             </button>
           </div>
         </nav>
