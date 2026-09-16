@@ -139,27 +139,49 @@
     },
     {
       "id": "oversized-black-tee",
-      "name": "Oversized Black Tee",
+      "name": "Heavyweight Boxy Tee",
       "price": 2499,
-      "description": "A relaxed oversized tee crafted from 240 GSM combed cotton with subtle dropped shoulders.",
+      "description": "Architectural drop-shoulder t-shirt cut from 300gsm dense combed cotton jersey.",
       "category_id": "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
       "category_slug": "t-shirts",
       "category_name": "T-SHIRTS",
-      "image": "/black-tee.jfif",
+      "image": "/atelier-tshirt.jpg",
       "images": [
-        "/black-tee.jfif",
-        "/white-tee.jfif",
-        "/grey-hoodie.jfif"
+        "/atelier-tshirt.jpg",
+        "/atelier-tshirt-detail.jpg"
       ],
-      "stock": 50,
+      "stock": 35,
       "is_featured": true,
-      "is_new": false,
+      "is_new": true,
       "is_trending": true,
       "color": "BLACK",
-      "product_no": "BT-001",
-      "material": "100% Combed Cotton",
-      "fabric": "Heavyweight Jersey",
-      "fit": "Oversized Fit"
+      "product_no": "AT-TSH-01",
+      "material": "100% Combed Heavyweight Cotton",
+      "fabric": "300gsm Dense Jersey",
+      "fit": "Boxy Drop-Shoulder"
+    },
+    {
+      "id": "tailored-poplin-shirt",
+      "name": "Tailored Poplin Shirt",
+      "price": 3499,
+      "description": "Architectural oversized collared shirt in crisp off-white Italian cotton poplin with mother-of-pearl buttons.",
+      "category_id": "cat-shirts",
+      "category_slug": "shirts",
+      "category_name": "SHIRTS",
+      "image": "/atelier-shirt.jpg",
+      "images": [
+        "/atelier-shirt.jpg",
+        "/atelier-shirt-detail.jpg"
+      ],
+      "stock": 22,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "OFF-WHITE",
+      "product_no": "AT-SHT-01",
+      "material": "100% Egyptian Cotton Poplin",
+      "fabric": "Crisp 120s Poplin",
+      "fit": "Oversized Tailored Drape"
     },
     {
       "id": "urban-grey-hoodie",
@@ -310,8 +332,15 @@
       "id": "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
       "name": "T-SHIRTS",
       "slug": "t-shirts",
-      "image": "/black-tee.jfif",
-      "description": "Signature oversized and regular fit tees designed for timeless streetwear aesthetics."
+      "image": "/atelier-tshirt.jpg",
+      "description": "Architectural drop-shoulder t-shirts crafted from heavyweight combed jersey."
+    },
+    {
+      "id": "cat-shirts",
+      "name": "SHIRTS",
+      "slug": "shirts",
+      "image": "/atelier-shirt.jpg",
+      "description": "Architectural tailored shirting in Italian and Egyptian cotton poplins."
     },
     {
       "id": "8f4e5a32-9172-466f-b752-2f8e1c6586a0",

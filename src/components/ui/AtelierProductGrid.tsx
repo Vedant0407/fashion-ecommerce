@@ -9,11 +9,8 @@ import { useWishlist } from "@/context/WishlistContext";
 
 const ATELIER_CATEGORIES = [
   { label: "ALL", slug: "all" },
-  { label: "PANTS", slug: "pants" },
-  { label: "TOPS", slug: "tops" },
-  { label: "OUTERWEAR", slug: "outerwear" },
-  { label: "BAGS", slug: "bags" },
-  { label: "FOOTWEAR", slug: "footwear" },
+  { label: "T-SHIRT", slug: "tshirt" },
+  { label: "SHIRT", slug: "shirt" },
 ];
 
 const CURATED_ATELIER_PRODUCTS: Product[] = [
@@ -102,6 +99,40 @@ const CURATED_ATELIER_PRODUCTS: Product[] = [
     fabric: "Satin lining",
     fit: "Tailored silhouette",
   },
+  {
+    id: "tailored-poplin-shirt",
+    name: "Tailored Poplin Shirt",
+    price: 3499,
+    description: "Architectural oversized collared shirt in crisp off-white Italian cotton poplin with mother-of-pearl buttons.",
+    category_slug: "shirts",
+    category_name: "SHIRTS",
+    image: "/atelier-shirt.jpg",
+    images: ["/atelier-shirt.jpg", "/atelier-shirt-detail.jpg"],
+    stock: 22,
+    is_featured: true,
+    is_new: true,
+    is_trending: true,
+    material: "100% Egyptian Cotton Poplin",
+    fabric: "Crisp 120s Poplin",
+    fit: "Oversized Tailored Drape",
+  },
+  {
+    id: "oversized-black-tee",
+    name: "Heavyweight Boxy Tee",
+    price: 2499,
+    description: "Architectural drop-shoulder t-shirt cut from 300gsm dense combed cotton jersey.",
+    category_slug: "t-shirts",
+    category_name: "T-SHIRTS",
+    image: "/atelier-tshirt.jpg",
+    images: ["/atelier-tshirt.jpg", "/atelier-tshirt-detail.jpg"],
+    stock: 35,
+    is_featured: true,
+    is_new: true,
+    is_trending: true,
+    material: "100% Combed Heavyweight Cotton",
+    fabric: "300gsm Dense Jersey",
+    fit: "Boxy Drop-Shoulder",
+  },
 ];
 
 export default function AtelierProductGrid() {
@@ -150,58 +181,34 @@ export default function AtelierProductGrid() {
     const cat = (item.category_name || "").toLowerCase();
     const title = (item.name || "").toLowerCase();
 
-    if (activeTab === "pants") {
+    if (activeTab === "tshirt") {
       return (
-        slug === "pants" ||
-        slug.includes("pant") ||
-        slug.includes("trouser") ||
-        cat.includes("pant") ||
-        cat.includes("trouser") ||
-        title.includes("pant") ||
-        title.includes("trouser") ||
-        title.includes("cargo")
-      );
-    }
-    if (activeTab === "tops") {
-      return (
-        slug.includes("top") ||
+        slug === "t-shirts" ||
+        slug === "tshirts" ||
+        slug === "tshirt" ||
+        slug.includes("t-shirt") ||
+        slug.includes("tshirt") ||
         slug.includes("tee") ||
-        slug.includes("shirt") ||
-        cat.includes("top") ||
+        cat.includes("t-shirt") ||
+        cat.includes("tshirt") ||
         cat.includes("tee") ||
-        cat.includes("shirt") ||
-        title.includes("tee") ||
-        title.includes("turtleneck")
+        title.includes("t-shirt") ||
+        title.includes("tshirt") ||
+        title.includes("tee")
       );
     }
-    if (activeTab === "outerwear") {
+    if (activeTab === "shirt") {
       return (
-        slug.includes("outer") ||
-        slug.includes("hoodie") ||
-        slug.includes("coat") ||
-        cat.includes("outer") ||
-        cat.includes("hoodie") ||
-        title.includes("coat") ||
-        title.includes("jacket") ||
-        title.includes("hoodie")
-      );
-    }
-    if (activeTab === "bags") {
-      return (
-        slug.includes("bag") ||
-        cat.includes("bag") ||
-        title.includes("bag") ||
-        title.includes("tote")
-      );
-    }
-    if (activeTab === "footwear") {
-      return (
-        slug.includes("foot") ||
-        slug.includes("shoe") ||
-        cat.includes("foot") ||
-        cat.includes("shoe") ||
-        title.includes("derb") ||
-        title.includes("shoe")
+        (slug.includes("shirt") || cat.includes("shirt") || title.includes("shirt")) &&
+        !slug.includes("t-shirt") &&
+        !slug.includes("tshirt") &&
+        !slug.includes("tee") &&
+        !cat.includes("t-shirt") &&
+        !cat.includes("tshirt") &&
+        !cat.includes("tee") &&
+        !title.includes("t-shirt") &&
+        !title.includes("tshirt") &&
+        !title.includes("tee")
       );
     }
     return slug === activeTab || cat === activeTab || title.includes(activeTab);
