@@ -30,11 +30,8 @@ export default function AboutSection() {
         <div className="about-column">
           <h3>COLLECTIONS</h3>
           <Link href="/category/t-shirts">Oversized T-Shirts</Link>
-          <Link href="/category/hoodies">Fleece Hoodies</Link>
-          <Link href="/category/pants">Cargo & Street Pants</Link>
-          <Link href="/category/caps">Caps & Headwear</Link>
-          <Link href="/category/bags">Utility Bags</Link>
-          <Link href="/category/accessories">Chains & Accessories</Link>
+          <Link href="/category/shirts">Tailored Shirts</Link>
+          <Link href="/shop">All Silhouettes</Link>
         </div>
 
         <div className="about-column">

@@ -19,11 +19,14 @@ function getCategoryGroup(item?: Product | null): string {
   const title = item.name?.toLowerCase().trim() || "";
   const text = `${slug} ${name} ${id} ${title}`;
 
+  if (slug === "shirts" || (text.includes("shirt") && !text.includes("t-shirt") && !text.includes("tee"))) {
+    return "shirts";
+  }
+  if (slug === "t-shirts" || text.includes("tee") || text.includes("t-shirt")) {
+    return "t-shirts";
+  }
   if (slug === "pants" || text.includes("pant") || text.includes("cargo") || text.includes("trouser")) {
     return "pants";
-  }
-  if (slug === "tops" || slug === "t-shirts" || text.includes("tee") || text.includes("t-shirt") || text.includes("shirt") || text.includes("turtleneck")) {
-    return "tops";
   }
   if (slug === "outerwear" || slug === "hoodies" || text.includes("hoodie") || text.includes("coat") || text.includes("jacket")) {
     return "outerwear";
@@ -58,10 +61,14 @@ function getCategoryDisplayName(item?: Product | null): string {
   if (!item) return "ATELIER";
   const group = getCategoryGroup(item);
   switch (group) {
+    case "shirts":
+      return "SHIRTS";
+    case "t-shirts":
+      return "T-SHIRTS";
     case "pants":
       return "PANTS & TROUSERS";
     case "tops":
-      return "TOPS & KNITWEAR";
+      return "TOPS";
     case "outerwear":
       return "OUTERWEAR & COATS";
     case "bags":

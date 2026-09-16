@@ -85,12 +85,9 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   if (!isOpen) return null;
 
   const quickCategories = [
+    { name: "ALL PIECES", slug: "all" },
     { name: "T-SHIRTS", slug: "t-shirts" },
-    { name: "HOODIES", slug: "hoodies" },
-    { name: "PANTS", slug: "pants" },
-    { name: "CAPS", slug: "caps" },
-    { name: "BAGS", slug: "bags" },
-    { name: "ACCESSORIES", slug: "accessories" },
+    { name: "SHIRTS", slug: "shirts" },
   ];
 
   return (
@@ -256,7 +253,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="SEARCH PIECES, HOODIES, TEES, PANTS..."
+                placeholder="SEARCH PIECES, SHIRTS, TEES..."
                 style={{
                   width: "100%",
                   background: "transparent",

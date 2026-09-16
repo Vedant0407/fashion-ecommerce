@@ -79,11 +79,7 @@ export default function ShopPage() {
         if (p.category_slug?.toLowerCase() === catSlug) return true;
         if (p.category_name?.toUpperCase() === selectedCategory) return true;
         if (catSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee"))) return true;
-        if (catSlug === "hoodies" && (p.id.includes("hoodie") || p.name.toLowerCase().includes("hoodie"))) return true;
-        if (catSlug === "pants" && (p.id.includes("pants") || p.name.toLowerCase().includes("pants") || p.id.includes("cargo"))) return true;
-        if (catSlug === "caps" && (p.id.includes("cap") || p.name.toLowerCase().includes("cap"))) return true;
-        if (catSlug === "bags" && (p.id.includes("bag") || p.name.toLowerCase().includes("bag"))) return true;
-        if (catSlug === "accessories" && (p.id.includes("chain") || p.name.toLowerCase().includes("chain"))) return true;
+        if (catSlug === "shirts" && (p.id.includes("shirt") || p.name.toLowerCase().includes("shirt"))) return true;
         return false;
       });
     }

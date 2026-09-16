@@ -15,6 +15,10 @@ const categoryMeta: Record<
     name: "T-SHIRTS",
     description: "Signature heavyweight oversized and relaxed fit tees crafted from luxury combed cotton.",
   },
+  shirts: {
+    name: "SHIRTS",
+    description: "Architectural tailored shirting and relaxed collared overshirts in luxury poplin and oxford weaves.",
+  },
   hoodies: {
     name: "HOODIES",
     description: "Structured heavyweight fleece pullover hoodies with dropped shoulders.",

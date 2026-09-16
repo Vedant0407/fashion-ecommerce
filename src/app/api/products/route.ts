@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreProducts } from "@/lib/store-data";
+import { isShirtOrTshirt } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,9 @@ export async function GET(request: NextRequest) {
       } catch {}
     }
 
+    // Strictly enforce curated shirts & t-shirts
+    products = products.filter(isShirtOrTshirt);
+
     if (category && category.toLowerCase() !== "all") {
       const cleanSlug = category.toLowerCase().trim();
       products = products.filter((p) => {
@@ -39,12 +43,8 @@ export async function GET(request: NextRequest) {
         if (p.collection_tag?.toLowerCase() === cleanSlug) return true;
         if (p.category_slug?.toLowerCase() === cleanSlug) return true;
         if (p.category_name?.toLowerCase().replace(/[\s-]/g, "") === cleanSlug.replace(/[\s-]/g, "")) return true;
-        if (cleanSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee"))) return true;
-        if (cleanSlug === "hoodies" && (p.id.includes("hoodie") || p.name.toLowerCase().includes("hoodie"))) return true;
-        if (cleanSlug === "pants" && (p.id.includes("pants") || p.name.toLowerCase().includes("pants") || p.id.includes("cargo"))) return true;
-        if (cleanSlug === "caps" && (p.id.includes("cap") || p.name.toLowerCase().includes("cap"))) return true;
-        if (cleanSlug === "bags" && (p.id.includes("bag") || p.name.toLowerCase().includes("bag"))) return true;
-        if (cleanSlug === "accessories" && (p.id.includes("chain") || p.name.toLowerCase().includes("chain"))) return true;
+        if (cleanSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee") || p.category_slug === "t-shirts")) return true;
+        if (cleanSlug === "shirts" && (p.id.includes("shirt") || p.name.toLowerCase().includes("shirt") || p.category_slug === "shirts")) return true;
         return false;
       });
     }

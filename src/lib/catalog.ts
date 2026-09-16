@@ -47,164 +47,48 @@ export const FALLBACK_CATEGORIES: Category[] = [
     image: "/atelier-shirt.jpg",
     description: "Architectural tailored shirting in Italian and Egyptian cotton poplins.",
   },
-  {
-    id: "8f4e5a32-9172-466f-b752-2f8e1c6586a0",
-    name: "HOODIES",
-    slug: "hoodies",
-    image: "/grey-hoodie.jfif",
-    description: "Heavyweight fleece hoodies with drop shoulders and structured drape.",
-  },
-  {
-    id: "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
-    name: "PANTS",
-    slug: "pants",
-    image: "/cargo-pants.jfif",
-    description: "Utility cargo pants and streetwear trousers with tailored proportions.",
-  },
-  {
-    id: "be67b7ca-c601-4daf-9d7d-4ee083f8bdc2",
-    name: "CAPS",
-    slug: "caps",
-    image: "/hero.jfif",
-    description: "Low-profile structured 6-panel caps and vintage dad hats.",
-  },
-  {
-    id: "0e60c6fa-3368-4d27-b827-57c2ae2cbcff",
-    name: "BAGS",
-    slug: "bags",
-    image: "/cargo-pants.jfif",
-    description: "Technical crossbodies, modular tote bags and utility carriers.",
-  },
-  {
-    id: "21fcf8a3-cdc3-4b43-888e-45a72ef053f2",
-    name: "ACCESSORIES",
-    slug: "accessories",
-    image: "/white-tee.jfif",
-    description: "Everyday essentials, keychains, stainless jewelry, and socks.",
-  },
-  {
-    id: "cat-tops",
-    name: "TOPS",
-    slug: "tops",
-    image: "/atelier-knitwear.jpg",
-    description: "Fine knitwear, minimal tees, and structured shirting.",
-  },
-  {
-    id: "cat-outerwear",
-    name: "OUTERWEAR",
-    slug: "outerwear",
-    image: "/atelier-coat.jpg",
-    description: "Tailored long coats, architectural blazers, and luxury woolens.",
-  },
-  {
-    id: "cat-footwear",
-    name: "FOOTWEAR",
-    slug: "footwear",
-    image: "/atelier-derbies.jpg",
-    description: "Hand-finished calfskin derbies and European leather shoes.",
-  },
 ];
 
 export const FALLBACK_PRODUCTS: Product[] = [
   {
-    id: "envelope-tote-bag",
-    name: "Envelope Tote",
-    price: 4499,
-    description: "Architectural slouchy shoulder tote crafted from vegetable-tanned full-grain calfskin leather.",
-    category_id: "0e60c6fa-3368-4d27-b827-57c2ae2cbcff",
-    category_slug: "bags",
-    category_name: "BAGS",
-    image: "/atelier-bag.jpg",
-    images: ["/atelier-bag.jpg", "/atelier-bag-detail.jpg"],
-    stock: 20,
+    id: "tailored-poplin-shirt",
+    name: "Tailored Poplin Shirt",
+    price: 3499,
+    description: "Architectural oversized collared shirt in crisp off-white Italian cotton poplin with mother-of-pearl buttons.",
+    category_id: "cat-shirts",
+    category_slug: "shirts",
+    category_name: "SHIRTS",
+    image: "/atelier-shirt.jpg",
+    images: ["/atelier-shirt.jpg", "/atelier-shirt-detail.jpg"],
+    stock: 22,
     is_featured: true,
     is_new: true,
     is_trending: true,
-    color: "NOIR",
-    product_no: "AT-BAG-01",
-    material: "Calfskin Leather",
-    fabric: "Vegetable Tanned",
-    fit: "Structured slouch",
+    color: "OFF-WHITE",
+    product_no: "AT-SHT-01",
+    material: "100% Egyptian Cotton Poplin",
+    fabric: "Crisp 120s Poplin",
+    fit: "Oversized Tailored Drape",
   },
   {
-    id: "knit-turtleneck-no-3",
-    name: "Knit Turtleneck No. 3",
+    id: "charcoal-oxford-overshirt",
+    name: "Charcoal Oxford Overshirt",
     price: 3899,
-    description: "Relaxed high-neck sweater knitted from 100% fine virgin wool in an oatmeal ribbed texture.",
-    category_id: "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
-    category_slug: "tops",
-    category_name: "TOPS",
-    image: "/atelier-knitwear.jpg",
-    images: ["/atelier-knitwear.jpg", "/white-tee.jfif"],
-    stock: 30,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    color: "OATMEAL",
-    product_no: "AT-KNIT-03",
-    material: "100% Virgin wool",
-    fabric: "Heavyweight rib",
-    fit: "Relaxed drape",
-  },
-  {
-    id: "polished-calfskin-derbies",
-    name: "Calfskin Derbies",
-    price: 5299,
-    description: "Minimalist low-profile derby shoes shaped from polished black calfskin with hand-finished leather soles.",
-    category_id: "21fcf8a3-cdc3-4b43-888e-45a72ef053f2",
-    category_slug: "footwear",
-    category_name: "FOOTWEAR",
-    image: "/atelier-derbies.jpg",
-    images: ["/atelier-derbies.jpg"],
+    description: "Minimalist relaxed collared overshirt crafted from heavyweight Italian structured cotton oxford weave.",
+    category_id: "cat-shirts",
+    category_slug: "shirts",
+    category_name: "SHIRTS",
+    image: "/atelier-oxford-shirt.jpg",
+    images: ["/atelier-oxford-shirt.jpg", "/atelier-oxford-detail.jpg"],
     stock: 18,
     is_featured: true,
     is_new: true,
     is_trending: true,
-    color: "NOIR",
-    product_no: "AT-SHOE-01",
-    material: "Polished calfskin",
-    fabric: "Leather sole",
-    fit: "Classic European",
-  },
-  {
-    id: "tailored-wool-coat",
-    name: "Double-Breasted Wool Coat",
-    price: 6999,
-    description: "Sharp architectural double-breasted long coat in heavyweight charcoal melange wool.",
-    category_id: "8f4e5a32-9172-466f-b752-2f8e1c6586a0",
-    category_slug: "outerwear",
-    category_name: "OUTERWEAR",
-    image: "/atelier-coat.jpg",
-    images: ["/atelier-coat.jpg", "/grey-hoodie.jfif"],
-    stock: 15,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
     color: "CHARCOAL",
-    product_no: "AT-COAT-01",
-    material: "Heavyweight wool melange",
-    fabric: "Satin lining",
-    fit: "Tailored silhouette",
-  },
-  {
-    id: "pleated-wool-trousers",
-    name: "Pleated Wool Trousers",
-    price: 4299,
-    description: "Architectural wide-leg tailored trousers in tropical virgin wool with double front pleats and fluid drape.",
-    category_id: "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
-    category_slug: "pants",
-    category_name: "PANTS",
-    image: "/atelier-trousers.jpg",
-    images: ["/atelier-trousers.jpg", "/atelier-trousers-detail.jpg"],
-    stock: 25,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    color: "CHARCOAL",
-    product_no: "AT-PNT-01",
-    material: "100% Tropical Wool",
-    fabric: "Virgin Wool Weave",
-    fit: "Relaxed Wide Leg",
+    product_no: "AT-SHT-02",
+    material: "100% Italian Oxford Cotton",
+    fabric: "Heavyweight Structured Weave",
+    fit: "Relaxed Boxy Silhouette",
   },
   {
     id: "oversized-black-tee",
@@ -227,144 +111,24 @@ export const FALLBACK_PRODUCTS: Product[] = [
     fit: "Boxy Drop-Shoulder",
   },
   {
-    id: "tailored-poplin-shirt",
-    name: "Tailored Poplin Shirt",
-    price: 3499,
-    description: "Architectural oversized collared shirt in crisp off-white Italian cotton poplin with mother-of-pearl buttons.",
-    category_id: "cat-shirts",
-    category_slug: "shirts",
-    category_name: "SHIRTS",
-    image: "/atelier-shirt.jpg",
-    images: ["/atelier-shirt.jpg", "/atelier-shirt-detail.jpg"],
-    stock: 22,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    color: "OFF-WHITE",
-    product_no: "AT-SHT-01",
-    material: "100% Egyptian Cotton Poplin",
-    fabric: "Crisp 120s Poplin",
-    fit: "Oversized Tailored Drape",
-  },
-  {
-    id: "urban-grey-hoodie",
-    name: "Urban Grey Hoodie",
-    price: 3999,
-    description: "A clean heavyweight hoodie built from 420 GSM brushback fleece with hidden pouch pockets.",
-    category_id: "8f4e5a32-9172-466f-b752-2f8e1c6586a0",
-    category_slug: "hoodies",
-    category_name: "HOODIES",
-    image: "/grey-hoodie.jfif",
-    images: ["/grey-hoodie.jfif", "/black-tee.jfif", "/hero.jfif"],
-    stock: 45,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    color: "GREY",
-    product_no: "GH-001",
-    material: "Cotton Fleece",
-    fabric: "420 GSM Fleece",
-    fit: "Boxy Oversized Fit",
-  },
-  {
-    id: "cargo-street-pants",
-    name: "Cargo Street Pants",
-    price: 3499,
-    description: "Modern streetwear cargo pants with articulated knees, deep utility pockets and cinchable cuffs.",
-    category_id: "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
-    category_slug: "pants",
-    category_name: "PANTS",
-    image: "/cargo-pants.jfif",
-    images: ["/cargo-pants.jfif", "/grey-hoodie.jfif", "/black-tee.jfif"],
-    stock: 35,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    color: "OLIVE",
-    product_no: "GP-001",
-    material: "Cotton Twill",
-    fabric: "Ripstop Twill",
-    fit: "Relaxed Straight Fit",
-  },
-  {
-    id: "classic-white-tee",
-    name: "Classic White Tee",
-    price: 1999,
-    description: "A clean, minimal white tee for daily layering, tailored with reinforced rib collar.",
+    id: "minimalist-chalk-tee",
+    name: "Minimalist Chalk Tee",
+    price: 2499,
+    description: "Clean drop-shoulder crewneck t-shirt cut in 320gsm premium off-white combed cotton jersey.",
     category_id: "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
     category_slug: "t-shirts",
     category_name: "T-SHIRTS",
-    image: "/white-tee.jfif",
-    images: ["/white-tee.jfif", "/black-tee.jfif", "/hero.jfif"],
-    stock: 60,
-    is_featured: false,
-    is_new: true,
-    is_trending: false,
-    color: "WHITE",
-    product_no: "WT-001",
-    material: "100% Organic Cotton",
-    fabric: "Single Jersey",
-    fit: "Regular Fit",
-  },
-  {
-    id: "greeno-dad-cap",
-    name: "GreenO Signature Dad Cap",
-    price: 1499,
-    description: "Unstructured 6-panel cap with vintage washed cotton finish and antique brass closure.",
-    category_id: "be67b7ca-c601-4daf-9d7d-4ee083f8bdc2",
-    category_slug: "caps",
-    category_name: "CAPS",
-    image: "/hero.jfif",
-    images: ["/hero.jfif", "/black-tee.jfif", "/white-tee.jfif"],
-    stock: 25,
-    is_featured: false,
-    is_new: true,
-    is_trending: true,
-    color: "BLACK",
-    product_no: "CP-001",
-    material: "100% Washed Cotton",
-    fabric: "Chino Cotton",
-    fit: "Adjustable",
-  },
-  {
-    id: "tactical-crossbody-bag",
-    name: "Tactical Crossbody Bag",
-    price: 2799,
-    description: "Water-resistant Cordura nylon body with Fidlock magnetic buckle and modular strap.",
-    category_id: "0e60c6fa-3368-4d27-b827-57c2ae2cbcff",
-    category_slug: "bags",
-    category_name: "BAGS",
-    image: "/cargo-pants.jfif",
-    images: ["/cargo-pants.jfif", "/black-tee.jfif", "/grey-hoodie.jfif"],
-    stock: 30,
+    image: "/atelier-white-tee.jpg",
+    images: ["/atelier-white-tee.jpg", "/atelier-white-detail.jpg"],
+    stock: 28,
     is_featured: true,
     is_new: true,
     is_trending: true,
-    color: "BLACK",
-    product_no: "BG-001",
-    material: "Cordura Nylon",
-    fabric: "Weatherproof 500D",
-    fit: "One Size",
-  },
-  {
-    id: "silver-link-chain",
-    name: "Industrial Link Chain",
-    price: 1899,
-    description: "Solid 316L stainless steel chain with custom GreenO laser engraved clasp.",
-    category_id: "21fcf8a3-cdc3-4b43-888e-45a72ef053f2",
-    category_slug: "accessories",
-    category_name: "ACCESSORIES",
-    image: "/white-tee.jfif",
-    images: ["/white-tee.jfif", "/hero.jfif"],
-    stock: 40,
-    is_featured: false,
-    is_new: false,
-    is_trending: false,
-    color: "SILVER",
-    product_no: "AC-001",
-    material: "Stainless Steel",
-    fabric: "316L Grade",
-    fit: "55cm Length",
+    color: "CHALK",
+    product_no: "AT-TSH-02",
+    material: "100% Combed Heavyweight Cotton",
+    fabric: "320gsm Dense Jersey",
+    fit: "Relaxed Architectural Fit",
   },
 ];
 
@@ -409,6 +173,49 @@ export function ensureProductImages(product: Product): Product {
     ...product,
     images: unique.length > 1 ? unique : [baseImg, "/black-tee.jfif", "/white-tee.jfif"],
   };
+}
+
+export function isShirtOrTshirt(product?: Product | null): boolean {
+  if (!product) return false;
+  const id = (product.id || "").toLowerCase();
+  const catSlug = (product.category_slug || "").toLowerCase();
+  const catName = (product.category_name || "").toLowerCase();
+  const name = (product.name || "").toLowerCase();
+
+  // Exclude non-shirt categories and product lines
+  if (
+    id.includes("pant") ||
+    id.includes("trouser") ||
+    id.includes("hoodie") ||
+    id.includes("bag") ||
+    id.includes("cap") ||
+    id.includes("derbie") ||
+    id.includes("chain") ||
+    id.includes("coat") ||
+    id.includes("knit") ||
+    name.includes("trouser") ||
+    name.includes("bag") ||
+    name.includes("cap") ||
+    name.includes("hoodie") ||
+    name.includes("pant") ||
+    name.includes("derbie") ||
+    name.includes("coat") ||
+    name.includes("turtleneck") ||
+    name.includes("chain")
+  ) {
+    return false;
+  }
+
+  return (
+    catSlug.includes("shirt") ||
+    catSlug.includes("tee") ||
+    catName.includes("shirt") ||
+    catName.includes("tee") ||
+    name.includes("shirt") ||
+    name.includes("tee") ||
+    id.includes("shirt") ||
+    id.includes("tee")
+  );
 }
 
 export async function getAllProducts(): Promise<Product[]> {
@@ -476,18 +283,18 @@ export async function getAllProducts(): Promise<Product[]> {
           }
 
           if (merged.length > 0) {
-            return merged.map(ensureProductImages);
+            return merged.filter(isShirtOrTshirt).map(ensureProductImages);
           }
         }
       } catch (clientFetchErr) {
         console.warn("Client fetch /api/products warning, using local cache:", clientFetchErr);
         if (localProducts.length > 0) {
-          return localProducts.map(ensureProductImages);
+          return localProducts.filter(isShirtOrTshirt).map(ensureProductImages);
         }
       }
 
       if (localProducts.length > 0) {
-        return localProducts.map(ensureProductImages);
+        return localProducts.filter(isShirtOrTshirt).map(ensureProductImages);
       }
     }
 
@@ -496,7 +303,7 @@ export async function getAllProducts(): Promise<Product[]> {
         const { getStoreProducts } = await import("./store-data");
         const storeProducts = await getStoreProducts();
         if (storeProducts && storeProducts.length > 0) {
-          return storeProducts.map(ensureProductImages);
+          return storeProducts.filter(isShirtOrTshirt).map(ensureProductImages);
         }
       } catch (serverImportErr) {
         // Continue to Supabase / fallback below
@@ -509,7 +316,7 @@ export async function getAllProducts(): Promise<Product[]> {
       .select("*, categories(id, name, slug)");
 
     if (error || !dbProducts || dbProducts.length === 0) {
-      return FALLBACK_PRODUCTS;
+      return FALLBACK_PRODUCTS.filter(isShirtOrTshirt);
     }
 
     const merged = [...FALLBACK_PRODUCTS];
@@ -550,10 +357,10 @@ export async function getAllProducts(): Promise<Product[]> {
       }
     });
 
-    return merged.map(ensureProductImages);
+    return merged.filter(isShirtOrTshirt).map(ensureProductImages);
   } catch (e) {
     console.error("Error in getAllProducts:", e);
-    return FALLBACK_PRODUCTS;
+    return FALLBACK_PRODUCTS.filter(isShirtOrTshirt);
   }
 }
 
@@ -580,7 +387,7 @@ export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | 
       if (raw) {
         const localList: Product[] = JSON.parse(raw);
         found = localList.find((p) => {
-          if (!p) return false;
+          if (!p || !isShirtOrTshirt(p)) return false;
           const pId = p.id ? String(p.id).toLowerCase() : "";
           const pName = p.name ? String(p.name).toLowerCase() : "";
           return (
@@ -601,6 +408,7 @@ export async function getProductsByCategory(categorySlug: string): Promise<Produ
   const cleanSlug = categorySlug.toLowerCase().trim();
 
   return products.filter((p) => {
+    if (!isShirtOrTshirt(p)) return false;
     if ((cleanSlug === "newin" || cleanSlug === "new-in" || cleanSlug === "new") && p.is_new) return true;
     if (cleanSlug === "trending" && p.is_trending) return true;
     if (cleanSlug === "featured" && p.is_featured) return true;
@@ -608,12 +416,8 @@ export async function getProductsByCategory(categorySlug: string): Promise<Produ
     if (p.category_slug?.toLowerCase() === cleanSlug) return true;
     if (p.category_name?.toLowerCase().replace(/[\s-]/g, "") === cleanSlug.replace(/[\s-]/g, "")) return true;
 
-    if (cleanSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee"))) return true;
-    if (cleanSlug === "hoodies" && (p.id.includes("hoodie") || p.name.toLowerCase().includes("hoodie"))) return true;
-    if (cleanSlug === "pants" && (p.id.includes("pants") || p.name.toLowerCase().includes("pants") || p.id.includes("cargo"))) return true;
-    if (cleanSlug === "caps" && (p.id.includes("cap") || p.name.toLowerCase().includes("cap"))) return true;
-    if (cleanSlug === "bags" && (p.id.includes("bag") || p.name.toLowerCase().includes("bag"))) return true;
-    if (cleanSlug === "accessories" && (p.id.includes("chain") || p.name.toLowerCase().includes("chain"))) return true;
+    if (cleanSlug === "t-shirts" && (p.id.includes("tee") || p.name.toLowerCase().includes("tee") || p.category_slug === "t-shirts")) return true;
+    if (cleanSlug === "shirts" && (p.id.includes("shirt") || p.name.toLowerCase().includes("shirt") || p.category_slug === "shirts")) return true;
 
     return false;
   });

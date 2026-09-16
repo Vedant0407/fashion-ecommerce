@@ -15,91 +15,6 @@ const ATELIER_CATEGORIES = [
 
 const CURATED_ATELIER_PRODUCTS: Product[] = [
   {
-    id: "envelope-tote-bag",
-    name: "Envelope Tote",
-    price: 4499,
-    description: "Architectural slouchy shoulder tote crafted from vegetable-tanned full-grain calfskin leather.",
-    category_slug: "bags",
-    category_name: "BAGS",
-    image: "/atelier-bag.jpg",
-    images: ["/atelier-bag.jpg"],
-    stock: 20,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    material: "Vegetable tanned calfskin",
-    fabric: "Full grain leather",
-    fit: "Structured slouch",
-  },
-  {
-    id: "knit-turtleneck-no-3",
-    name: "Knit Turtleneck No. 3",
-    price: 3899,
-    description: "Relaxed high-neck sweater knitted from 100% fine virgin wool in an oatmeal ribbed texture.",
-    category_slug: "tops",
-    category_name: "TOPS",
-    image: "/atelier-knitwear.jpg",
-    images: ["/atelier-knitwear.jpg"],
-    stock: 30,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    material: "100% Virgin wool",
-    fabric: "Heavyweight rib",
-    fit: "Relaxed drape",
-  },
-  {
-    id: "pleated-wool-trousers",
-    name: "Pleated Wool Trousers",
-    price: 4299,
-    description: "Architectural wide-leg tailored trousers in tropical virgin wool with double front pleats and fluid drape.",
-    category_slug: "pants",
-    category_name: "PANTS",
-    image: "/atelier-trousers.jpg",
-    images: ["/atelier-trousers.jpg", "/atelier-trousers-detail.jpg"],
-    stock: 25,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    material: "100% Tropical Wool",
-    fabric: "Virgin Wool Weave",
-    fit: "Relaxed Wide Leg",
-  },
-  {
-    id: "polished-calfskin-derbies",
-    name: "Calfskin Derbies",
-    price: 5299,
-    description: "Minimalist low-profile derby shoes shaped from polished black calfskin with hand-finished leather soles.",
-    category_slug: "footwear",
-    category_name: "FOOTWEAR",
-    image: "/atelier-derbies.jpg",
-    images: ["/atelier-derbies.jpg"],
-    stock: 18,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    material: "Polished calfskin",
-    fabric: "Leather sole",
-    fit: "Classic European",
-  },
-  {
-    id: "tailored-wool-coat",
-    name: "Double-Breasted Wool Coat",
-    price: 6999,
-    description: "Sharp architectural double-breasted long coat in heavyweight charcoal melange wool.",
-    category_slug: "outerwear",
-    category_name: "OUTERWEAR",
-    image: "/atelier-coat.jpg",
-    images: ["/atelier-coat.jpg"],
-    stock: 15,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    material: "Heavyweight wool melange",
-    fabric: "Satin lining",
-    fit: "Tailored silhouette",
-  },
-  {
     id: "tailored-poplin-shirt",
     name: "Tailored Poplin Shirt",
     price: 3499,
@@ -117,6 +32,23 @@ const CURATED_ATELIER_PRODUCTS: Product[] = [
     fit: "Oversized Tailored Drape",
   },
   {
+    id: "charcoal-oxford-overshirt",
+    name: "Charcoal Oxford Overshirt",
+    price: 3899,
+    description: "Minimalist relaxed collared overshirt crafted from heavyweight Italian structured cotton oxford weave.",
+    category_slug: "shirts",
+    category_name: "SHIRTS",
+    image: "/atelier-oxford-shirt.jpg",
+    images: ["/atelier-oxford-shirt.jpg", "/atelier-oxford-detail.jpg"],
+    stock: 18,
+    is_featured: true,
+    is_new: true,
+    is_trending: true,
+    material: "100% Italian Oxford Cotton",
+    fabric: "Heavyweight Structured Weave",
+    fit: "Relaxed Boxy Silhouette",
+  },
+  {
     id: "oversized-black-tee",
     name: "Heavyweight Boxy Tee",
     price: 2499,
@@ -132,6 +64,23 @@ const CURATED_ATELIER_PRODUCTS: Product[] = [
     material: "100% Combed Heavyweight Cotton",
     fabric: "300gsm Dense Jersey",
     fit: "Boxy Drop-Shoulder",
+  },
+  {
+    id: "minimalist-chalk-tee",
+    name: "Minimalist Chalk Tee",
+    price: 2499,
+    description: "Clean drop-shoulder crewneck t-shirt cut in 320gsm premium off-white combed cotton jersey.",
+    category_slug: "t-shirts",
+    category_name: "T-SHIRTS",
+    image: "/atelier-white-tee.jpg",
+    images: ["/atelier-white-tee.jpg", "/atelier-white-detail.jpg"],
+    stock: 28,
+    is_featured: true,
+    is_new: true,
+    is_trending: true,
+    material: "100% Combed Heavyweight Cotton",
+    fabric: "320gsm Dense Jersey",
+    fit: "Relaxed Architectural Fit",
   },
 ];
 
@@ -176,42 +125,35 @@ export default function AtelierProductGrid() {
   }, []);
 
   const filteredProducts = products.filter((item) => {
-    if (activeTab === "all") return true;
     const slug = (item.category_slug || "").toLowerCase();
     const cat = (item.category_name || "").toLowerCase();
     const title = (item.name || "").toLowerCase();
 
-    if (activeTab === "tshirt") {
-      return (
-        slug === "t-shirts" ||
-        slug === "tshirts" ||
-        slug === "tshirt" ||
-        slug.includes("t-shirt") ||
-        slug.includes("tshirt") ||
-        slug.includes("tee") ||
-        cat.includes("t-shirt") ||
-        cat.includes("tshirt") ||
-        cat.includes("tee") ||
-        title.includes("t-shirt") ||
-        title.includes("tshirt") ||
-        title.includes("tee")
-      );
-    }
-    if (activeTab === "shirt") {
-      return (
-        (slug.includes("shirt") || cat.includes("shirt") || title.includes("shirt")) &&
-        !slug.includes("t-shirt") &&
-        !slug.includes("tshirt") &&
-        !slug.includes("tee") &&
-        !cat.includes("t-shirt") &&
-        !cat.includes("tshirt") &&
-        !cat.includes("tee") &&
-        !title.includes("t-shirt") &&
-        !title.includes("tshirt") &&
-        !title.includes("tee")
-      );
-    }
-    return slug === activeTab || cat === activeTab || title.includes(activeTab);
+    const isTshirt =
+      slug === "t-shirts" ||
+      slug === "tshirts" ||
+      slug === "tshirt" ||
+      slug.includes("t-shirt") ||
+      slug.includes("tshirt") ||
+      slug.includes("tee") ||
+      cat.includes("t-shirt") ||
+      cat.includes("tshirt") ||
+      cat.includes("tee") ||
+      title.includes("t-shirt") ||
+      title.includes("tshirt") ||
+      title.includes("tee");
+
+    const isShirt =
+      (slug.includes("shirt") || cat.includes("shirt") || title.includes("shirt")) &&
+      !isTshirt;
+
+    // Filter out any product that is neither a t-shirt nor a shirt
+    if (!isTshirt && !isShirt) return false;
+
+    if (activeTab === "all") return true;
+    if (activeTab === "tshirt") return isTshirt;
+    if (activeTab === "shirt") return isShirt;
+    return false;
   });
 
   const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
