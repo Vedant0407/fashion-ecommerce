@@ -1,7 +1,18 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
 :root {
-  --color-bg: #ffffff;
+  --font-mono: "PPSupplyMono", monospace;
+  --font-sans: "PP Neue Montreal", sans-serif;
+  --font-display: "Cormorant Garamond", serif;
+  --color-bg: #0a0a0a;
+  --color-text: #ffffff;
+  --color-text-muted: rgba(255, 255, 255, 0.7);
+  --color-text-light: rgba(255, 255, 255, 0.5);
+  --color-accent: #d4af37;
+  --font-size-mono: clamp(10px, 1.2vw, 12px);
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+
   --color-surface: #ffffff;
   --color-surface-elevated: #fafafa;
   --color-surface-border: #e5e5e5;
@@ -15,7 +26,6 @@
   --color-violet: #000000;
   --color-text-primary: #000000;
   --color-text-secondary: #555555;
-  --color-text-muted: #888888;
 }
 
 /* =========================================
@@ -8288,6 +8298,206 @@ select {
   .atelier-pdp-recommendations {
     margin-top: 48px;
     padding-top: 36px;
+  }
+}
+
+/* =========================================
+   LUMINA INTERACTIVE LIST / WEBGL SLIDER
+========================================= */
+
+.slider-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 580px;
+  overflow: hidden;
+  background: var(--color-bg, #0a0a0a);
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  border-radius: 4px;
+}
+
+.slider-wrapper.loaded {
+  opacity: 1;
+}
+
+.webgl-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.slide-number {
+  position: absolute;
+  top: clamp(24px, 4vw, 44px);
+  left: clamp(24px, 4.5vw, 56px);
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(12px, 1.4vw, 15px);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: #ffffff;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+}
+
+.atelier-hero-cta-banner {
+  position: absolute;
+  top: clamp(24px, 4vw, 44px);
+  right: clamp(24px, 4.5vw, 56px);
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.atelier-hero-cta-banner .atelier-hero-link {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: background 0.25s, border-color 0.25s, transform 0.25s;
+}
+
+.atelier-hero-cta-banner .atelier-hero-link:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #121212;
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.slide-total {
+  position: absolute;
+  top: clamp(24px, 4vw, 44px);
+  left: calc(clamp(24px, 4.5vw, 56px) + 38px);
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(10px, 1.1vw, 12px);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.5);
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+}
+
+.slide-total::before {
+  content: "/ ";
+  margin-right: 4px;
+  opacity: 0.6;
+}
+
+.slide-content {
+  position: absolute;
+  bottom: clamp(96px, 14vh, 120px);
+  left: clamp(24px, 4.5vw, 56px);
+  max-width: min(88%, 680px);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.slide-title {
+  font-family: var(--font-display, "Cormorant Garamond", serif);
+  font-size: clamp(32px, 5.2vw, 68px);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--color-text, #ffffff);
+  margin: 0 0 14px 0;
+  text-transform: uppercase;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.slide-title span {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.slide-description {
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  font-size: clamp(12.5px, 1.25vw, 15px);
+  line-height: 1.65;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.75));
+  max-width: 520px;
+  margin: 0;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.slides-navigation {
+  position: absolute;
+  bottom: clamp(20px, 3.5vw, 36px);
+  left: clamp(24px, 4.5vw, 56px);
+  right: clamp(24px, 4.5vw, 56px);
+  display: flex;
+  gap: clamp(12px, 1.8vw, 28px);
+  z-index: 10;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  padding-top: 16px;
+}
+
+.slide-nav-item {
+  flex: 1;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0.45;
+  transition: opacity 0.3s ease;
+  min-width: 0;
+}
+
+.slide-nav-item:hover,
+.slide-nav-item.active {
+  opacity: 1;
+}
+
+.slide-progress-line {
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  position: relative;
+  overflow: hidden;
+  border-radius: 1px;
+}
+
+.slide-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--color-accent, #d4af37);
+  transition: width 0.1s linear;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+}
+
+.slide-nav-title {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-mono, clamp(9px, 1vw, 11.5px));
+  color: #ffffff;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .slides-navigation {
+    bottom: 20px;
+    gap: 8px;
+    padding-top: 12px;
+  }
+  .slide-nav-title {
+    display: none;
+  }
+  .slide-content {
+    bottom: 74px;
   }
 }
 
