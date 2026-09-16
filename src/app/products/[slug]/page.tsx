@@ -300,9 +300,11 @@ export default function ProductPage() {
                   alt={product.name}
                   className="atelier-pdp-main-image"
                   onClick={() => {
-                    setLightboxIndex(activeImageIndex);
-                    setLightboxOpen(true);
+                    if (productImages.length > 1) {
+                      setActiveImageIndex((prev) => (prev + 1) % productImages.length);
+                    }
                   }}
+                  style={{ cursor: productImages.length > 1 ? "pointer" : "default" }}
                 />
 
                 {/* Subtle Image Counter & Zoom Indicator */}
