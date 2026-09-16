@@ -15,82 +15,89 @@ export interface ProjectsTypes {
 const projects: ProjectsTypes[] = [
   {
     id: "01",
-    img: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80",
-    title: "Atelier Poplin Edition",
-    des: "Crisp Italian poplin tailored with architectural lines and mother-of-pearl closures",
+    img: "https://cdn.21st.dev/assets/mirror/f2/f267202371f1d7603ebceea7cbcac251b6a9f5b035f6ff48146e0e29f85736d8.jpg",
+    title: "Distrokings",
+    des: "We make your logo communicate with your customers more than words ever could",
   },
   {
     id: "02",
-    img: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1200&q=80",
-    title: "Heavyweight Boxy Series",
-    des: "Cut from 300gsm dense combed cotton jersey with sculpted dropped shoulders",
+    img: "https://cdn.21st.dev/assets/mirror/ac/ac1b54879a9289f1cf908a8e6e7e4da09828ddd43eef95cae78a0c71cb748c29.jpg",
+    title: "Profitables",
+    des: "We are dedicated to unlocking your business potential through precision development",
   },
   {
     id: "03",
-    img: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=80",
-    title: "Oxford Structured Weave",
-    des: "Minimalist collared overshirt crafted from heavyweight Italian structured cotton",
+    img: "https://cdn.21st.dev/assets/mirror/94/94876618573b337e94fc0f2716364c23a6f4e486ccb75e5a25a91af75dd30ca5.jpg",
+    title: "Topserve-copiers",
+    des: "We are dedicated to unlocking your business potential through precision development",
   },
   {
     id: "04",
-    img: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80",
-    title: "Chalk Minimalist Silhouette",
-    des: "Clean architectural crewneck cut from 320gsm premium off-white combed jersey",
+    img: "https://cdn.21st.dev/assets/mirror/fc/fc8b7c4531f5c2a277663830ae19cac5569b9e36c97a65e3bd6a515f4435aeb9.jpg",
+    title: "Labramart.",
+    des: "We specialize in crafting marketing solutions that propel your brand to new heights",
   },
 ];
 
 export default function ConditionGrid() {
   return (
-    <section className="condition-grid-section" style={{ maxWidth: "1560px", margin: "0 auto", padding: "16px clamp(16px, 2.5vw, 36px) 64px" }}>
-      <div className="grid grid-cols-12 gap-4 overflow-hidden">
-        {projects.map((project, index) => {
-          let colSpanClass = "sm:col-span-6 col-span-12";
-          if (index === 0) {
-            colSpanClass = "sm:col-span-5 col-span-12";
-          } else if (index === 1) {
-            colSpanClass = "sm:col-span-7 col-span-12";
-          } else if (index === projects.length - 2) {
-            colSpanClass = "sm:col-span-7 col-span-12";
-          } else if (index === projects.length - 1) {
-            colSpanClass = "sm:col-span-5 col-span-12";
-          }
-          return (
-            <motion.article
-              key={project.id ?? project.title}
-              initial={{ y: 50, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              transition={{ ease: "easeOut", duration: 0.6 }}
-              viewport={{ once: true }}
-              className={`relative ${colSpanClass} group`}
-              style={{ minHeight: "360px" }}
-            >
-              <div className="w-full h-full relative overflow-hidden rounded-xl bg-[#EFECE6]" style={{ height: "420px" }}>
-                <Image
-                  src={project.img}
-                  alt={project.title}
-                  height={600}
-                  width={1200}
-                  className="h-full w-full object-cover rounded-xl transition-transform duration-700 ease-out group-hover:scale-105"
-                  priority={index < 2}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
-              </div>
-              <div className="absolute lg:bottom-4 bottom-2 text-white w-full p-4 flex justify-between items-center z-10 pointer-events-auto">
-                <div>
-                  <h3 className="lg:text-base text-xs font-semibold tracking-wider uppercase bg-black/80 backdrop-blur-md text-white rounded-lg py-2 px-3.5 inline-block shadow-sm">
-                    {project.title}
-                  </h3>
-                  <p className="text-[11px] text-white/80 mt-1 max-w-[280px] hidden sm:block">
-                    {project.des}
-                  </p>
+    <section
+      className="condition-grid-section bg-[#F7F6F2] w-full"
+      style={{
+        padding: "0 clamp(16px, 2.5vw, 40px) 48px",
+      }}
+    >
+      <div className="max-w-[1440px] mx-auto">
+        <div className="grid grid-cols-12 gap-2 sm:gap-3 overflow-hidden">
+          {projects.map((project, index) => {
+            // Row 1: Left = 8 cols (wide), Right = 4 cols (narrow)
+            // Row 2: Left = 4 cols (narrow), Right = 8 cols (wide)
+            let colSpanClass = "sm:col-span-6 col-span-12";
+            if (index === 0) {
+              colSpanClass = "sm:col-span-8 col-span-12";
+            } else if (index === 1) {
+              colSpanClass = "sm:col-span-4 col-span-12";
+            } else if (index === 2) {
+              colSpanClass = "sm:col-span-4 col-span-12";
+            } else if (index === 3) {
+              colSpanClass = "sm:col-span-8 col-span-12";
+            }
+
+            return (
+              <motion.article
+                key={project.id ?? project.title}
+                initial={{ y: 35, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                transition={{ ease: "easeOut", duration: 0.55, delay: index * 0.08 }}
+                viewport={{ once: true }}
+                className={`relative ${colSpanClass} group cursor-pointer`}
+              >
+                <div className="w-full relative overflow-hidden rounded-2xl bg-[#EFECE6] h-[220px] sm:h-[280px] md:h-[340px] lg:h-[380px]">
+                  <Image
+                    src={project.img}
+                    alt={project.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 66vw, 800px"
+                    className="object-cover rounded-2xl transition-transform duration-700 ease-out group-hover:scale-105"
+                    priority={index < 2}
+                  />
+
+                  {/* Subtle hover overlay and interactive indicator */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
+
+                  <div className="absolute bottom-3 left-3 right-3 text-white flex justify-between items-center z-10 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                    <h3 className="text-xs sm:text-sm font-semibold tracking-wider uppercase bg-black/85 backdrop-blur-md text-white rounded-lg py-1.5 px-3 shadow-sm">
+                      {project.title}
+                    </h3>
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 text-white grid place-content-center rounded-full bg-black/85 backdrop-blur-md shadow-sm transition-transform duration-300 group-hover:scale-110">
+                      <MoveUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </div>
+                  </div>
                 </div>
-                <div className="lg:w-11 w-9 lg:h-11 h-9 text-white grid place-content-center rounded-full bg-black/85 backdrop-blur-md shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:bg-black">
-                  <MoveUpRight className="w-4 h-4" />
-                </div>
-              </div>
-            </motion.article>
-          );
-        })}
+              </motion.article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

@@ -7187,7 +7187,7 @@ select {
 
 /* --- Atelier Catalog & Product Grid --- */
 .atelier-catalog-section {
-  padding: 24px 40px 120px;
+  padding: 24px 40px 24px;
   background: #F7F6F2;
   width: 100%;
 }
@@ -7485,7 +7485,7 @@ select {
   }
 
   .atelier-catalog-section {
-    padding: 20px 14px 90px;
+    padding: 20px 14px 20px;
   }
 
   .atelier-filter-bar {
