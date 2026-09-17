@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE_MODULE from "three";
 import gsap_module from "gsap";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 declare const gsap: any;
 declare const THREE: any;
@@ -15,6 +16,7 @@ export function Component() {
     let animFrameId: number | null = null;
     let autoSlideTimer: any = null;
     let progressAnimation: any = null;
+    let cleanupFn: (() => void) | null = null;
 
     // Ensure THREE and gsap are available globally from npm packages or CDN
     if (typeof window !== "undefined") {
@@ -82,7 +84,7 @@ export function Component() {
       // --- MAIN CONFIG ---
       const SLIDER_CONFIG: any = {
         settings: {
-          transitionDuration: 2.2,
+          transitionDuration: 1.3,
           autoSlideSpeed: 5500,
           currentEffect: "glass",
           currentEffectPreset: "Default",
@@ -293,184 +295,214 @@ export function Component() {
           .join("");
       };
 
-      const updateContent = (idx: number) => {
+      let activeTween: any = null;
+      let textTimeoutId: any = null;
+
+      const updateContent = (idx: number, isFast = false) => {
         const titleEl = containerRef.current?.querySelector("#mainTitle") as HTMLElement;
         const descEl = containerRef.current?.querySelector("#mainDesc") as HTMLElement;
-        if (titleEl && descEl) {
-          gsap.to(titleEl.children, {
-            y: -20,
-            opacity: 0,
-            duration: 0.5,
-            stagger: 0.02,
-            ease: "power2.in",
-          });
-          gsap.to(descEl, { y: -10, opacity: 0, duration: 0.4, ease: "power2.in" });
+        if (!titleEl || !descEl) return;
 
-          setTimeout(() => {
-            if (isCleanedUp) return;
-            titleEl.innerHTML = splitText(slides[idx].title);
-            descEl.textContent = slides[idx].description;
-
-            gsap.set(titleEl.children, { opacity: 0 });
-            gsap.set(descEl, { y: 20, opacity: 0 });
-
-            const children = titleEl.children;
-            switch (idx % 6) {
-              case 0:
-                gsap.set(children, { y: 20 });
-                gsap.to(children, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  stagger: 0.03,
-                  ease: "power3.out",
-                });
-                gsap.to(descEl, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  delay: 0.2,
-                  ease: "power3.out",
-                });
-                break;
-              case 1:
-                gsap.set(children, { y: -20 });
-                gsap.to(children, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  stagger: 0.03,
-                  ease: "back.out(1.7)",
-                });
-                gsap.to(descEl, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  delay: 0.2,
-                  ease: "power3.out",
-                });
-                break;
-              case 2:
-                gsap.set(children, { filter: "blur(10px)", scale: 1.5, y: 0 });
-                gsap.to(children, {
-                  filter: "blur(0px)",
-                  scale: 1,
-                  opacity: 1,
-                  duration: 1,
-                  stagger: { amount: 0.5, from: "random" },
-                  ease: "power2.out",
-                });
-                gsap.to(descEl, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 1,
-                  delay: 0.3,
-                  ease: "power2.out",
-                });
-                break;
-              case 3:
-                gsap.set(children, { scale: 0, y: 0 });
-                gsap.to(children, {
-                  scale: 1,
-                  opacity: 1,
-                  duration: 0.6,
-                  stagger: 0.05,
-                  ease: "back.out(1.5)",
-                });
-                gsap.to(descEl, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  delay: 0.2,
-                  ease: "power3.out",
-                });
-                break;
-              case 4:
-                gsap.set(children, {
-                  rotationX: 90,
-                  y: 0,
-                  transformOrigin: "50% 50%",
-                });
-                gsap.to(children, {
-                  rotationX: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  stagger: 0.04,
-                  ease: "power2.out",
-                });
-                gsap.to(descEl, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  delay: 0.2,
-                  ease: "power2.out",
-                });
-                break;
-              case 5:
-                gsap.set(children, { x: 30, y: 0 });
-                gsap.to(children, {
-                  x: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  stagger: 0.03,
-                  ease: "power3.out",
-                });
-                gsap.to(descEl, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  delay: 0.2,
-                  ease: "power3.out",
-                });
-                break;
-              default:
-                gsap.set(children, { y: 20 });
-                gsap.to(children, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  stagger: 0.03,
-                  ease: "power3.out",
-                });
-                gsap.to(descEl, {
-                  y: 0,
-                  opacity: 1,
-                  duration: 0.8,
-                  delay: 0.2,
-                  ease: "power3.out",
-                });
-            }
-          }, 450);
+        if (textTimeoutId) {
+          clearTimeout(textTimeoutId);
+          textTimeoutId = null;
         }
+
+        gsap.killTweensOf(titleEl.children);
+        gsap.killTweensOf(descEl);
+
+        const outDuration = isFast ? 0.12 : 0.4;
+        const inDelay = isFast ? 100 : 380;
+
+        gsap.to(titleEl.children, {
+          y: -15,
+          opacity: 0,
+          duration: outDuration,
+          stagger: isFast ? 0.01 : 0.02,
+          ease: "power2.in",
+        });
+        gsap.to(descEl, { y: -8, opacity: 0, duration: outDuration, ease: "power2.in" });
+
+        textTimeoutId = setTimeout(() => {
+          if (isCleanedUp) return;
+          titleEl.innerHTML = splitText(slides[idx].title);
+          descEl.textContent = slides[idx].description;
+
+          gsap.set(titleEl.children, { opacity: 0 });
+          gsap.set(descEl, { y: 15, opacity: 0 });
+
+          const children = titleEl.children;
+          const animDuration = isFast ? 0.45 : 0.8;
+          const staggerDuration = isFast ? 0.015 : 0.03;
+          const descDelay = isFast ? 0.06 : 0.2;
+
+          switch (idx % 6) {
+            case 0:
+              gsap.set(children, { y: 15 });
+              gsap.to(children, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                stagger: staggerDuration,
+                ease: "power3.out",
+              });
+              gsap.to(descEl, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                delay: descDelay,
+                ease: "power3.out",
+              });
+              break;
+            case 1:
+              gsap.set(children, { y: -15 });
+              gsap.to(children, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                stagger: staggerDuration,
+                ease: "back.out(1.5)",
+              });
+              gsap.to(descEl, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                delay: descDelay,
+                ease: "power3.out",
+              });
+              break;
+            case 2:
+              gsap.set(children, { filter: "blur(6px)", scale: 1.2, y: 0 });
+              gsap.to(children, {
+                filter: "blur(0px)",
+                scale: 1,
+                opacity: 1,
+                duration: isFast ? 0.45 : 0.9,
+                stagger: { amount: isFast ? 0.2 : 0.4, from: "random" },
+                ease: "power2.out",
+              });
+              gsap.to(descEl, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                delay: descDelay,
+                ease: "power2.out",
+              });
+              break;
+            case 3:
+              gsap.set(children, { scale: 0.2, y: 0 });
+              gsap.to(children, {
+                scale: 1,
+                opacity: 1,
+                duration: animDuration,
+                stagger: staggerDuration,
+                ease: "back.out(1.4)",
+              });
+              gsap.to(descEl, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                delay: descDelay,
+                ease: "power3.out",
+              });
+              break;
+            case 4:
+              gsap.set(children, {
+                rotationX: 90,
+                y: 0,
+                transformOrigin: "50% 50%",
+              });
+              gsap.to(children, {
+                rotationX: 0,
+                opacity: 1,
+                duration: animDuration,
+                stagger: staggerDuration,
+                ease: "power2.out",
+              });
+              gsap.to(descEl, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                delay: descDelay,
+                ease: "power2.out",
+              });
+              break;
+            case 5:
+              gsap.set(children, { x: 20, y: 0 });
+              gsap.to(children, {
+                x: 0,
+                opacity: 1,
+                duration: animDuration,
+                stagger: staggerDuration,
+                ease: "power3.out",
+              });
+              gsap.to(descEl, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                delay: descDelay,
+                ease: "power3.out",
+              });
+              break;
+            default:
+              gsap.set(children, { y: 15 });
+              gsap.to(children, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                stagger: staggerDuration,
+                ease: "power3.out",
+              });
+              gsap.to(descEl, {
+                y: 0,
+                opacity: 1,
+                duration: animDuration,
+                delay: descDelay,
+                ease: "power3.out",
+              });
+          }
+        }, inDelay);
       };
 
-      const navigateToSlide = (targetIndex: number) => {
-        if (isTransitioning || targetIndex === currentSlideIndex || isCleanedUp) return;
+      const navigateToSlide = (targetIndex: number, isFast = false) => {
+        if (targetIndex === currentSlideIndex || isCleanedUp) return;
+        if (!texturesLoaded || !sliderEnabled || !shaderMaterial) return;
+
         stopAutoSlideTimer();
         quickResetProgress(currentSlideIndex);
+
+        // Cancel running transition so rapid clicks advance immediately without locking
+        if (activeTween) {
+          activeTween.kill();
+          activeTween = null;
+        }
 
         const currentTexture = slideTextures[currentSlideIndex];
         const targetTexture = slideTextures[targetIndex];
         if (!currentTexture || !targetTexture) return;
 
         isTransitioning = true;
+        shaderMaterial.uniforms.uProgress.value = 0;
         shaderMaterial.uniforms.uTexture1.value = currentTexture;
         shaderMaterial.uniforms.uTexture2.value = targetTexture;
         shaderMaterial.uniforms.uTexture1Size.value = currentTexture.userData.size;
         shaderMaterial.uniforms.uTexture2Size.value = targetTexture.userData.size;
 
-        updateContent(targetIndex);
+        updateContent(targetIndex, isFast);
 
         currentSlideIndex = targetIndex;
         updateCounter(currentSlideIndex);
         updateNavigationState(currentSlideIndex);
 
-        gsap.fromTo(
+        // Fast responsive transition (0.55s) for manual arrow / nav clicks, 1.3s for ambient auto-slide
+        const duration = isFast ? 0.55 : 1.3;
+
+        activeTween = gsap.fromTo(
           shaderMaterial.uniforms.uProgress,
           { value: 0 },
           {
             value: 1,
-            duration: TRANSITION_DURATION(),
+            duration,
             ease: "power2.inOut",
             onComplete: () => {
               if (isCleanedUp) return;
@@ -478,15 +510,32 @@ export function Component() {
               shaderMaterial.uniforms.uTexture1.value = targetTexture;
               shaderMaterial.uniforms.uTexture1Size.value = targetTexture.userData.size;
               isTransitioning = false;
-              safeStartTimer(100);
+              activeTween = null;
+              safeStartTimer(isFast ? 4500 : 100);
             },
           }
         );
       };
 
+      const handlePrev = (e?: Event) => {
+        e?.stopPropagation();
+        e?.preventDefault();
+        if (isCleanedUp || !texturesLoaded || !sliderEnabled) return;
+        const target = (currentSlideIndex - 1 + slides.length) % slides.length;
+        navigateToSlide(target, true);
+      };
+
+      const handleNext = (e?: Event) => {
+        e?.stopPropagation();
+        e?.preventDefault();
+        if (isCleanedUp || !texturesLoaded || !sliderEnabled) return;
+        const target = (currentSlideIndex + 1) % slides.length;
+        navigateToSlide(target, true);
+      };
+
       const handleSlideChange = () => {
-        if (isTransitioning || !texturesLoaded || !sliderEnabled || isCleanedUp) return;
-        navigateToSlide((currentSlideIndex + 1) % slides.length);
+        if (!texturesLoaded || !sliderEnabled || isCleanedUp) return;
+        navigateToSlide((currentSlideIndex + 1) % slides.length, false);
       };
 
       const createSlidesNavigation = () => {
@@ -500,10 +549,10 @@ export function Component() {
           item.innerHTML = `<div class="slide-progress-line"><div class="slide-progress-fill"></div></div><div class="slide-nav-title">${slide.title}</div>`;
           item.addEventListener("click", (e) => {
             e.stopPropagation();
-            if (!isTransitioning && i !== currentSlideIndex) {
+            if (i !== currentSlideIndex) {
               stopAutoSlideTimer();
               quickResetProgress(currentSlideIndex);
-              navigateToSlide(i);
+              navigateToSlide(i, true);
             }
           });
           nav.appendChild(item);
@@ -758,9 +807,63 @@ export function Component() {
       document.addEventListener("visibilitychange", handleVisibilityChange);
       window.addEventListener("resize", handleResize);
 
-      return () => {
+      const prevBtn = containerRef.current?.querySelector("#slidePrevBtn");
+      const nextBtn = containerRef.current?.querySelector("#slideNextBtn");
+
+      prevBtn?.addEventListener("click", handlePrev);
+      nextBtn?.addEventListener("click", handleNext);
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        const activeEl = document.activeElement;
+        const tag = activeEl?.tagName?.toLowerCase();
+        if (tag === "input" || tag === "textarea" || activeEl?.getAttribute("contenteditable") === "true") {
+          return;
+        }
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          handlePrev();
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          handleNext();
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+
+      let touchStartX = 0;
+      let touchStartY = 0;
+      const handleTouchStart = (e: TouchEvent) => {
+        if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }
+      };
+      const handleTouchEnd = (e: TouchEvent) => {
+        if (e.changedTouches.length === 1) {
+          const deltaX = e.changedTouches[0].clientX - touchStartX;
+          const deltaY = e.changedTouches[0].clientY - touchStartY;
+          if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+            if (deltaX > 0) {
+              handlePrev();
+            } else {
+              handleNext();
+            }
+          }
+        }
+      };
+      const wrapperEl = containerRef.current;
+      wrapperEl?.addEventListener("touchstart", handleTouchStart, { passive: true });
+      wrapperEl?.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+      cleanupFn = () => {
+        prevBtn?.removeEventListener("click", handlePrev);
+        nextBtn?.removeEventListener("click", handleNext);
+        window.removeEventListener("keydown", handleKeyDown);
+        wrapperEl?.removeEventListener("touchstart", handleTouchStart);
+        wrapperEl?.removeEventListener("touchend", handleTouchEnd);
         document.removeEventListener("visibilitychange", handleVisibilityChange);
         window.removeEventListener("resize", handleResize);
+        if (activeTween) activeTween.kill();
+        if (textTimeoutId) clearTimeout(textTimeoutId);
       };
     };
 
@@ -768,6 +871,7 @@ export function Component() {
 
     return () => {
       isCleanedUp = true;
+      if (cleanupFn) cleanupFn();
       if (animFrameId) cancelAnimationFrame(animFrameId);
       if (autoSlideTimer) clearTimeout(autoSlideTimer);
       if (progressAnimation) clearInterval(progressAnimation);
@@ -787,6 +891,28 @@ export function Component() {
       <div className="slide-content">
         <h1 className="slide-title" id="mainTitle"></h1>
         <p className="slide-description" id="mainDesc"></p>
+      </div>
+
+      {/* Quick Image Navigation Arrow Controls */}
+      <div className="slider-arrow-controls">
+        <button
+          type="button"
+          className="slider-arrow-btn slider-arrow-prev"
+          id="slidePrevBtn"
+          aria-label="Previous image"
+          title="Previous image (Left Arrow)"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <button
+          type="button"
+          className="slider-arrow-btn slider-arrow-next"
+          id="slideNextBtn"
+          aria-label="Next image"
+          title="Next image (Right Arrow)"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
 
       <nav className="slides-navigation" id="slidesNav"></nav>
