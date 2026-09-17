@@ -8448,6 +8448,620 @@ select {
   margin: 0;
 }
 
+/* =========================================
+   ATELIER PDP CLIENT REVIEWS & APPRAISALS
+========================================= */
+
+.atelier-pdp-rating-anchor-wrap {
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+
+.atelier-pdp-rating-anchor {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s;
+}
+
+.atelier-pdp-rating-anchor:hover {
+  opacity: 0.75;
+}
+
+.atelier-stars-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.atelier-stars-row.mini {
+  gap: 2px;
+}
+
+.atelier-rating-score {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #121212;
+  letter-spacing: 0.04em;
+}
+
+.atelier-rating-sep {
+  color: #C0BCB3;
+  font-size: 10px;
+}
+
+.atelier-rating-link {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #555555;
+  letter-spacing: 0.16em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: #C0BCB3;
+}
+
+/* Reviews Container (below photo in left column) */
+.atelier-pdp-reviews {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid #E7E5DF;
+}
+
+/* Reviews Header */
+.atelier-reviews-head {
+  margin-bottom: 20px;
+}
+
+.atelier-reviews-kicker {
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+  font-weight: 600;
+  color: #888888;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.atelier-kicker-dot {
+  color: #BDB9B0;
+}
+
+.atelier-reviews-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.atelier-reviews-title {
+  font-family: var(--font-geist-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #121212;
+  letter-spacing: 0.14em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.atelier-reviews-write-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: 1px solid #121212;
+  background: transparent;
+  color: #121212;
+  cursor: pointer;
+  border-radius: 1px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.atelier-reviews-write-btn:hover {
+  background: #121212;
+  color: #FFFFFF;
+}
+
+/* Score Card */
+.atelier-reviews-score-card {
+  background: #FFFFFF;
+  border: 1px solid #E7E5DF;
+  padding: 18px 20px;
+  border-radius: 2px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.atelier-score-primary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.atelier-score-num {
+  font-family: var(--font-geist-sans), "Inter", sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1;
+  color: #121212;
+  letter-spacing: -0.02em;
+}
+
+.atelier-score-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.atelier-score-caption {
+  font-size: 11px;
+  color: #71717A;
+  letter-spacing: 0.04em;
+}
+
+/* Progress Bars */
+.atelier-breakdown-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.atelier-bar-row {
+  display: grid;
+  grid-template-columns: 24px 1fr 34px;
+  align-items: center;
+  gap: 10px;
+  font-size: 10.5px;
+  color: #666666;
+  font-variant-numeric: tabular-nums;
+}
+
+.atelier-bar-label {
+  font-weight: 600;
+  color: #121212;
+}
+
+.atelier-bar-track {
+  height: 4px;
+  background: #EFECE6;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.atelier-bar-fill {
+  height: 100%;
+  background: #121212;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.atelier-bar-pct {
+  text-align: right;
+  font-size: 10px;
+  color: #888888;
+}
+
+/* Fit Insights */
+.atelier-reviews-fit-insights {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px dashed #E7E5DF;
+}
+
+.atelier-fit-insight-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fit-k {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  color: #888888;
+}
+
+.fit-v {
+  font-size: 11px;
+  font-weight: 600;
+  color: #121212;
+  line-height: 1.3;
+}
+
+/* Form Panel */
+.atelier-review-form-panel {
+  background: #FFFFFF;
+  border: 1px solid #121212;
+  padding: 22px 20px;
+  margin-bottom: 24px;
+  border-radius: 2px;
+  animation: fadeIn 0.3s ease;
+}
+
+.atelier-form-header {
+  margin-bottom: 18px;
+}
+
+.atelier-form-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #121212;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.atelier-form-sub {
+  font-size: 11.5px;
+  color: #666666;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.atelier-form-error {
+  padding: 8px 12px;
+  background: #FEF2F2;
+  border: 1px solid #F87171;
+  color: #991B1B;
+  font-size: 11px;
+  margin-bottom: 14px;
+  border-radius: 2px;
+}
+
+.atelier-form-success {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #F4F6F0;
+  border: 1px solid #D6DECD;
+  color: #121212;
+}
+
+.atelier-form-success strong {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.atelier-form-success p {
+  font-size: 11px;
+  color: #555555;
+  margin: 2px 0 0;
+}
+
+.atelier-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.atelier-form-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: #555555;
+  text-transform: uppercase;
+}
+
+.atelier-star-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.atelier-star-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: transform 0.15s;
+}
+
+.atelier-star-btn:hover {
+  transform: scale(1.15);
+}
+
+.atelier-star-picker-text {
+  font-size: 11px;
+  color: #555555;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.atelier-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.atelier-form-input,
+.atelier-form-select,
+.atelier-form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 12px;
+  border: 1px solid #D8D4CA;
+  border-radius: 2px;
+  background: #FDFDFD;
+  color: #121212;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.atelier-form-input:focus,
+.atelier-form-select:focus,
+.atelier-form-textarea:focus {
+  border-color: #121212;
+}
+
+.atelier-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.atelier-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.atelier-form-submit-btn {
+  flex: 1;
+  padding: 11px 16px;
+  background: #121212;
+  color: #FFFFFF;
+  border: 1px solid #121212;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.atelier-form-submit-btn:hover {
+  opacity: 0.9;
+}
+
+.atelier-form-cancel-btn {
+  padding: 11px 16px;
+  background: transparent;
+  color: #666666;
+  border: 1px solid #D8D4CA;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.atelier-form-cancel-btn:hover {
+  color: #121212;
+  border-color: #121212;
+}
+
+/* Filter Pills */
+.atelier-reviews-filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.atelier-filter-pill {
+  background: transparent;
+  border: 1px solid #D8D4CA;
+  padding: 5px 10px;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: #666666;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.atelier-filter-pill:hover,
+.atelier-filter-pill.active {
+  background: #121212;
+  border-color: #121212;
+  color: #FFFFFF;
+}
+
+/* Review Cards List */
+.atelier-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.atelier-review-card {
+  background: #FFFFFF;
+  border: 1px solid #E7E5DF;
+  padding: 18px 18px 16px;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.atelier-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.atelier-card-author-info {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.atelier-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #121212;
+  letter-spacing: 0.04em;
+}
+
+.atelier-card-location {
+  font-size: 11px;
+  color: #888888;
+}
+
+.atelier-card-date {
+  font-size: 10.5px;
+  color: #999999;
+  white-space: nowrap;
+}
+
+.atelier-card-rating-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.atelier-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: #2E7D32;
+  background: #F1F8F1;
+  padding: 3px 7px;
+  border-radius: 2px;
+}
+
+.atelier-card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.atelier-meta-tag {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: #555555;
+  background: #F4F2EB;
+  padding: 3px 7px;
+  border-radius: 2px;
+}
+
+.atelier-card-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #121212;
+  line-height: 1.4;
+  margin: 4px 0 0;
+  letter-spacing: 0.02em;
+}
+
+.atelier-card-comment {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #444444;
+  margin: 0;
+}
+
+.atelier-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #F4F2EC;
+}
+
+.atelier-helpful-btn {
+  background: transparent;
+  border: 1px solid #E7E5DF;
+  padding: 4px 10px;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: #666666;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 2px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.atelier-helpful-btn:hover {
+  border-color: #121212;
+  color: #121212;
+}
+
+.atelier-helpful-btn.voted {
+  background: #121212;
+  border-color: #121212;
+  color: #FFFFFF;
+}
+
+/* More / Less button */
+.atelier-reviews-more-wrap {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.atelier-reviews-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 16px;
+  background: #FAF9F5;
+  border: 1px solid #E7E5DF;
+  color: #121212;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.atelier-reviews-toggle-btn:hover {
+  background: #121212;
+  color: #FFFFFF;
+  border-color: #121212;
+}
+
 /* PDP Mobile Responsive */
 @media (max-width: 1024px) {
   .atelier-pdp-layout {
@@ -8490,6 +9104,22 @@ select {
   .atelier-pdp-specs-grid {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .atelier-pdp-reviews {
+    max-width: 100%;
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+
+  .atelier-form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .atelier-reviews-fit-insights {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .atelier-pdp-recommendations {

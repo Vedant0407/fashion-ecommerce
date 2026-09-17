@@ -3,12 +3,13 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Heart, ShoppingBag, ArrowLeft, ChevronLeft, ChevronRight, ShieldCheck, Truck, RefreshCw, ZoomIn } from "lucide-react";
+import { Heart, ShoppingBag, ArrowLeft, ChevronLeft, ChevronRight, ShieldCheck, Truck, RefreshCw, ZoomIn, Star } from "lucide-react";
 
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import AboutSection from "@/components/ui/AboutSection";
 import ProductImageLightbox from "@/components/ProductImageLightbox";
+import ProductReviews from "@/components/ProductReviews";
 import { Product, getProductByIdOrSlug, getAllProducts } from "@/lib/catalog";
 
 function getCategoryGroup(item?: Product | null): string {
@@ -378,6 +379,13 @@ export default function ProductPage() {
                   ))}
                 </div>
               )}
+
+              {/* Client Appraisals & Reviews Section: Directly below photo */}
+              <ProductReviews
+                productId={product.id}
+                productName={product.name}
+                categoryGroup={getCategoryGroup(product)}
+              />
             </div>
 
             {/* Right: Editorial Information & Checkout Controls */}
@@ -394,6 +402,30 @@ export default function ProductPage() {
                   </div>
 
                   <h1 className="atelier-pdp-title">{product.name}</h1>
+
+                  {/* Rating Anchor Link directly to Reviews Section */}
+                  <div className="atelier-pdp-rating-anchor-wrap">
+                    <button
+                      type="button"
+                      className="atelier-pdp-rating-anchor"
+                      onClick={() => {
+                        const el = document.getElementById("atelier-reviews");
+                        if (el) {
+                          el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                      }}
+                      title="Scroll to client appraisals"
+                    >
+                      <div className="atelier-stars-row mini">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} size={11} fill="#121212" stroke="#121212" strokeWidth={1.5} />
+                        ))}
+                      </div>
+                      <span className="atelier-rating-score">4.9</span>
+                      <span className="atelier-rating-sep">&bull;</span>
+                      <span className="atelier-rating-link">CLIENT APPRAISALS</span>
+                    </button>
+                  </div>
 
                   <div className="atelier-pdp-price-wrap">
                     <span className="atelier-pdp-price">
