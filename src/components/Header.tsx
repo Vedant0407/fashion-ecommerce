@@ -9,6 +9,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { createClient } from "@/lib/supabase/client";
 import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
+import { Search, Heart, User, ShoppingBag } from "lucide-react";
 
 export default function Header() {
   const pathname = usePathname();
@@ -183,30 +184,36 @@ export default function Header() {
           <div className="header-actions atelier-header-actions">
             <button
               type="button"
-              className="header-text-action"
+              className="header-icon-action"
               aria-label="Search"
+              title="Search"
               onClick={() => setSearchOpen(true)}
             >
-              SEARCH
+              <Search size={21} strokeWidth={1.8} />
             </button>
 
             <Link
               href="/wishlist"
-              className="header-text-action"
+              className="header-icon-action"
               aria-label="Wishlist"
+              title="Saved pieces"
             >
-              SAVED {wishlistCount > 0 && `(${wishlistCount})`}
+              <Heart size={21} strokeWidth={1.8} />
+              {wishlistCount > 0 && (
+                <span className="header-icon-badge">{wishlistCount}</span>
+              )}
             </Link>
 
             <div className="account-wrapper" ref={accountRef}>
               <button
                 type="button"
-                className="header-text-action"
+                className="header-icon-action"
                 onClick={() => setAccountOpen((open) => !open)}
                 aria-label="Account"
+                title="Client account"
                 aria-expanded={accountOpen}
               >
-                ACCOUNT
+                <User size={21} strokeWidth={1.8} />
               </button>
 
               {accountOpen && (
@@ -246,10 +253,14 @@ export default function Header() {
             <button
               type="button"
               onClick={openCart}
-              className="header-text-action bag-action"
+              className="header-icon-action bag-action"
               aria-label="Shopping bag"
+              title="Shopping bag"
             >
-              BAG ({cartCount})
+              <ShoppingBag size={21} strokeWidth={1.8} />
+              {cartCount > 0 && (
+                <span className="header-icon-badge">{cartCount}</span>
+              )}
             </button>
           </div>
         </nav>

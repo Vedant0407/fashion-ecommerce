@@ -123,8 +123,8 @@ select {
 
 .navbar {
   width: 100%;
-  height: 70px;
-  padding: 0 clamp(20px, 3.5vw, 48px);
+  height: 84px;
+  padding: 0 clamp(24px, 4vw, 56px);
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -154,10 +154,10 @@ select {
   display: block;
   margin: 0;
   color: inherit;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.26em;
   text-decoration: none;
   text-transform: uppercase;
   transition: opacity 0.2s ease;
@@ -171,8 +171,66 @@ select {
   justify-self: end;
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 18px;
   line-height: 1;
+}
+
+.header-icon-action {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 8px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  line-height: 1;
+  text-decoration: none;
+  outline: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.header-icon-action:hover {
+  opacity: 0.6;
+  transform: scale(1.08);
+}
+
+.header-icon-action:active {
+  transform: scale(0.94);
+}
+
+.header-icon-action svg {
+  width: 21px;
+  height: 21px;
+  display: block;
+}
+
+.header-icon-badge {
+  position: absolute;
+  top: 1px;
+  right: -1px;
+  background: #121212;
+  color: #ffffff;
+  border-radius: 50%;
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  font-weight: 700;
+  min-width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  border: 1.5px solid #F7F6F2;
+}
+
+.site-header.scrolled .header-icon-badge {
+  border-color: #F7F6F2;
 }
 
 .header-text-action {
@@ -1349,8 +1407,8 @@ select {
 
 @media (max-width: 900px) {
   .navbar {
-    padding: 0 20px;
-    height: 60px;
+    padding: 0 24px;
+    height: 72px;
   }
   .nav-links-left {
     display: flex;
@@ -1388,7 +1446,7 @@ select {
   }
   .navbar {
     padding: 0 16px;
-    height: 56px;
+    height: 68px;
   }
   .nav-link {
     font-size: 9px;
@@ -7132,7 +7190,7 @@ select {
 
 /* --- Atelier Hero Section --- */
 .atelier-hero-section {
-  padding-top: 118px;
+  padding-top: 116px;
   padding-bottom: 24px;
   padding-left: clamp(16px, 2.5vw, 36px);
   padding-right: clamp(16px, 2.5vw, 36px);
@@ -7154,7 +7212,7 @@ select {
   height: 85vh;
   min-height: 600px;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: 0 0 4px 4px;
   background: #EFECE6;
 }
 
@@ -7514,7 +7572,7 @@ select {
 
 @media (max-width: 768px) {
   .atelier-hero-section {
-    padding-top: 104px;
+    padding-top: 96px;
     padding-bottom: 16px;
     padding-left: 14px;
     padding-right: 14px;
@@ -8391,7 +8449,7 @@ select {
   opacity: 0;
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
-  border-radius: 4px;
+  border-radius: 0 0 4px 4px;
 }
 
 .slider-wrapper.loaded {
