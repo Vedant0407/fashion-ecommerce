@@ -172,27 +172,31 @@ export default function AdminPage() {
   async function handleUploadStoryMedia(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      alert("Please upload a file smaller than 25MB.");
+      return;
+    }
+
     setUploadingStoryMedia(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to upload media file.");
-      }
-      const uploadedUrl = data.urls?.[0];
-      if (uploadedUrl) {
-        setEditingStory((prev) => ({ ...prev, image: uploadedUrl }));
-        triggerToast("Story media uploaded successfully!");
-      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        if (dataUrl) {
+          setEditingStory((prev) => ({ ...prev, image: dataUrl }));
+          triggerToast("Story media loaded successfully!");
+        }
+        setUploadingStoryMedia(false);
+      };
+      reader.onerror = () => {
+        setUploadingStoryMedia(false);
+        alert("Could not read media file from your device.");
+      };
+      reader.readAsDataURL(file);
     } catch (err: any) {
-      alert(err.message || "Media upload failed.");
-    } finally {
       setUploadingStoryMedia(false);
+      alert(err.message || "Failed to load media.");
     }
   }
 
