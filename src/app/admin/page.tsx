@@ -4979,24 +4979,81 @@ export default function AdminPage() {
       {/* ==================== STORY MODAL ==================== */}
       {isStoryModalOpen && editingStory && (
         <div className={styles.modalBackdrop}>
-          <div className={styles.modalWindow} style={{ maxWidth: "860px" }}>
-            <div className={styles.modalHeader}>
+          <div
+            className={styles.modalWindow}
+            style={{
+              maxWidth: "880px",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              className={styles.modalHeader}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 24px",
+                flexShrink: 0,
+              }}
+            >
               <div className={styles.modalTitle}>
                 {editingStory.id ? `EDIT STORY: ${editingStory.title}` : "CREATE NEW ATELIER STORY"}
               </div>
-              <button
-                className={styles.modalCloseBtn}
-                onClick={() => {
-                  setIsStoryModalOpen(false);
-                  setEditingStory(null);
-                }}
-              >
-                &times;
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button
+                  type="submit"
+                  form="story-modal-form"
+                  className={styles.primaryButton}
+                  style={{
+                    background: "#121212",
+                    color: "#ffffff",
+                    padding: "8px 18px",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    letterSpacing: "0.1em",
+                    borderRadius: "2px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {editingStory.id ? "✓ SAVE" : "+ CREATE STORY"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.modalCloseBtn}
+                  onClick={() => {
+                    setIsStoryModalOpen(false);
+                    setEditingStory(null);
+                  }}
+                  aria-label="Close modal"
+                >
+                  &times;
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSaveStory}>
-              <div className={styles.modalBody}>
+            <form
+              id="story-modal-form"
+              onSubmit={handleSaveStory}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                minHeight: 0,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                className={styles.modalBody}
+                style={{
+                  overflowY: "auto",
+                  flex: 1,
+                  minHeight: 0,
+                  padding: "24px",
+                }}
+              >
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: "24px" }}>
                   {/* Left: Form Fields */}
                   <div className={styles.formGrid} style={{ gridTemplateColumns: "1fr 1fr" }}>
@@ -5359,7 +5416,21 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className={styles.modalFooter}>
+              <div
+                className={styles.modalFooter}
+                style={{
+                  flexShrink: 0,
+                  position: "sticky",
+                  bottom: 0,
+                  zIndex: 10,
+                  borderTop: "1px solid #E7E5DF",
+                  background: "#FAFAF8",
+                  padding: "16px 24px",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "12px",
+                }}
+              >
                 <button
                   type="button"
                   className={styles.ghostButton}
@@ -5370,8 +5441,19 @@ export default function AdminPage() {
                 >
                   CANCEL
                 </button>
-                <button type="submit" className={styles.primaryButton}>
-                  {editingStory.id ? "SAVE CHANGES" : "PUBLISH STORY"}
+                <button
+                  type="submit"
+                  className={styles.primaryButton}
+                  style={{
+                    background: "#121212",
+                    color: "#FFFFFF",
+                    padding: "12px 28px",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  {editingStory.id ? "✓ SAVE CHANGES" : "+ CREATE STORY"}
                 </button>
               </div>
             </form>
