@@ -8624,37 +8624,6 @@ select {
   color: #888888;
 }
 
-/* Quote snippet */
-.atelier-cover-preview-card {
-  padding: 10px 14px;
-  background: #FAF9F5;
-  border: 1px solid #EFECE6;
-  border-radius: 2px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.atelier-cover-preview-card:hover {
-  border-color: #121212;
-  background: #F4F2EC;
-}
-
-.atelier-cover-preview-text {
-  font-size: 11px;
-  color: #444444;
-  line-height: 1.45;
-  font-style: italic;
-  margin: 0 0 4px;
-}
-
-.atelier-cover-preview-author {
-  font-size: 10px;
-  font-weight: 600;
-  color: #121212;
-  letter-spacing: 0.04em;
-  display: block;
-}
-
 /* Cover Actions */
 .atelier-cover-actions {
   display: flex;

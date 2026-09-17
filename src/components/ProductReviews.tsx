@@ -459,22 +459,6 @@ export default function ProductReviews({
           })}
         </div>
 
-        {/* Highlight Quote from latest verified review */}
-        {reviews.length > 0 && (
-          <div
-            className="atelier-cover-preview-card"
-            onClick={() => setIsModalOpen(true)}
-            title="Click to view all reviews in modal"
-          >
-            <p className="atelier-cover-preview-text">
-              &ldquo;{reviews[0].comment.length > 115 ? `${reviews[0].comment.slice(0, 115)}...` : reviews[0].comment}&rdquo;
-            </p>
-            <span className="atelier-cover-preview-author">
-              &mdash; {reviews[0].author}{reviews[0].location ? `, ${reviews[0].location}` : ""}
-            </span>
-          </div>
-        )}
-
         {/* Action Buttons inside the cover box */}
         <div className="atelier-cover-actions">
           <button
