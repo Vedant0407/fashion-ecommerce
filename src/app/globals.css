@@ -7719,7 +7719,7 @@ select {
 }
 
 .atelier-pdp-container {
-  max-width: 1160px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -8415,6 +8415,30 @@ select {
   margin-top: 36px;
   padding-top: 32px;
   border-top: 1px solid #E7E5DF;
+  width: 100%;
+}
+
+.atelier-pdp-recommendations .atelier-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  row-gap: 48px;
+}
+
+@media (max-width: 1024px) {
+  .atelier-pdp-recommendations .atelier-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    row-gap: 36px;
+  }
+}
+
+@media (max-width: 640px) {
+  .atelier-pdp-recommendations .atelier-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    row-gap: 28px;
+  }
 }
 
 .atelier-recommendations-header {
