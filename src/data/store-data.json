@@ -1,6 +1,172 @@
 {
   "products": [
     {
+      "id": "pant",
+      "name": "pant",
+      "price": 10,
+      "description": "brand new",
+      "category_id": "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
+      "category_name": "PANTS",
+      "category_slug": "pants",
+      "image": "/black-tee.jfif",
+      "images": [
+        "/black-tee.jfif",
+        "/cargo-pants.jfif"
+      ],
+      "stock": 15,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": false,
+      "color": "BLACK",
+      "product_no": "GO-3607",
+      "material": "100% Cotton",
+      "fabric": "Heavyweight Jersey",
+      "fit": "Oversized Fit"
+    },
+    {
+      "id": "urban-grey-hoodie",
+      "name": "Urban Grey Hoodie",
+      "price": 3999,
+      "description": "A clean heavyweight hoodie built from 420 GSM brushback fleece with hidden pouch pockets.",
+      "category_id": "8f4e5a32-9172-466f-b752-2f8e1c6586a0",
+      "category_slug": "hoodies",
+      "category_name": "HOODIES",
+      "image": "/grey-hoodie.jfif",
+      "images": [
+        "/grey-hoodie.jfif",
+        "/black-tee.jfif",
+        "/hero.jfif"
+      ],
+      "stock": 45,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "GREY",
+      "product_no": "GH-001",
+      "material": "Cotton Fleece",
+      "fabric": "420 GSM Fleece",
+      "fit": "Boxy Oversized Fit"
+    },
+    {
+      "id": "cargo-street-pants",
+      "name": "Cargo Street Pants",
+      "price": 3499,
+      "description": "Modern streetwear cargo pants with articulated knees, deep utility pockets and cinchable cuffs.",
+      "category_id": "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
+      "category_slug": "pants",
+      "category_name": "PANTS",
+      "image": "/cargo-pants.jfif",
+      "images": [
+        "/cargo-pants.jfif",
+        "/grey-hoodie.jfif",
+        "/black-tee.jfif"
+      ],
+      "stock": 35,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "OLIVE",
+      "product_no": "GP-001",
+      "material": "Cotton Twill",
+      "fabric": "Ripstop Twill",
+      "fit": "Relaxed Straight Fit"
+    },
+    {
+      "id": "classic-white-tee",
+      "name": "Classic White Tee",
+      "price": 1999,
+      "description": "A clean, minimal white tee for daily layering, tailored with reinforced rib collar.",
+      "category_id": "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
+      "category_slug": "t-shirts",
+      "category_name": "T-SHIRTS",
+      "image": "/white-tee.jfif",
+      "images": [
+        "/white-tee.jfif",
+        "/black-tee.jfif",
+        "/hero.jfif"
+      ],
+      "stock": 60,
+      "is_featured": false,
+      "is_new": true,
+      "is_trending": false,
+      "color": "WHITE",
+      "product_no": "WT-001",
+      "material": "100% Organic Cotton",
+      "fabric": "Single Jersey",
+      "fit": "Regular Fit"
+    },
+    {
+      "id": "greeno-dad-cap",
+      "name": "GreenO Signature Dad Cap",
+      "price": 1499,
+      "description": "Unstructured 6-panel cap with vintage washed cotton finish and antique brass closure.",
+      "category_id": "be67b7ca-c601-4daf-9d7d-4ee083f8bdc2",
+      "category_slug": "caps",
+      "category_name": "CAPS",
+      "image": "/hero.jfif",
+      "images": [
+        "/hero.jfif",
+        "/black-tee.jfif",
+        "/white-tee.jfif"
+      ],
+      "stock": 25,
+      "is_featured": false,
+      "is_new": true,
+      "is_trending": true,
+      "color": "BLACK",
+      "product_no": "CP-001",
+      "material": "100% Washed Cotton",
+      "fabric": "Chino Cotton",
+      "fit": "Adjustable"
+    },
+    {
+      "id": "tactical-crossbody-bag",
+      "name": "Tactical Crossbody Bag",
+      "price": 2799,
+      "description": "Water-resistant Cordura nylon body with Fidlock magnetic buckle and modular strap.",
+      "category_id": "0e60c6fa-3368-4d27-b827-57c2ae2cbcff",
+      "category_slug": "bags",
+      "category_name": "BAGS",
+      "image": "/cargo-pants.jfif",
+      "images": [
+        "/cargo-pants.jfif",
+        "/black-tee.jfif",
+        "/grey-hoodie.jfif"
+      ],
+      "stock": 30,
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true,
+      "color": "BLACK",
+      "product_no": "BG-001",
+      "material": "Cordura Nylon",
+      "fabric": "Weatherproof 500D",
+      "fit": "One Size"
+    },
+    {
+      "id": "silver-link-chain",
+      "name": "Industrial Link Chain",
+      "price": 1899,
+      "description": "Solid 316L stainless steel chain with custom GreenO laser engraved clasp.",
+      "category_id": "21fcf8a3-cdc3-4b43-888e-45a72ef053f2",
+      "category_slug": "accessories",
+      "category_name": "ACCESSORIES",
+      "image": "/white-tee.jfif",
+      "images": [
+        "/white-tee.jfif",
+        "/hero.jfif"
+      ],
+      "stock": 40,
+      "is_featured": false,
+      "is_new": false,
+      "is_trending": false,
+      "color": "SILVER",
+      "product_no": "AC-001",
+      "material": "Stainless Steel",
+      "fabric": "316L Grade",
+      "fit": "55cm Length"
+    },
+    {
       "id": "tailored-poplin-shirt",
       "name": "Tailored Poplin Shirt",
       "price": 3499,
@@ -98,8 +264,8 @@
       "id": "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
       "name": "T-SHIRTS",
       "slug": "t-shirts",
-      "image": "/atelier-tshirt.jpg",
-      "description": "Architectural drop-shoulder t-shirts crafted from heavyweight combed jersey."
+      "image": "/black-tee.jfif",
+      "description": "Signature oversized and regular fit tees designed for timeless streetwear aesthetics."
     },
     {
       "id": "cat-shirts",
@@ -107,6 +273,41 @@
       "slug": "shirts",
       "image": "/atelier-shirt.jpg",
       "description": "Architectural tailored shirting in Italian and Egyptian cotton poplins."
+    },
+    {
+      "id": "8f4e5a32-9172-466f-b752-2f8e1c6586a0",
+      "name": "HOODIES",
+      "slug": "hoodies",
+      "image": "/grey-hoodie.jfif",
+      "description": "Heavyweight fleece hoodies with drop shoulders and structured drape."
+    },
+    {
+      "id": "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
+      "name": "PANTS",
+      "slug": "pants",
+      "image": "/cargo-pants.jfif",
+      "description": "Utility cargo pants and streetwear trousers with tailored proportions."
+    },
+    {
+      "id": "be67b7ca-c601-4daf-9d7d-4ee083f8bdc2",
+      "name": "CAPS",
+      "slug": "caps",
+      "image": "/hero.jfif",
+      "description": "Low-profile structured 6-panel caps and vintage dad hats."
+    },
+    {
+      "id": "0e60c6fa-3368-4d27-b827-57c2ae2cbcff",
+      "name": "BAGS",
+      "slug": "bags",
+      "image": "/cargo-pants.jfif",
+      "description": "Technical crossbodies, modular tote bags and utility carriers."
+    },
+    {
+      "id": "21fcf8a3-cdc3-4b43-888e-45a72ef053f2",
+      "name": "ACCESSORIES",
+      "slug": "accessories",
+      "image": "/white-tee.jfif",
+      "description": "Everyday essentials, keychains, stainless jewelry, and socks."
     }
   ],
   "orders": [
@@ -327,5 +528,92 @@
     "smtpFrom": "GreenO Security <vedantshrivastava0407@gmail.com>",
     "brevoApiKey": "",
     "resendApiKey": ""
-  }
+  },
+  "reviews": [
+    {
+      "id": "rev-poplin-1",
+      "product_id": "tailored-poplin-shirt",
+      "product_name": "Tailored Poplin Shirt",
+      "author": "Julian V.",
+      "location": "Milan, IT",
+      "rating": 5,
+      "date": "3 days ago",
+      "title": "Impeccable collar stance and refined weave",
+      "comment": "The collar retains its sharp architectural profile with zero buckling. The fabric has an exquisite substantial weight while remaining breathable throughout the day. Finished with refined mother-of-pearl buttons.",
+      "verified": true,
+      "sizePurchased": "M",
+      "fitFeedback": "True to Size",
+      "helpfulCount": 14,
+      "is_featured": true,
+      "created_at": "2026-09-14T17:35:25.114Z"
+    },
+    {
+      "id": "rev-boxy-1",
+      "product_id": "oversized-black-tee",
+      "product_name": "Heavyweight Boxy Tee",
+      "author": "Dev P.",
+      "location": "Bengaluru, IN",
+      "rating": 5,
+      "date": "4 days ago",
+      "title": "Dense combed cotton that holds its structure",
+      "comment": "The 300gsm combed jersey is phenomenal. Heavyweight without stiffness, hangs with an architectural boxy drape. Zero collar buckling after wash.",
+      "verified": true,
+      "sizePurchased": "L",
+      "fitFeedback": "True to Size",
+      "helpfulCount": 16,
+      "is_featured": true,
+      "created_at": "2026-09-13T17:35:25.114Z"
+    },
+    {
+      "id": "rev-chalk-1",
+      "product_id": "minimalist-chalk-tee",
+      "product_name": "Minimalist Chalk Tee",
+      "author": "Kavya S.",
+      "location": "New Delhi, IN",
+      "rating": 5,
+      "date": "5 days ago",
+      "title": "Quiet elegance, sculptural drop shoulder",
+      "comment": "Substantial tactile handfeel without feeling uncomfortably heavy. The drop shoulder is tailored with precision rather than looking sloppy.",
+      "verified": true,
+      "sizePurchased": "S",
+      "fitFeedback": "True to Size",
+      "helpfulCount": 11,
+      "is_featured": true,
+      "created_at": "2026-09-12T17:35:25.114Z"
+    },
+    {
+      "id": "rev-poplin-2",
+      "product_id": "tailored-poplin-shirt",
+      "product_name": "Tailored Poplin Shirt",
+      "author": "Aarav M.",
+      "location": "Mumbai, IN",
+      "rating": 5,
+      "date": "1 week ago",
+      "title": "Fluid drape, quiet luxury tailoring",
+      "comment": "Fits impeccably through the shoulders with just enough ease in the torso. Doesn't crease easily and moves with an understated elegance. Easily rivals European luxury fashion houses.",
+      "verified": true,
+      "sizePurchased": "L",
+      "fitFeedback": "True to Size",
+      "helpfulCount": 9,
+      "is_featured": true,
+      "created_at": "2026-09-10T17:35:25.114Z"
+    },
+    {
+      "id": "rev-oxford-1",
+      "product_id": "charcoal-oxford-overshirt",
+      "product_name": "Charcoal Oxford Overshirt",
+      "author": "Marcus K.",
+      "location": "London, UK",
+      "rating": 5,
+      "date": "2 weeks ago",
+      "title": "Substantial handfeel and immaculate stitching",
+      "comment": "Very clean French seams and premium cotton density. Sits slightly relaxed in the body as intended by the atelier silhouette. Highly recommended.",
+      "verified": true,
+      "sizePurchased": "XL",
+      "fitFeedback": "True to Size",
+      "helpfulCount": 12,
+      "is_featured": true,
+      "created_at": "2026-09-03T17:35:25.114Z"
+    }
+  ]
 }

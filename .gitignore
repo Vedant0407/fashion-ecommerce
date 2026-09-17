@@ -43,6 +43,7 @@ next-env.d.ts
 # runtime & uploaded files
 src/data/otp-store.json
 src/data/store-data-cache.json
+src/data/greeno-users-cache.json
 src/data/order-status-overrides.json
 public/uploads/*
 !public/uploads/.gitkeep

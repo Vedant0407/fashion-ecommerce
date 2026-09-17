@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import styles from "./admin.module.css";
 import { Product, Category } from "@/lib/catalog";
-import { StoreOrder, StoreCoupon, StoreSettings, ReturnExchangeRequest } from "@/lib/store-data";
+import { StoreOrder, StoreCoupon, StoreSettings, ReturnExchangeRequest, StoreReview } from "@/lib/store-data";
 import { formatShortOrderId } from "@/lib/order-utils";
 
 export default function AdminPage() {
@@ -15,7 +15,7 @@ export default function AdminPage() {
 
   // Navigation
   const [activeTab, setActiveTab] = useState<
-    "overview" | "products" | "categories" | "orders" | "returns" | "coupons" | "settings" | "sms" | "email"
+    "overview" | "products" | "categories" | "orders" | "returns" | "coupons" | "reviews" | "clients" | "settings" | "sms" | "email"
   >("overview");
 
   // SMS Testing State
@@ -93,12 +93,72 @@ export default function AdminPage() {
   const [returnSearch, setReturnSearch] = useState("");
   const [returnFilter, setReturnFilter] = useState("ALL");
 
+  // Client Reviews & Directory State
+  const [reviews, setReviews] = useState<StoreReview[]>([]);
+  const [reviewSearch, setReviewSearch] = useState("");
+  const [reviewProductFilter, setReviewProductFilter] = useState("ALL");
+  const [reviewRatingFilter, setReviewRatingFilter] = useState("ALL");
+  const [clients, setClients] = useState<any[]>([]);
+  const [clientSearch, setClientSearch] = useState("");
+
   // Helper Toast
   function triggerToast(msg: string) {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage("");
     }, 3000);
+  }
+
+  // Review Actions
+  async function handleToggleReviewVerified(id: string, currentVerified: boolean) {
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, verified: !currentVerified }),
+      });
+      if (res.ok) {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, verified: !currentVerified } : r))
+        );
+        triggerToast(`Review ${!currentVerified ? "marked as verified" : "unverified"} successfully.`);
+      }
+    } catch (err) {
+      console.error("Error updating review verified status:", err);
+    }
+  }
+
+  async function handleToggleReviewFeatured(id: string, currentFeatured: boolean) {
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, is_featured: !currentFeatured }),
+      });
+      if (res.ok) {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, is_featured: !currentFeatured } : r))
+        );
+        triggerToast(`Review ${!currentFeatured ? "marked as featured" : "unfeatured"} successfully.`);
+      }
+    } catch (err) {
+      console.error("Error updating review featured status:", err);
+    }
+  }
+
+  async function handleDeleteReview(id: string) {
+    if (!confirm("Are you sure you want to delete this client review?")) return;
+    try {
+      const res = await fetch(`/api/admin/reviews?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setReviews((prev) => prev.filter((r) => r.id !== id));
+        triggerToast("Review deleted successfully.");
+      }
+    } catch (err) {
+      console.error("Error deleting review:", err);
+    }
   }
 
   // Always require passkey on every open or refresh
@@ -113,7 +173,7 @@ export default function AdminPage() {
   async function fetchAllData() {
     setLoading(true);
     try {
-      const [prodRes, catRes, orderRes, retRes, coupRes, setRes, userRes] = await Promise.all([
+      const [prodRes, catRes, orderRes, retRes, coupRes, setRes, userRes, revRes] = await Promise.all([
         fetch("/api/admin/products"),
         fetch("/api/admin/categories"),
         fetch(`/api/admin/orders?t=${Date.now()}`, { cache: "no-store" }),
@@ -121,6 +181,7 @@ export default function AdminPage() {
         fetch("/api/admin/coupons"),
         fetch("/api/admin/settings"),
         fetch("/api/admin/users"),
+        fetch("/api/admin/reviews"),
       ]);
 
       if (prodRes.ok) {
@@ -311,6 +372,11 @@ export default function AdminPage() {
       if (userRes && userRes.ok) {
         const userData = await userRes.json();
         if (typeof userData.count === "number") setTotalUsers(userData.count);
+        if (Array.isArray(userData.users)) setClients(userData.users);
+      }
+      if (revRes && revRes.ok) {
+        const revData = await revRes.json();
+        if (Array.isArray(revData.reviews)) setReviews(revData.reviews);
       }
     } catch (err) {
       console.error("Error fetching admin data:", err);
@@ -1195,6 +1261,34 @@ export default function AdminPage() {
     });
   }, [returnRequests, returnSearch, returnFilter]);
 
+  const filteredReviews = useMemo(() => {
+    return reviews.filter((r) => {
+      const matchProduct = reviewProductFilter === "ALL" || r.product_id === reviewProductFilter;
+      const matchRating = reviewRatingFilter === "ALL" || Math.round(Number(r.rating)) === Number(reviewRatingFilter);
+      const s = reviewSearch.trim().toLowerCase();
+      const matchSearch =
+        !s ||
+        r.author.toLowerCase().includes(s) ||
+        r.comment.toLowerCase().includes(s) ||
+        (r.title && r.title.toLowerCase().includes(s)) ||
+        (r.location && r.location.toLowerCase().includes(s)) ||
+        (r.product_name && r.product_name.toLowerCase().includes(s)) ||
+        r.product_id.toLowerCase().includes(s);
+      return matchProduct && matchRating && matchSearch;
+    });
+  }, [reviews, reviewProductFilter, reviewRatingFilter, reviewSearch]);
+
+  const filteredClients = useMemo(() => {
+    if (!clientSearch.trim()) return clients;
+    const s = clientSearch.trim().toLowerCase();
+    return clients.filter(
+      (c) =>
+        (c.name && c.name.toLowerCase().includes(s)) ||
+        (c.email && c.email.toLowerCase().includes(s)) ||
+        (c.id && c.id.toLowerCase().includes(s))
+    );
+  }, [clients, clientSearch]);
+
   // Metrics
   const metrics = useMemo(() => {
     const totalSales = orders.reduce((sum, o) => (o.status !== "cancelled" ? sum + o.total : sum), 0);
@@ -1222,8 +1316,8 @@ export default function AdminPage() {
     return (
       <div className={styles.authOverlay}>
         <div className={styles.authCard}>
-          <div className={styles.authBrand}>GREENO</div>
-          <div className={styles.authSubtitle}>ADMIN CONSOLE // RESTRICTED ACCESS</div>
+          <div className={styles.authBrand}>GREENO ATELIER</div>
+          <div className={styles.authSubtitle}>COMMAND CONSOLE // RESTRICTED ACCESS</div>
 
           <form onSubmit={handleUnlock}>
             <div className={styles.authInputGroup}>
@@ -1245,7 +1339,7 @@ export default function AdminPage() {
             )}
 
             <button type="submit" className={styles.authButton}>
-              UNLOCK CONSOLE
+              UNLOCK ATELIER CONSOLE
             </button>
           </form>
 
@@ -1269,13 +1363,13 @@ export default function AdminPage() {
       <header className={styles.topNav}>
         <div className={styles.topNavInner}>
           <div className={styles.brandGroup}>
-            <div className={styles.brandLogo}>GREENO</div>
-            <div className={styles.brandTag}>ADMINISTRATION DASHBOARD</div>
+            <div className={styles.brandLogo}>GREENO ATELIER</div>
+            <div className={styles.brandTag}>COMMAND CONSOLE // DROP &amp; SILHOUETTES</div>
           </div>
 
           <div className={styles.topActions}>
             <Link href="/" target="_blank" className={styles.ghostButton}>
-              <span>VIEW STORE &#8599;</span>
+              <span>VIEW ATELIER &#8599;</span>
             </Link>
             <button onClick={handleLock} className={styles.ghostButton}>
               LOCK CONSOLE
@@ -1297,7 +1391,7 @@ export default function AdminPage() {
             className={`${styles.tabBtn} ${activeTab === "products" ? styles.activeTab : ""}`}
             onClick={() => setActiveTab("products")}
           >
-            PRODUCTS ({products.length})
+            SILHOUETTES ({products.length})
           </button>
           <button
             className={`${styles.tabBtn} ${activeTab === "categories" ? styles.activeTab : ""}`}
@@ -1313,17 +1407,30 @@ export default function AdminPage() {
             {metrics.pendingOrders > 0 && (
               <span
                 style={{
-                  background: "#000000",
+                  background: "#121212",
                   color: "#ffffff",
                   padding: "1px 6px",
                   fontSize: "9px",
                   fontWeight: 800,
                   marginLeft: "6px",
+                  borderRadius: "2px",
                 }}
               >
                 {metrics.pendingOrders}
               </span>
             )}
+          </button>
+          <button
+            className={`${styles.tabBtn} ${activeTab === "reviews" ? styles.activeTab : ""}`}
+            onClick={() => setActiveTab("reviews")}
+          >
+            CLIENT REVIEWS ({reviews.length})
+          </button>
+          <button
+            className={`${styles.tabBtn} ${activeTab === "clients" ? styles.activeTab : ""}`}
+            onClick={() => setActiveTab("clients")}
+          >
+            CLIENT DIRECTORY ({clients.length || totalUsers})
           </button>
           <button
             className={`${styles.tabBtn} ${activeTab === "returns" ? styles.activeTab : ""}`}
@@ -1339,6 +1446,7 @@ export default function AdminPage() {
                   fontSize: "9px",
                   fontWeight: 800,
                   marginLeft: "6px",
+                  borderRadius: "2px",
                 }}
               >
                 {metrics.pendingReturns} PENDING
@@ -1681,10 +1789,11 @@ export default function AdminPage() {
                                     style={{
                                       fontSize: "9px",
                                       fontWeight: 700,
-                                      padding: "1px 5px",
-                                      background: "#161616",
-                                      border: "1px solid #333333",
-                                      color: "#cccccc",
+                                      padding: "1px 6px",
+                                      background: "#F4F3EF",
+                                      border: "1px solid #E5E3DC",
+                                      color: "#4B5563",
+                                      borderRadius: "2px",
                                       letterSpacing: "0.05em",
                                     }}
                                   >
@@ -2664,15 +2773,16 @@ export default function AdminPage() {
                     <div className={styles.fullSpan}>
                       <div
                         style={{
-                          background: "#111111",
-                          border: "1px solid #222222",
+                          background: "#FAF9F5",
+                          border: "1px solid #E7E5DF",
                           padding: "16px 20px",
                           fontSize: "12px",
                           lineHeight: "1.6",
-                          color: "#aaaaaa",
+                          color: "#4B5563",
+                          borderRadius: "4px",
                         }}
                       >
-                        <div style={{ fontWeight: 800, color: "#ffffff", letterSpacing: "0.1em", marginBottom: "8px", fontSize: "11px" }}>
+                        <div style={{ fontWeight: 700, color: "#121212", letterSpacing: "0.08em", marginBottom: "8px", fontSize: "11px" }}>
                           👉 HOW TO GET YOUR FREE FAST2SMS API KEY (TAKES 30 SECONDS):
                         </div>
                         <ol style={{ margin: "0 0 10px", paddingLeft: "18px" }}>
@@ -2682,7 +2792,7 @@ export default function AdminPage() {
                               href="https://www.fast2sms.com"
                               target="_blank"
                               rel="noreferrer"
-                              style={{ color: "#ffffff", fontWeight: 700, textDecoration: "underline" }}
+                              style={{ color: "#121212", fontWeight: 700, textDecoration: "underline" }}
                             >
                               fast2sms.com &#8599;
                             </a>{" "}
@@ -2717,7 +2827,7 @@ export default function AdminPage() {
                   style={{
                     marginTop: "48px",
                     paddingTop: "32px",
-                    borderTop: "1px solid #222222",
+                    borderTop: "1px solid #E7E5DF",
                   }}
                 >
                   <div className={styles.sectionHeader}>
@@ -2732,9 +2842,10 @@ export default function AdminPage() {
                   <form
                     onSubmit={handleTestSms}
                     style={{
-                      background: "#0c0c0c",
-                      border: "1px solid #262626",
+                      background: "#FFFFFF",
+                      border: "1px solid #E7E5DF",
                       padding: "24px 20px",
+                      borderRadius: "4px",
                     }}
                   >
                     <div className={styles.fieldGroup} style={{ marginBottom: "16px" }}>
@@ -2742,12 +2853,13 @@ export default function AdminPage() {
                       <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                         <span
                           style={{
-                            background: "#1a1a1a",
-                            border: "1px solid #333333",
+                            background: "#F4F3EF",
+                            border: "1px solid #E5E3DC",
                             padding: "12px 14px",
                             fontSize: "13px",
-                            color: "#888888",
+                            color: "#121212",
                             fontWeight: 700,
+                            borderRadius: "2px",
                           }}
                         >
                           +91
@@ -2980,15 +3092,16 @@ export default function AdminPage() {
                         <div className={styles.fullSpan}>
                           <div
                             style={{
-                              background: "#111111",
-                              border: "1px solid #222222",
+                              background: "#FAF9F5",
+                              border: "1px solid #E7E5DF",
                               padding: "16px 20px",
                               fontSize: "12px",
                               lineHeight: "1.6",
-                              color: "#aaaaaa",
+                              color: "#4B5563",
+                              borderRadius: "4px",
                             }}
                           >
-                            <div style={{ fontWeight: 800, color: "#ffffff", letterSpacing: "0.1em", marginBottom: "8px", fontSize: "11px" }}>
+                            <div style={{ fontWeight: 700, color: "#121212", letterSpacing: "0.08em", marginBottom: "8px", fontSize: "11px" }}>
                               👉 HOW TO GET A FREE GMAIL APP PASSWORD (TAKES 30 SECONDS):
                             </div>
                             <ol style={{ margin: "0 0 10px", paddingLeft: "18px" }}>
@@ -2998,7 +3111,7 @@ export default function AdminPage() {
                                   href="https://myaccount.google.com/security"
                                   target="_blank"
                                   rel="noreferrer"
-                                  style={{ color: "#ffffff", fontWeight: 700, textDecoration: "underline" }}
+                                  style={{ color: "#121212", fontWeight: 700, textDecoration: "underline" }}
                                 >
                                   myaccount.google.com/security &#8599;
                                 </a>
@@ -3007,7 +3120,7 @@ export default function AdminPage() {
                                 Ensure <strong>2-Step Verification</strong> is enabled on your Google account.
                               </li>
                               <li style={{ marginBottom: "4px" }}>
-                                In the search bar at the top of your Google Account, search for <strong>App Passwords</strong> (or visit <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>myaccount.google.com/apppasswords</a>).
+                                In the search bar at the top of your Google Account, search for <strong>App Passwords</strong> (or visit <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" style={{ color: "#121212", textDecoration: "underline" }}>myaccount.google.com/apppasswords</a>).
                               </li>
                               <li style={{ marginBottom: "4px" }}>
                                 Enter App Name: <strong>GreenO</strong>, then click <strong>Create</strong>.
@@ -3039,7 +3152,7 @@ export default function AdminPage() {
                           required
                         />
                         <span style={{ fontSize: "10px", color: "#888888" }}>
-                          Get a free key from <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>brevo.com</a> (300 free emails/day).
+                          Get a free key from <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noreferrer" style={{ color: "#121212", textDecoration: "underline" }}>brevo.com</a> (300 free emails/day).
                         </span>
                       </div>
                     </div>
@@ -3059,7 +3172,7 @@ export default function AdminPage() {
                           required
                         />
                         <span style={{ fontSize: "10px", color: "#888888" }}>
-                          Get an API key from <a href="https://resend.com/api-keys" target="_blank" rel="noreferrer" style={{ color: "#ffffff", textDecoration: "underline" }}>resend.com</a>.
+                          Get an API key from <a href="https://resend.com/api-keys" target="_blank" rel="noreferrer" style={{ color: "#121212", textDecoration: "underline" }}>resend.com</a>.
                         </span>
                       </div>
                     </div>
@@ -3077,7 +3190,7 @@ export default function AdminPage() {
                   style={{
                     marginTop: "48px",
                     paddingTop: "32px",
-                    borderTop: "1px solid #222222",
+                    borderTop: "1px solid #E7E5DF",
                   }}
                 >
                   <div className={styles.sectionHeader}>
@@ -3092,9 +3205,10 @@ export default function AdminPage() {
                   <form
                     onSubmit={handleTestEmail}
                     style={{
-                      background: "#0c0c0c",
-                      border: "1px solid #262626",
+                      background: "#FFFFFF",
+                      border: "1px solid #E7E5DF",
                       padding: "24px 20px",
+                      borderRadius: "4px",
                     }}
                   >
                     <div className={styles.fieldGroup} style={{ marginBottom: "16px" }}>
@@ -3114,8 +3228,8 @@ export default function AdminPage() {
                       disabled={testEmailLoading || !testEmail.includes("@")}
                       className={styles.primaryButton}
                       style={{
-                        background: testEmail.includes("@") ? "#ffffff" : "#333333",
-                        color: testEmail.includes("@") ? "#000000" : "#888888",
+                        background: testEmail.includes("@") ? "#121212" : "#E5E3DC",
+                        color: testEmail.includes("@") ? "#FFFFFF" : "#888888",
                         cursor: testEmail.includes("@") ? "pointer" : "not-allowed",
                       }}
                     >
@@ -3156,6 +3270,372 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
+
+            {/* ==================== CLIENT REVIEWS TAB ==================== */}
+            {activeTab === "reviews" && (
+              <div>
+                <div className={styles.sectionHeader}>
+                  <div>
+                    <h2 className={styles.sectionTitle}>CLIENT REVIEWS &amp; ATELIER TESTIMONIALS</h2>
+                    <p style={{ fontSize: "11px", color: "#71717A", marginTop: "4px", letterSpacing: "0.04em" }}>
+                      Curate patron reviews, verify purchases, calibrate fit verdicts, and spotlight standout testimonials on product detail pages.
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                    <span className={styles.badge} style={{ background: "#FFFFFF" }}>
+                      TOTAL REVIEWS: {reviews.length}
+                    </span>
+                    <span className={`${styles.badge} ${styles.badgeSuccess}`}>
+                      VERIFIED: {reviews.filter((r) => r.verified).length}
+                    </span>
+                    <span className={`${styles.badge} ${styles.badgeWarning}`}>
+                      SPOTLIGHTED: {reviews.filter((r) => r.is_featured).length}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={styles.controlsBar}>
+                  <input
+                    type="text"
+                    className={styles.searchInput}
+                    placeholder="Search by client name, comment, product, or location..."
+                    value={reviewSearch}
+                    onChange={(e) => setReviewSearch(e.target.value)}
+                  />
+
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    <select
+                      className={styles.filterSelect}
+                      value={reviewProductFilter}
+                      onChange={(e) => setReviewProductFilter(e.target.value)}
+                    >
+                      <option value="ALL">ALL SILHOUETTES</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      className={styles.filterSelect}
+                      value={reviewRatingFilter}
+                      onChange={(e) => setReviewRatingFilter(e.target.value)}
+                    >
+                      <option value="ALL">ALL RATINGS</option>
+                      <option value="5">5 STARS (★★★★★)</option>
+                      <option value="4">4 STARS (★★★★☆)</option>
+                      <option value="3">3 STARS (★★★☆☆)</option>
+                      <option value="2">2 STARS (★★☆☆☆)</option>
+                      <option value="1">1 STAR (★☆☆☆☆)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {filteredReviews.length === 0 ? (
+                  <div style={{ background: "#FFFFFF", border: "1px solid #E7E5DF", padding: "48px 24px", textAlign: "center", borderRadius: "4px" }}>
+                    <p style={{ fontSize: "13px", color: "#71717A", letterSpacing: "0.04em" }}>
+                      No client reviews match your selected filters.
+                    </p>
+                  </div>
+                ) : (
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.dataTable}>
+                      <thead>
+                        <tr>
+                          <th>SILHOUETTE</th>
+                          <th>PATRON / LOCATION</th>
+                          <th>RATING &amp; FIT</th>
+                          <th>HEADLINE &amp; TESTIMONIAL</th>
+                          <th>STATUS</th>
+                          <th>ACTIONS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredReviews.map((rev) => {
+                          const matchedProduct = products.find((p) => p.id === rev.product_id);
+                          const productName = rev.product_name || matchedProduct?.name || rev.product_id;
+                          const thumbUrl = matchedProduct?.images?.[0] || matchedProduct?.image || "/atelier-shirt.jpg";
+
+                          return (
+                            <tr key={rev.id}>
+                              <td style={{ minWidth: "180px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                  <img
+                                    src={thumbUrl}
+                                    alt={productName}
+                                    className={styles.productThumb}
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLImageElement).src = "/atelier-shirt.jpg";
+                                    }}
+                                  />
+                                  <div>
+                                    <div style={{ fontWeight: 600, fontSize: "12px", color: "#121212" }}>
+                                      {productName}
+                                    </div>
+                                    <div style={{ fontSize: "10px", color: "#888888", letterSpacing: "0.06em", marginTop: "2px" }}>
+                                      ID: {rev.product_id}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td style={{ minWidth: "150px" }}>
+                                <div style={{ fontWeight: 600, fontSize: "12px", color: "#121212" }}>
+                                  {rev.author}
+                                </div>
+                                <div style={{ fontSize: "10.5px", color: "#71717A", marginTop: "2px" }}>
+                                  {rev.location || "Online Patron"}
+                                </div>
+                                <div style={{ fontSize: "9.5px", color: "#A1A1AA", marginTop: "4px" }}>
+                                  {rev.date || (rev.created_at ? new Date(rev.created_at).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : "—")}
+                                </div>
+                              </td>
+
+                              <td style={{ minWidth: "140px" }}>
+                                <div style={{ letterSpacing: "2px", color: "#121212", fontSize: "13px" }}>
+                                  {"★".repeat(Math.min(5, Math.max(1, Math.round(rev.rating))))}
+                                  {"☆".repeat(5 - Math.min(5, Math.max(1, Math.round(rev.rating))))}
+                                </div>
+                                {rev.fitFeedback && (
+                                  <div style={{ fontSize: "10px", color: "#4B5563", marginTop: "4px" }}>
+                                    Fit: <span style={{ fontWeight: 600 }}>{rev.fitFeedback}</span>
+                                  </div>
+                                )}
+                                {rev.sizePurchased && (
+                                  <div style={{ fontSize: "9.5px", color: "#888888" }}>
+                                    Size: {rev.sizePurchased}
+                                  </div>
+                                )}
+                              </td>
+
+                              <td style={{ maxWidth: "340px" }}>
+                                {rev.title && (
+                                  <div style={{ fontWeight: 600, fontSize: "12px", marginBottom: "4px", color: "#121212" }}>
+                                    &ldquo;{rev.title}&rdquo;
+                                  </div>
+                                )}
+                                <div style={{ fontSize: "11.5px", color: "#4B5563", lineHeight: 1.5 }}>
+                                  {rev.comment}
+                                </div>
+                                {rev.helpfulCount > 0 && (
+                                  <div style={{ fontSize: "9.5px", color: "#888888", marginTop: "4px" }}>
+                                    {rev.helpfulCount} patron{rev.helpfulCount !== 1 ? "s" : ""} found this helpful
+                                  </div>
+                                )}
+                              </td>
+
+                              <td style={{ minWidth: "120px" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-start" }}>
+                                  {rev.verified ? (
+                                    <span className={`${styles.badge} ${styles.badgeSuccess}`}>
+                                      ✓ VERIFIED
+                                    </span>
+                                  ) : (
+                                    <span className={styles.badge}>UNVERIFIED</span>
+                                  )}
+
+                                  {rev.is_featured && (
+                                    <span className={`${styles.badge} ${styles.badgeWarning}`}>
+                                      ★ SPOTLIGHT
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              <td>
+                                <div className={styles.actionGroup}>
+                                  <button
+                                    type="button"
+                                    className={styles.smallBtn}
+                                    title={rev.verified ? "Remove verified status" : "Mark as verified patron"}
+                                    onClick={() => handleToggleReviewVerified(rev.id, rev.verified)}
+                                  >
+                                    {rev.verified ? "Unverify" : "Verify"}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className={styles.smallBtn}
+                                    title={rev.is_featured ? "Remove from product spotlight" : "Spotlight on product page"}
+                                    onClick={() => handleToggleReviewFeatured(rev.id, Boolean(rev.is_featured))}
+                                    style={{
+                                      background: rev.is_featured ? "#FEF3C7" : undefined,
+                                      borderColor: rev.is_featured ? "#FDE68A" : undefined,
+                                      color: rev.is_featured ? "#92400E" : undefined,
+                                    }}
+                                  >
+                                    {rev.is_featured ? "Unfeature" : "Feature"}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className={styles.deleteBtn}
+                                    title="Delete review permanently"
+                                    onClick={() => handleDeleteReview(rev.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ==================== CLIENT DIRECTORY TAB ==================== */}
+            {activeTab === "clients" && (
+              <div>
+                <div className={styles.sectionHeader}>
+                  <div>
+                    <h2 className={styles.sectionTitle}>CLIENT DIRECTORY &amp; ATELIER PATRONS</h2>
+                    <p style={{ fontSize: "11px", color: "#71717A", marginTop: "4px", letterSpacing: "0.04em" }}>
+                      Registered patrons, account authentication profiles, order histories, and lifetime atelier spend.
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                    <span className={styles.badge} style={{ background: "#FFFFFF" }}>
+                      REGISTERED: {clients.length || totalUsers}
+                    </span>
+                    <span className={`${styles.badge} ${styles.badgeSuccess}`}>
+                      VERIFIED: {clients.filter((c) => c.email_verified).length}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={styles.controlsBar}>
+                  <input
+                    type="text"
+                    className={styles.searchInput}
+                    placeholder="Search patrons by name, email, or client ID..."
+                    value={clientSearch}
+                    onChange={(e) => setClientSearch(e.target.value)}
+                  />
+                </div>
+
+                {filteredClients.length === 0 ? (
+                  <div style={{ background: "#FFFFFF", border: "1px solid #E7E5DF", padding: "48px 24px", textAlign: "center", borderRadius: "4px" }}>
+                    <p style={{ fontSize: "13px", color: "#71717A", letterSpacing: "0.04em" }}>
+                      No registered patrons match your search filter.
+                    </p>
+                  </div>
+                ) : (
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.dataTable}>
+                      <thead>
+                        <tr>
+                          <th>PATRON NAME</th>
+                          <th>EMAIL &amp; STATUS</th>
+                          <th>AUTH PROVIDER</th>
+                          <th>ORDERS PLACED</th>
+                          <th>LIFETIME SPEND</th>
+                          <th>REGISTERED</th>
+                          <th>LAST LOGIN</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredClients.map((client) => {
+                          const clientOrders = orders.filter(
+                            (o) =>
+                              (o.customer?.email && o.customer.email.toLowerCase() === client.email?.toLowerCase()) ||
+                              (Boolean((o as any)?.shippingAddress?.email) && (o as any).shippingAddress.email.toLowerCase() === client.email?.toLowerCase())
+                          );
+                          const totalSpend = clientOrders.reduce(
+                            (acc, o) => (o.status !== "cancelled" ? acc + (o.total || 0) : acc),
+                            0
+                          );
+
+                          return (
+                            <tr key={client.id || client.email}>
+                              <td>
+                                <div style={{ fontWeight: 600, fontSize: "12.5px", color: "#121212" }}>
+                                  {client.name || "Atelier Patron"}
+                                </div>
+                                <div style={{ fontSize: "9.5px", color: "#888888", letterSpacing: "0.04em", marginTop: "2px" }}>
+                                  ID: {client.id ? client.id.slice(0, 12) + "..." : "—"}
+                                </div>
+                              </td>
+
+                              <td>
+                                <div style={{ fontSize: "12px", color: "#121212", fontWeight: 500 }}>
+                                  {client.email}
+                                </div>
+                                <div style={{ marginTop: "4px" }}>
+                                  {client.email_verified ? (
+                                    <span className={`${styles.badge} ${styles.badgeSuccess}`}>
+                                      ✓ VERIFIED
+                                    </span>
+                                  ) : (
+                                    <span className={styles.badge}>
+                                      PENDING VERIFICATION
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              <td>
+                                <span
+                                  className={styles.badge}
+                                  style={{
+                                    background: client.provider === "google" ? "#EFF6FF" : "#F4F3EF",
+                                    borderColor: client.provider === "google" ? "#BFDBFE" : "#E5E3DC",
+                                    color: client.provider === "google" ? "#1D4ED8" : "#4B5563",
+                                  }}
+                                >
+                                  {client.provider === "google" ? "GOOGLE AUTH" : "EMAIL PASSCODE"}
+                                </span>
+                              </td>
+
+                              <td>
+                                <div style={{ fontWeight: 600, fontSize: "12.5px" }}>
+                                  {clientOrders.length} {clientOrders.length === 1 ? "Order" : "Orders"}
+                                </div>
+                                {clientOrders.length > 0 && (
+                                  <div style={{ fontSize: "9.5px", color: "#71717A", marginTop: "2px" }}>
+                                    Latest: #{clientOrders[0].id?.slice(0, 8)}
+                                  </div>
+                                )}
+                              </td>
+
+                              <td>
+                                <div style={{ fontWeight: 700, fontSize: "13px", color: "#121212" }}>
+                                  ₹{totalSpend.toLocaleString("en-IN")}
+                                </div>
+                              </td>
+
+                              <td style={{ fontSize: "11px", color: "#71717A" }}>
+                                {client.created_at
+                                  ? new Date(client.created_at).toLocaleDateString("en-IN", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    })
+                                  : "—"}
+                              </td>
+
+                              <td style={{ fontSize: "11px", color: "#71717A" }}>
+                                {client.last_login_at
+                                  ? new Date(client.last_login_at).toLocaleDateString("en-IN", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    })
+                                  : "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </main>
@@ -3166,7 +3646,7 @@ export default function AdminPage() {
           <div className={styles.modalWindow}>
             <div className={styles.modalHeader}>
               <div className={styles.modalTitle}>
-                {editingProduct.id ? `EDIT PRODUCT: ${editingProduct.name}` : "ADD NEW STREETWEAR PRODUCT"}
+                {editingProduct.id ? `EDIT SILHOUETTE: ${editingProduct.name}` : "ADD NEW ATELIER SILHOUETTE"}
               </div>
               <button
                 className={styles.modalCloseBtn}
@@ -3187,7 +3667,7 @@ export default function AdminPage() {
                         className={styles.fieldInput}
                         value={editingProduct.name || ""}
                         onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                        placeholder="e.g. Oversized Heavyweight Tee"
+                        placeholder="e.g. Oversized Structured Poplin Shirt"
                         required
                       />
                     </div>
@@ -3198,7 +3678,7 @@ export default function AdminPage() {
                     <input
                       type="number"
                       className={styles.fieldInput}
-                      value={editingProduct.price ?? 2499}
+                      value={editingProduct.price ?? 3499}
                       onChange={(e) =>
                         setEditingProduct({ ...editingProduct, price: Number(e.target.value) })
                       }
@@ -3213,7 +3693,7 @@ export default function AdminPage() {
                       className={styles.fieldInput}
                       value={editingProduct.stock ?? 50}
                       readOnly
-                      style={{ background: "#111111", color: "#aaaaaa", cursor: "not-allowed" }}
+                      style={{ background: "#F7F6F2", color: "#71717A", cursor: "not-allowed" }}
                       title="Computed automatically as sum of size stock quantities below"
                     />
                     <div style={{ fontSize: "10px", color: "#888888", marginTop: "2px" }}>
@@ -3226,7 +3706,7 @@ export default function AdminPage() {
                     <label className={styles.fieldLabel}>Garment Category (Apparel Type) *</label>
                     <select
                       className={styles.fieldSelect}
-                      value={editingProduct.category_slug || "t-shirts"}
+                      value={editingProduct.category_slug || "shirts"}
                       onChange={(e) => {
                         const selectedSlug = e.target.value;
                         const match = categories.find((c) => c.slug === selectedSlug);
@@ -3239,16 +3719,17 @@ export default function AdminPage() {
                       }}
                       required
                     >
+                      <option value="shirts">SHIRTS / ATELIER</option>
                       <option value="t-shirts">T-SHIRTS</option>
-                      <option value="hoodies">HOODIES</option>
                       <option value="pants">PANTS / TROUSERS</option>
+                      <option value="hoodies">HOODIES</option>
+                      <option value="accessories">ACCESSORIES</option>
                       <option value="caps">CAPS &amp; HEADWEAR</option>
                       <option value="bags">BAGS &amp; TOTES</option>
-                      <option value="accessories">ACCESSORIES</option>
                       {categories
                         .filter(
                           (c) =>
-                            !["t-shirts", "hoodies", "pants", "caps", "bags", "accessories"].includes(
+                            !["shirts", "t-shirts", "hoodies", "pants", "caps", "bags", "accessories"].includes(
                               c.slug.toLowerCase()
                             )
                         )
@@ -3259,7 +3740,7 @@ export default function AdminPage() {
                         ))}
                     </select>
                     <div style={{ fontSize: "10px", color: "#888888", marginTop: "2px" }}>
-                      Which clothing category this piece belongs to (hoodie, pants, t-shirts, etc.).
+                      Which clothing category this piece belongs to (shirt, t-shirt, trousers, etc.).
                     </div>
                   </div>
 
@@ -3376,16 +3857,17 @@ export default function AdminPage() {
                       {/* Quick Add Palette & Custom Input */}
                       <div
                         style={{
-                          background: "#0d0d0d",
-                          border: "1px solid #222222",
+                          background: "#FAF9F5",
+                          border: "1px solid #E7E5DF",
                           padding: "12px",
                           display: "flex",
                           flexDirection: "column",
                           gap: "10px",
+                          borderRadius: "2px",
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                          <span style={{ fontSize: "10px", color: "#888888", fontWeight: 700 }}>
+                          <span style={{ fontSize: "10px", color: "#71717A", fontWeight: 700 }}>
                             QUICK ADD PALETTE:
                           </span>
                           {[
@@ -3518,8 +4000,8 @@ export default function AdminPage() {
                               key={sz}
                               className={styles.sizeStockBox}
                               style={{
-                                borderColor: isOut ? "#ef4444" : isLow ? "#f59e0b" : "#282828",
-                                background: isOut ? "#1a0808" : isLow ? "#1c1407" : "#0d0d0d",
+                                borderColor: isOut ? "#FECACA" : isLow ? "#FDE68A" : "#E7E5DF",
+                                background: isOut ? "#FEF2F2" : isLow ? "#FFFBEB" : "#FAFAFA",
                               }}
                             >
                               <div className={styles.sizeStockLabel}>
@@ -3830,10 +4312,11 @@ export default function AdminPage() {
                           display: "flex",
                           alignItems: "flex-start",
                           gap: "10px",
-                          background: editingProduct.is_new ? "#181818" : "#0d0d0d",
-                          border: `1px solid ${editingProduct.is_new ? "#ffffff" : "#222222"}`,
+                          background: editingProduct.is_new ? "#F7F6F2" : "#FFFFFF",
+                          border: `1px solid ${editingProduct.is_new ? "#121212" : "#E7E5DF"}`,
                           padding: "12px",
                           cursor: "pointer",
+                          borderRadius: "2px",
                           transition: "all 0.2s ease"
                         }}>
                           <input
@@ -3842,13 +4325,13 @@ export default function AdminPage() {
                             onChange={(e) =>
                               setEditingProduct({ ...editingProduct, is_new: e.target.checked })
                             }
-                            style={{ marginTop: "2px", accentColor: "#ffffff" }}
+                            style={{ marginTop: "2px", accentColor: "#121212" }}
                           />
                           <div>
-                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#ffffff", letterSpacing: "0.08em" }}>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#121212", letterSpacing: "0.08em" }}>
                               NEW IN SECTION
                             </div>
-                            <div style={{ fontSize: "10px", color: "#777777", marginTop: "2px", lineHeight: "1.3" }}>
+                            <div style={{ fontSize: "10px", color: "#71717A", marginTop: "2px", lineHeight: "1.3" }}>
                               Shows product in homepage &ldquo;NEW ARRIVALS&rdquo; marquee and &ldquo;NEW IN&rdquo; catalogue filters.
                             </div>
                           </div>
@@ -3859,10 +4342,11 @@ export default function AdminPage() {
                           display: "flex",
                           alignItems: "flex-start",
                           gap: "10px",
-                          background: editingProduct.is_trending ? "#181818" : "#0d0d0d",
-                          border: `1px solid ${editingProduct.is_trending ? "#ffffff" : "#222222"}`,
+                          background: editingProduct.is_trending ? "#F7F6F2" : "#FFFFFF",
+                          border: `1px solid ${editingProduct.is_trending ? "#121212" : "#E7E5DF"}`,
                           padding: "12px",
                           cursor: "pointer",
+                          borderRadius: "2px",
                           transition: "all 0.2s ease"
                         }}>
                           <input
@@ -3871,13 +4355,13 @@ export default function AdminPage() {
                             onChange={(e) =>
                               setEditingProduct({ ...editingProduct, is_trending: e.target.checked })
                             }
-                            style={{ marginTop: "2px", accentColor: "#ffffff" }}
+                            style={{ marginTop: "2px", accentColor: "#121212" }}
                           />
                           <div>
-                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#ffffff", letterSpacing: "0.08em" }}>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#121212", letterSpacing: "0.08em" }}>
                               TRENDING SECTION
                             </div>
-                            <div style={{ fontSize: "10px", color: "#777777", marginTop: "2px", lineHeight: "1.3" }}>
+                            <div style={{ fontSize: "10px", color: "#71717A", marginTop: "2px", lineHeight: "1.3" }}>
                               Shows product in homepage &ldquo;TRENDING&rdquo; featured spotlight slider and trending filters.
                             </div>
                           </div>
@@ -3888,10 +4372,11 @@ export default function AdminPage() {
                           display: "flex",
                           alignItems: "flex-start",
                           gap: "10px",
-                          background: editingProduct.is_featured ? "#181818" : "#0d0d0d",
-                          border: `1px solid ${editingProduct.is_featured ? "#ffffff" : "#222222"}`,
+                          background: editingProduct.is_featured ? "#F7F6F2" : "#FFFFFF",
+                          border: `1px solid ${editingProduct.is_featured ? "#121212" : "#E7E5DF"}`,
                           padding: "12px",
                           cursor: "pointer",
+                          borderRadius: "2px",
                           transition: "all 0.2s ease"
                         }}>
                           <input
@@ -3900,13 +4385,13 @@ export default function AdminPage() {
                             onChange={(e) =>
                               setEditingProduct({ ...editingProduct, is_featured: e.target.checked })
                             }
-                            style={{ marginTop: "2px", accentColor: "#ffffff" }}
+                            style={{ marginTop: "2px", accentColor: "#121212" }}
                           />
                           <div>
-                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#ffffff", letterSpacing: "0.08em" }}>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#121212", letterSpacing: "0.08em" }}>
                               CURATED PRODUCTS
                             </div>
-                            <div style={{ fontSize: "10px", color: "#777777", marginTop: "2px", lineHeight: "1.3" }}>
+                            <div style={{ fontSize: "10px", color: "#71717A", marginTop: "2px", lineHeight: "1.3" }}>
                               Featured prominently in homepage &ldquo;CURATED CATALOGUE&rdquo; grid.
                             </div>
                           </div>
@@ -3914,9 +4399,9 @@ export default function AdminPage() {
                       </div>
 
                       {/* Category Live Indicator */}
-                      <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #222222", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", fontSize: "11px" }}>
-                        <span style={{ color: "#777777" }}>Assigned Category Section:</span>
-                        <strong style={{ color: "#ffffff", letterSpacing: "0.08em" }}>
+                      <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #E7E5DF", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", fontSize: "11px" }}>
+                        <span style={{ color: "#71717A" }}>Assigned Category Section:</span>
+                        <strong style={{ color: "#121212", letterSpacing: "0.08em" }}>
                           {editingProduct.category_name ? `${editingProduct.category_name} (/category/${editingProduct.category_slug})` : "SELECT A CATEGORY ABOVE"}
                         </strong>
                       </div>
@@ -4041,16 +4526,16 @@ export default function AdminPage() {
                       )}
 
                       {editingCategory.image && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "14px", background: "#111111", padding: "10px 14px", border: "1px solid #222222" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "14px", background: "#FAF9F5", padding: "10px 14px", border: "1px solid #E7E5DF", borderRadius: "2px" }}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={editingCategory.image}
                             alt="Cover preview"
-                            style={{ width: "50px", height: "50px", objectFit: "cover", border: "1px solid #333333" }}
+                            style={{ width: "50px", height: "50px", objectFit: "cover", border: "1px solid #E5E3DC" }}
                           />
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#ffffff" }}>ACTIVE COVER PHOTO</div>
-                            <div style={{ fontSize: "10px", color: "#777777", wordBreak: "break-all" }}>{editingCategory.image}</div>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#121212" }}>ACTIVE COVER PHOTO</div>
+                            <div style={{ fontSize: "10px", color: "#71717A", wordBreak: "break-all" }}>{editingCategory.image}</div>
                           </div>
                           <button
                             type="button"
@@ -4592,10 +5077,11 @@ export default function AdminPage() {
               {/* Admin Notes & AWB tracking */}
               <div
                 style={{
-                  background: "#0a0a0a",
-                  border: "1px solid #262626",
+                  background: "#FAF9F5",
+                  border: "1px solid #E7E5DF",
                   padding: "16px",
                   marginBottom: "16px",
+                  borderRadius: "4px",
                 }}
               >
                 <label
@@ -4603,7 +5089,7 @@ export default function AdminPage() {
                     display: "block",
                     fontSize: "10px",
                     letterSpacing: "0.12em",
-                    color: "#888",
+                    color: "#71717A",
                     marginBottom: "6px",
                     fontWeight: 700,
                   }}
@@ -4618,11 +5104,12 @@ export default function AdminPage() {
                     placeholder="e.g. Delhivery reverse AWB #1293847, pickup scheduled for 2 PM"
                     style={{
                       flex: 1,
-                      background: "#141414",
-                      border: "1px solid #333",
-                      color: "#fff",
+                      background: "#FFFFFF",
+                      border: "1px solid #E5E3DC",
+                      color: "#121212",
                       padding: "8px 12px",
                       fontSize: "12px",
+                      borderRadius: "2px",
                     }}
                   />
                   <button
@@ -4636,13 +5123,14 @@ export default function AdminPage() {
                       triggerToast("Admin notes updated.");
                     }}
                     style={{
-                      background: "#27272a",
-                      color: "#fff",
-                      border: "1px solid #444",
+                      background: "#121212",
+                      color: "#ffffff",
+                      border: "1px solid #121212",
                       padding: "8px 16px",
                       fontSize: "11px",
-                      fontWeight: 700,
+                      fontWeight: 600,
                       cursor: "pointer",
+                      borderRadius: "2px",
                     }}
                   >
                     SAVE NOTE

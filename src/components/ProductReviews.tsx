@@ -249,31 +249,53 @@ export default function ProductReviews({
   const storageKey = `greeno_atelier_reviews_${productId}`;
   const helpfulKey = `greeno_helpful_reviews`;
 
-  // Initialize reviews from localStorage + defaults
+  // Initialize reviews from server /api/reviews with localStorage fallback
   useEffect(() => {
-    try {
-      const defaults = getDefaultCategoryReviews(productId, productName, categoryGroup);
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setReviews([...parsed, ...defaults]);
-        } else {
-          setReviews(defaults);
+    let isMounted = true;
+    async function fetchReviews() {
+      try {
+        const res = await fetch(`/api/reviews?productId=${encodeURIComponent(productId)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.reviews) && json.reviews.length > 0) {
+            if (isMounted) setReviews(json.reviews);
+            return;
+          }
         }
-      } else {
-        setReviews(defaults);
+      } catch (err) {
+        console.warn("Could not fetch remote reviews, using local fallback", err);
       }
 
+      // Local fallback
+      try {
+        const defaults = getDefaultCategoryReviews(productId, productName, categoryGroup);
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (isMounted) setReviews([...parsed, ...defaults]);
+            return;
+          }
+        }
+        if (isMounted) setReviews(defaults);
+      } catch (e) {
+        if (isMounted) setReviews(getDefaultCategoryReviews(productId, productName, categoryGroup));
+      }
+    }
+
+    fetchReviews();
+
+    try {
       const savedHelpful = localStorage.getItem(helpfulKey);
       if (savedHelpful) {
         setHelpfulVoted(JSON.parse(savedHelpful));
       }
-    } catch (e) {
-      console.error("Error loading reviews:", e);
-      setReviews(getDefaultCategoryReviews(productId, productName, categoryGroup));
-    }
-  }, [productId, productName, categoryGroup, storageKey]);
+    } catch {}
+
+    return () => {
+      isMounted = false;
+    };
+  }, [productId, productName, categoryGroup, storageKey, helpfulKey]);
 
   // Listen for global open review modal events (e.g. from header rating click)
   useEffect(() => {
@@ -392,6 +414,23 @@ export default function ProductReviews({
     } catch (e) {
       console.error("Error saving review to localStorage:", e);
     }
+
+    // Persist to server API
+    fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId,
+        productName,
+        author: formAuthor.trim(),
+        location: formLocation.trim() || "India",
+        rating: formRating,
+        title: formTitle.trim(),
+        comment: formComment.trim(),
+        sizePurchased: formSize,
+        fitFeedback: formFit,
+      }),
+    }).catch((err) => console.warn("Could not persist review to server:", err));
 
     setSubmitSuccess(true);
     setTimeout(() => {

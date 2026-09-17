@@ -106,6 +106,24 @@ export type StoreSettings = {
   resendApiKey?: string;
 };
 
+export type StoreReview = {
+  id: string;
+  product_id: string;
+  product_name?: string;
+  author: string;
+  location?: string;
+  rating: number;
+  date: string;
+  title: string;
+  comment: string;
+  verified: boolean;
+  sizePurchased?: string;
+  fitFeedback?: "Runs Small" | "True to Size" | "Runs Large";
+  helpfulCount: number;
+  is_featured?: boolean;
+  created_at: string;
+};
+
 export type StoreData = {
   products: Product[];
   categories: Category[];
@@ -113,6 +131,7 @@ export type StoreData = {
   returns: ReturnExchangeRequest[];
   coupons: StoreCoupon[];
   settings: StoreSettings;
+  reviews?: StoreReview[];
 };
 
 const DATA_DIR = path.join(process.cwd(), "src", "data");
@@ -383,6 +402,94 @@ export function getInMemoryOrderStatusOverrides(): Record<string, string> {
   return result;
 }
 
+export const DEFAULT_REVIEWS: StoreReview[] = [
+  {
+    id: "rev-poplin-1",
+    product_id: "tailored-poplin-shirt",
+    product_name: "Tailored Poplin Shirt",
+    author: "Julian V.",
+    location: "Milan, IT",
+    rating: 5,
+    date: "3 days ago",
+    title: "Impeccable collar stance and refined weave",
+    comment: "The collar retains its sharp architectural profile with zero buckling. The fabric has an exquisite substantial weight while remaining breathable throughout the day. Finished with refined mother-of-pearl buttons.",
+    verified: true,
+    sizePurchased: "M",
+    fitFeedback: "True to Size",
+    helpfulCount: 14,
+    is_featured: true,
+    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
+  },
+  {
+    id: "rev-poplin-2",
+    product_id: "tailored-poplin-shirt",
+    product_name: "Tailored Poplin Shirt",
+    author: "Aarav M.",
+    location: "Mumbai, IN",
+    rating: 5,
+    date: "1 week ago",
+    title: "Fluid drape, quiet luxury tailoring",
+    comment: "Fits impeccably through the shoulders with just enough ease in the torso. Doesn't crease easily and moves with an understated elegance. Easily rivals European luxury fashion houses.",
+    verified: true,
+    sizePurchased: "L",
+    fitFeedback: "True to Size",
+    helpfulCount: 9,
+    is_featured: true,
+    created_at: new Date(Date.now() - 3600000 * 168).toISOString(),
+  },
+  {
+    id: "rev-oxford-1",
+    product_id: "charcoal-oxford-overshirt",
+    product_name: "Charcoal Oxford Overshirt",
+    author: "Marcus K.",
+    location: "London, UK",
+    rating: 5,
+    date: "2 weeks ago",
+    title: "Substantial handfeel and immaculate stitching",
+    comment: "Very clean French seams and premium cotton density. Sits slightly relaxed in the body as intended by the atelier silhouette. Highly recommended.",
+    verified: true,
+    sizePurchased: "XL",
+    fitFeedback: "True to Size",
+    helpfulCount: 12,
+    is_featured: true,
+    created_at: new Date(Date.now() - 3600000 * 336).toISOString(),
+  },
+  {
+    id: "rev-boxy-1",
+    product_id: "oversized-black-tee",
+    product_name: "Heavyweight Boxy Tee",
+    author: "Dev P.",
+    location: "Bengaluru, IN",
+    rating: 5,
+    date: "4 days ago",
+    title: "Dense combed cotton that holds its structure",
+    comment: "The 300gsm combed jersey is phenomenal. Heavyweight without stiffness, hangs with an architectural boxy drape. Zero collar buckling after wash.",
+    verified: true,
+    sizePurchased: "L",
+    fitFeedback: "True to Size",
+    helpfulCount: 16,
+    is_featured: true,
+    created_at: new Date(Date.now() - 3600000 * 96).toISOString(),
+  },
+  {
+    id: "rev-chalk-1",
+    product_id: "minimalist-chalk-tee",
+    product_name: "Minimalist Chalk Tee",
+    author: "Kavya S.",
+    location: "New Delhi, IN",
+    rating: 5,
+    date: "5 days ago",
+    title: "Quiet elegance, sculptural drop shoulder",
+    comment: "Substantial tactile handfeel without feeling uncomfortably heavy. The drop shoulder is tailored with precision rather than looking sloppy.",
+    verified: true,
+    sizePurchased: "S",
+    fitFeedback: "True to Size",
+    helpfulCount: 11,
+    is_featured: true,
+    created_at: new Date(Date.now() - 3600000 * 120).toISOString(),
+  },
+];
+
 export function getInitialData(): StoreData {
   return {
     products: FALLBACK_PRODUCTS,
@@ -391,6 +498,7 @@ export function getInitialData(): StoreData {
     returns: DEFAULT_RETURNS,
     coupons: DEFAULT_COUPONS,
     settings: DEFAULT_SETTINGS,
+    reviews: DEFAULT_REVIEWS,
   };
 }
 
@@ -571,6 +679,22 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
     }
   }
 
+  // Merge client reviews
+  const reviewMap = new Map<string, StoreReview>();
+  for (const rev of initial.reviews || []) {
+    reviewMap.set(rev.id, rev);
+  }
+  if (fileData?.reviews && Array.isArray(fileData.reviews)) {
+    for (const rev of fileData.reviews) {
+      reviewMap.set(rev.id, rev);
+    }
+  }
+  if (tmpData?.reviews && Array.isArray(tmpData.reviews)) {
+    for (const rev of tmpData.reviews) {
+      reviewMap.set(rev.id, rev);
+    }
+  }
+
   const base = tmpData || fileData || {};
   memoryData = {
     products: Array.from(productMap.values()),
@@ -583,6 +707,9 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
     ),
     coupons: base.coupons || fileData?.coupons || initial.coupons,
     settings: { ...initial.settings, ...(fileData?.settings || {}), ...(tmpData?.settings || {}) },
+    reviews: Array.from(reviewMap.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ),
   };
 
   // Ensure any explicit status overrides are applied to memoryData
@@ -1008,3 +1135,53 @@ export async function deleteStoreReturn(id: string): Promise<boolean> {
   }
   return false;
 }
+
+// ----------------- Client Reviews Helpers -----------------
+
+export async function getStoreReviews(productId?: string): Promise<StoreReview[]> {
+  const data = await readStoreData();
+  const reviews = data.reviews || [];
+  if (productId) {
+    return reviews.filter((r) => r.product_id === productId);
+  }
+  return reviews;
+}
+
+export async function saveStoreReview(review: StoreReview): Promise<StoreReview> {
+  const data = await readStoreData();
+  if (!data.reviews) data.reviews = [];
+  const existingIdx = data.reviews.findIndex((r) => r.id === review.id);
+  if (existingIdx >= 0) {
+    data.reviews[existingIdx] = { ...data.reviews[existingIdx], ...review };
+  } else {
+    data.reviews.unshift(review);
+  }
+  await writeStoreData(data);
+  return review;
+}
+
+export async function updateStoreReview(
+  id: string,
+  updates: Partial<StoreReview>
+): Promise<StoreReview | null> {
+  const data = await readStoreData();
+  if (!data.reviews) data.reviews = [];
+  const review = data.reviews.find((r) => r.id === id);
+  if (!review) return null;
+  Object.assign(review, updates);
+  await writeStoreData(data);
+  return review;
+}
+
+export async function deleteStoreReview(id: string): Promise<boolean> {
+  const data = await readStoreData();
+  if (!data.reviews) return false;
+  const initialLen = data.reviews.length;
+  data.reviews = data.reviews.filter((r) => r.id !== id);
+  if (data.reviews.length !== initialLen) {
+    await writeStoreData(data);
+    return true;
+  }
+  return false;
+}
+
