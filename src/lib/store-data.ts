@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { Product, Category, FALLBACK_CATEGORIES, FALLBACK_PRODUCTS } from "./catalog";
+import { prisma } from "@/lib/prisma";
 
 export type OrderItem = {
   id?: string;
@@ -507,6 +508,218 @@ let lastDataFileMtime = 0;
 export async function readStoreData(forceFresh = false): Promise<StoreData> {
   loadOrderStatusOverrides();
 
+  try {
+    const [dbProducts, dbCategories, dbOrders, dbReturns, dbReviews, dbCoupons, dbSettings] =
+      await Promise.all([
+        prisma.product.findMany(),
+        prisma.category.findMany(),
+        prisma.order.findMany({
+          include: { items: true },
+          orderBy: { created_at: "desc" },
+        }),
+        prisma.returnRequest.findMany({
+          include: { items: true },
+          orderBy: { created_at: "desc" },
+        }),
+        prisma.review.findMany({
+          orderBy: { created_at: "desc" },
+        }),
+        prisma.coupon.findMany(),
+        prisma.storeSetting.findUnique({ where: { id: "default" } }),
+      ]);
+
+    if (dbProducts && dbProducts.length > 0) {
+      const parsedProducts: Product[] = dbProducts.map((p) => {
+        let parsedImages: string[] = [];
+        try {
+          parsedImages = JSON.parse(p.images);
+        } catch {
+          parsedImages = [p.image];
+        }
+
+        let parsedSizeStock: Record<string, number> = { S: 5, M: 10, L: 10, XL: 5, XXL: 0 };
+        try {
+          parsedSizeStock = JSON.parse(p.size_stock);
+        } catch {}
+
+        let parsedColors: string[] = [p.color || "BLACK"];
+        try {
+          parsedColors = JSON.parse(p.colors);
+        } catch {}
+
+        return {
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          description: p.description,
+          category_id: p.category_id || undefined,
+          category_slug: p.category_slug,
+          category_name: p.category_name,
+          image: p.image,
+          images: parsedImages,
+          stock: p.stock,
+          size_stock: parsedSizeStock,
+          colors: parsedColors,
+          color: p.color,
+          product_no: p.product_no || undefined,
+          material: p.material || undefined,
+          fabric: p.fabric || undefined,
+          fit: p.fit || undefined,
+          is_featured: p.is_featured,
+          is_new: p.is_new,
+          is_trending: p.is_trending,
+          collection_tag: p.collection_tag || undefined,
+        };
+      });
+
+      const parsedCategories: Category[] = dbCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        image: c.image || undefined,
+        description: c.description || undefined,
+      }));
+
+      const parsedOrders: StoreOrder[] = dbOrders.map((o) => {
+        const override = inMemoryOrderStatusOverrides.get(o.id);
+        return {
+          id: o.id,
+          created_at: o.created_at.toISOString(),
+          customer: {
+            fullName: o.customer_name,
+            email: o.customer_email,
+            phone: o.customer_phone,
+            address: o.address,
+            city: o.city,
+            state: o.state,
+            pincode: o.pincode,
+          },
+          items: o.items.map((it) => ({
+            id: it.id,
+            product_id: it.product_id || "",
+            name: it.name,
+            price: it.price,
+            quantity: it.quantity,
+            size: it.size || undefined,
+            color: it.color || undefined,
+            image: it.image || undefined,
+          })),
+          subtotal: o.subtotal,
+          shipping: o.shipping,
+          discount: o.discount,
+          total: o.total,
+          status: (override?.status || o.status) as StoreOrder["status"],
+          payment_method: o.payment_method,
+          payment_status: (override?.payment_status || o.payment_status) as StoreOrder["payment_status"],
+          notes: o.notes || undefined,
+        };
+      });
+
+      const parsedReviews: StoreReview[] = dbReviews.map((r) => ({
+        id: r.id,
+        product_id: r.product_id,
+        product_name: r.product_name || undefined,
+        author: r.author,
+        location: r.location || undefined,
+        rating: r.rating,
+        date: r.date,
+        title: r.title,
+        comment: r.comment,
+        verified: r.verified,
+        sizePurchased: r.sizePurchased || undefined,
+        fitFeedback: (r.fitFeedback as any) || undefined,
+        helpfulCount: r.helpfulCount,
+        is_featured: r.is_featured,
+        created_at: r.created_at.toISOString(),
+      }));
+
+      const parsedCoupons: StoreCoupon[] = dbCoupons.map((c) => ({
+        code: c.code,
+        type: c.type as StoreCoupon["type"],
+        value: c.value,
+        minOrder: c.minOrder,
+        description: c.description,
+        active: c.active,
+        usage_count: c.usage_count,
+      }));
+
+      const initial = getInitialData();
+
+      const parsedReturns: ReturnExchangeRequest[] =
+        dbReturns && dbReturns.length > 0
+          ? dbReturns.map((ret) => ({
+              id: ret.id,
+              order_id: ret.order_id,
+              created_at: ret.created_at.toISOString(),
+              type: ret.type as ReturnExchangeRequest["type"],
+              status: ret.status as ReturnExchangeRequest["status"],
+              customer: {
+                fullName: ret.customer_name,
+                email: ret.customer_email,
+                phone: ret.customer_phone,
+                address: ret.pickup_address || "",
+                city: "",
+                state: "",
+                pincode: "",
+              },
+              items: ret.items.map((it) => ({
+                product_id: it.product_id,
+                name: it.name,
+                price: it.price,
+                quantity: it.quantity,
+                size: it.size || undefined,
+                color: it.color || undefined,
+                image: it.image || undefined,
+                exchange_size: it.exchange_size || undefined,
+                exchange_color: it.exchange_color || undefined,
+                reason: it.reason || undefined,
+              })),
+              reason_category: ret.reason_category,
+              customer_notes: ret.customer_notes || undefined,
+              admin_notes: ret.admin_notes || undefined,
+              pickup_address: ret.pickup_address || undefined,
+              resolved_at: ret.resolved_at?.toISOString() || undefined,
+            }))
+          : initial.returns;
+
+      const parsedSettings: StoreSettings = dbSettings
+        ? {
+            announcementText: dbSettings.announcementText,
+            storeNotice: dbSettings.storeNotice,
+            supportPhone: dbSettings.supportPhone,
+            supportEmail: dbSettings.supportEmail,
+            adminPasskey: dbSettings.adminPasskey,
+            currency: dbSettings.currency,
+            smsApiKey: dbSettings.smsApiKey || undefined,
+            smsProvider: (dbSettings.smsProvider as any) || undefined,
+            emailProvider: (dbSettings.emailProvider as any) || undefined,
+            smtpHost: dbSettings.smtpHost || undefined,
+            smtpPort: dbSettings.smtpPort || undefined,
+            smtpSecure: dbSettings.smtpSecure !== null ? dbSettings.smtpSecure : undefined,
+            smtpUser: dbSettings.smtpUser || undefined,
+            smtpPass: dbSettings.smtpPass || undefined,
+            smtpFrom: dbSettings.smtpFrom || undefined,
+            brevoApiKey: dbSettings.brevoApiKey || undefined,
+            resendApiKey: dbSettings.resendApiKey || undefined,
+          }
+        : initial.settings;
+
+      memoryData = {
+        products: parsedProducts,
+        categories: parsedCategories,
+        orders: parsedOrders,
+        returns: parsedReturns,
+        coupons: parsedCoupons,
+        settings: parsedSettings,
+        reviews: parsedReviews,
+      };
+
+      return memoryData;
+    }
+  } catch (err) {
+    console.warn("Prisma query notice, falling back to disk JSON store:", err);
+  }
+
   let fileMtime = 0;
   try {
     if (fs.existsSync(DATA_FILE)) {
@@ -754,6 +967,57 @@ export async function getStoreProducts(forceFresh = true): Promise<Product[]> {
 }
 
 export async function saveStoreProduct(product: Product): Promise<Product> {
+  try {
+    await prisma.product.upsert({
+      where: { id: product.id },
+      update: {
+        name: product.name,
+        price: Number(product.price),
+        description: product.description || "",
+        category_slug: product.category_slug || "shirts",
+        category_name: product.category_name || "SHIRTS",
+        image: product.image || "/atelier-shirt.jpg",
+        images: JSON.stringify(product.images || [product.image || "/atelier-shirt.jpg"]),
+        stock: Number(product.stock || 50),
+        size_stock: JSON.stringify(product.size_stock || {}),
+        colors: JSON.stringify(product.colors || [product.color || "BLACK"]),
+        color: product.color || "BLACK",
+        product_no: product.product_no || null,
+        material: product.material || null,
+        fabric: product.fabric || null,
+        fit: product.fit || null,
+        is_featured: Boolean(product.is_featured),
+        is_new: Boolean(product.is_new),
+        is_trending: Boolean(product.is_trending),
+        collection_tag: product.collection_tag || null,
+      },
+      create: {
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        description: product.description || "",
+        category_slug: product.category_slug || "shirts",
+        category_name: product.category_name || "SHIRTS",
+        image: product.image || "/atelier-shirt.jpg",
+        images: JSON.stringify(product.images || [product.image || "/atelier-shirt.jpg"]),
+        stock: Number(product.stock || 50),
+        size_stock: JSON.stringify(product.size_stock || {}),
+        colors: JSON.stringify(product.colors || [product.color || "BLACK"]),
+        color: product.color || "BLACK",
+        product_no: product.product_no || null,
+        material: product.material || null,
+        fabric: product.fabric || null,
+        fit: product.fit || null,
+        is_featured: Boolean(product.is_featured),
+        is_new: Boolean(product.is_new),
+        is_trending: Boolean(product.is_trending),
+        collection_tag: product.collection_tag || null,
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma saveStoreProduct notice:", err);
+  }
+
   const data = await readStoreData(true);
   const index = data.products.findIndex((p) => p.id === product.id);
 
@@ -768,6 +1032,12 @@ export async function saveStoreProduct(product: Product): Promise<Product> {
 }
 
 export async function deleteStoreProduct(productId: string): Promise<boolean> {
+  try {
+    await prisma.product.delete({ where: { id: productId } });
+  } catch (err) {
+    console.warn("Prisma deleteStoreProduct notice:", err);
+  }
+
   const data = await readStoreData();
   const initialLen = data.products.length;
   data.products = data.products.filter((p) => p.id !== productId);
@@ -823,6 +1093,26 @@ export async function getStoreCategories(): Promise<Category[]> {
 }
 
 export async function saveStoreCategory(category: Category): Promise<Category> {
+  try {
+    await prisma.category.upsert({
+      where: { slug: category.slug },
+      update: {
+        name: category.name,
+        image: category.image || null,
+        description: category.description || null,
+      },
+      create: {
+        id: category.id || `cat-${category.slug}`,
+        name: category.name,
+        slug: category.slug,
+        image: category.image || null,
+        description: category.description || null,
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma saveStoreCategory notice:", err);
+  }
+
   const data = await readStoreData();
   const index = data.categories.findIndex(
     (c) => c.id === category.id || c.slug === category.slug
@@ -839,6 +1129,16 @@ export async function saveStoreCategory(category: Category): Promise<Category> {
 }
 
 export async function deleteStoreCategory(categoryIdOrSlug: string): Promise<boolean> {
+  try {
+    await prisma.category.deleteMany({
+      where: {
+        OR: [{ id: categoryIdOrSlug }, { slug: categoryIdOrSlug }],
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma deleteStoreCategory notice:", err);
+  }
+
   const data = await readStoreData();
   const initialLen = data.categories.length;
   data.categories = data.categories.filter(
@@ -861,6 +1161,49 @@ export async function getStoreOrders(forceFresh = true): Promise<StoreOrder[]> {
 }
 
 export async function addStoreOrder(order: StoreOrder): Promise<StoreOrder> {
+  try {
+    await prisma.order.upsert({
+      where: { id: order.id },
+      update: {
+        status: order.status,
+        payment_status: order.payment_status,
+        total: order.total,
+      },
+      create: {
+        id: order.id,
+        created_at: new Date(order.created_at || Date.now()),
+        customer_name: order.customer.fullName,
+        customer_email: order.customer.email,
+        customer_phone: order.customer.phone,
+        address: order.customer.address,
+        city: order.customer.city,
+        state: order.customer.state,
+        pincode: order.customer.pincode,
+        subtotal: order.subtotal,
+        shipping: order.shipping,
+        discount: order.discount,
+        total: order.total,
+        status: order.status,
+        payment_method: order.payment_method,
+        payment_status: order.payment_status,
+        notes: order.notes || null,
+        items: {
+          create: (order.items || []).map((it) => ({
+            product_id: it.product_id || null,
+            name: it.name,
+            price: it.price,
+            quantity: it.quantity,
+            size: it.size || null,
+            color: it.color || null,
+            image: it.image || null,
+          })),
+        },
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma addStoreOrder notice:", err);
+  }
+
   const data = await readStoreData(true);
   // Avoid duplicate entries
   const existingIdx = data.orders.findIndex((o) => o.id === order.id);
@@ -879,6 +1222,18 @@ export async function updateStoreOrderStatus(
   payment_status?: StoreOrder["payment_status"],
   fallbackOrder?: Partial<StoreOrder>
 ): Promise<StoreOrder | null> {
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status,
+        ...(payment_status ? { payment_status } : {}),
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma updateStoreOrderStatus notice:", err);
+  }
+
   const data = await readStoreData(true);
   let order = data.orders.find((o) => o.id === orderId);
 
@@ -998,15 +1353,41 @@ export async function getStoreCoupons(): Promise<StoreCoupon[]> {
 }
 
 export async function saveStoreCoupon(coupon: StoreCoupon): Promise<StoreCoupon> {
-  const data = await readStoreData();
-  const index = data.coupons.findIndex(
-    (c) => c.code.toUpperCase() === coupon.code.toUpperCase()
-  );
-
+  const cleanCode = coupon.code.trim().toUpperCase();
   const cleanCoupon: StoreCoupon = {
     ...coupon,
-    code: coupon.code.trim().toUpperCase(),
+    code: cleanCode,
   };
+
+  try {
+    await prisma.coupon.upsert({
+      where: { code: cleanCode },
+      update: {
+        type: cleanCoupon.type,
+        value: Number(cleanCoupon.value),
+        minOrder: Number(cleanCoupon.minOrder || 0),
+        description: cleanCoupon.description,
+        active: cleanCoupon.active !== undefined ? Boolean(cleanCoupon.active) : true,
+        usage_count: Number(cleanCoupon.usage_count || 0),
+      },
+      create: {
+        code: cleanCode,
+        type: cleanCoupon.type,
+        value: Number(cleanCoupon.value),
+        minOrder: Number(cleanCoupon.minOrder || 0),
+        description: cleanCoupon.description,
+        active: cleanCoupon.active !== undefined ? Boolean(cleanCoupon.active) : true,
+        usage_count: Number(cleanCoupon.usage_count || 0),
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma saveStoreCoupon notice:", err);
+  }
+
+  const data = await readStoreData();
+  const index = data.coupons.findIndex(
+    (c) => c.code.toUpperCase() === cleanCode
+  );
 
   if (index >= 0) {
     data.coupons[index] = { ...data.coupons[index], ...cleanCoupon };
@@ -1019,8 +1400,16 @@ export async function saveStoreCoupon(coupon: StoreCoupon): Promise<StoreCoupon>
 }
 
 export async function deleteStoreCoupon(code: string): Promise<boolean> {
-  const data = await readStoreData();
   const clean = code.trim().toUpperCase();
+  try {
+    await prisma.coupon.deleteMany({
+      where: { code: clean },
+    });
+  } catch (err) {
+    console.warn("Prisma deleteStoreCoupon notice:", err);
+  }
+
+  const data = await readStoreData();
   const initialLen = data.coupons.length;
   data.coupons = data.coupons.filter((c) => c.code.toUpperCase() !== clean);
   if (data.coupons.length !== initialLen) {
@@ -1038,6 +1427,53 @@ export async function getStoreSettings(): Promise<StoreSettings> {
 }
 
 export async function saveStoreSettings(settings: Partial<StoreSettings>): Promise<StoreSettings> {
+  try {
+    await prisma.storeSetting.upsert({
+      where: { id: "default" },
+      update: {
+        ...(settings.announcementText !== undefined && { announcementText: settings.announcementText }),
+        ...(settings.storeNotice !== undefined && { storeNotice: settings.storeNotice }),
+        ...(settings.supportPhone !== undefined && { supportPhone: settings.supportPhone }),
+        ...(settings.supportEmail !== undefined && { supportEmail: settings.supportEmail }),
+        ...(settings.adminPasskey !== undefined && { adminPasskey: settings.adminPasskey }),
+        ...(settings.currency !== undefined && { currency: settings.currency }),
+        ...(settings.smsApiKey !== undefined && { smsApiKey: settings.smsApiKey }),
+        ...(settings.smsProvider !== undefined && { smsProvider: settings.smsProvider }),
+        ...(settings.emailProvider !== undefined && { emailProvider: settings.emailProvider }),
+        ...(settings.smtpHost !== undefined && { smtpHost: settings.smtpHost }),
+        ...(settings.smtpPort !== undefined && { smtpPort: settings.smtpPort }),
+        ...(settings.smtpSecure !== undefined && { smtpSecure: settings.smtpSecure }),
+        ...(settings.smtpUser !== undefined && { smtpUser: settings.smtpUser }),
+        ...(settings.smtpPass !== undefined && { smtpPass: settings.smtpPass }),
+        ...(settings.smtpFrom !== undefined && { smtpFrom: settings.smtpFrom }),
+        ...(settings.brevoApiKey !== undefined && { brevoApiKey: settings.brevoApiKey }),
+        ...(settings.resendApiKey !== undefined && { resendApiKey: settings.resendApiKey }),
+      },
+      create: {
+        id: "default",
+        announcementText: settings.announcementText || "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE",
+        storeNotice: settings.storeNotice || "All orders placed today are dispatched within 24 hours.",
+        supportPhone: settings.supportPhone || "+91 98765 43210",
+        supportEmail: settings.supportEmail || "concierge@greeno.in",
+        adminPasskey: settings.adminPasskey || "aman2026",
+        currency: settings.currency || "INR",
+        smsApiKey: settings.smsApiKey || "",
+        smsProvider: settings.smsProvider || "2factor",
+        emailProvider: settings.emailProvider || "gmail",
+        smtpHost: settings.smtpHost || "smtp.gmail.com",
+        smtpPort: settings.smtpPort || 465,
+        smtpSecure: settings.smtpSecure !== undefined ? settings.smtpSecure : true,
+        smtpUser: settings.smtpUser || "vedantshrivastava0407@gmail.com",
+        smtpPass: settings.smtpPass || "qqzjjbpozvfvhlhv",
+        smtpFrom: settings.smtpFrom || "GreenO Security <vedantshrivastava0407@gmail.com>",
+        brevoApiKey: settings.brevoApiKey || "",
+        resendApiKey: settings.resendApiKey || "",
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma saveStoreSettings notice:", err);
+  }
+
   const data = await readStoreData();
   data.settings = { ...data.settings, ...settings };
   await writeStoreData(data);
@@ -1056,6 +1492,48 @@ export async function getStoreReturns(): Promise<ReturnExchangeRequest[]> {
 export async function addStoreReturn(
   returnReq: ReturnExchangeRequest
 ): Promise<ReturnExchangeRequest> {
+  try {
+    await prisma.returnRequest.upsert({
+      where: { id: returnReq.id },
+      update: {
+        status: returnReq.status,
+        admin_notes: returnReq.admin_notes || null,
+        resolved_at: returnReq.resolved_at ? new Date(returnReq.resolved_at) : null,
+      },
+      create: {
+        id: returnReq.id,
+        order_id: returnReq.order_id,
+        created_at: new Date(returnReq.created_at || Date.now()),
+        type: returnReq.type,
+        status: returnReq.status,
+        reason_category: returnReq.reason_category,
+        customer_notes: returnReq.customer_notes || null,
+        admin_notes: returnReq.admin_notes || null,
+        pickup_address: returnReq.pickup_address || null,
+        resolved_at: returnReq.resolved_at ? new Date(returnReq.resolved_at) : null,
+        customer_name: returnReq.customer.fullName,
+        customer_email: returnReq.customer.email,
+        customer_phone: returnReq.customer.phone,
+        items: {
+          create: returnReq.items.map((it) => ({
+            product_id: it.product_id,
+            name: it.name,
+            price: Number(it.price),
+            quantity: Number(it.quantity),
+            size: it.size || null,
+            color: it.color || null,
+            image: it.image || null,
+            exchange_size: it.exchange_size || null,
+            exchange_color: it.exchange_color || null,
+            reason: it.reason || null,
+          })),
+        },
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma addStoreReturn notice:", err);
+  }
+
   const data = await readStoreData();
   if (!data.returns) data.returns = [];
   const existingIdx = data.returns.findIndex((r) => r.id === returnReq.id);
@@ -1073,6 +1551,19 @@ export async function updateStoreReturnStatus(
   status: ReturnExchangeRequest["status"],
   admin_notes?: string
 ): Promise<ReturnExchangeRequest | null> {
+  try {
+    await prisma.returnRequest.update({
+      where: { id },
+      data: {
+        status,
+        ...(admin_notes !== undefined ? { admin_notes } : {}),
+        ...((status === "completed" || status === "rejected") ? { resolved_at: new Date() } : {}),
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma updateStoreReturnStatus notice:", err);
+  }
+
   const data = await readStoreData();
   if (!data.returns) data.returns = [];
   const returnReq = data.returns.find((r) => r.id === id);
@@ -1125,6 +1616,12 @@ export async function syncStoreReturns(
 }
 
 export async function deleteStoreReturn(id: string): Promise<boolean> {
+  try {
+    await prisma.returnRequest.delete({ where: { id } });
+  } catch (err) {
+    console.warn("Prisma deleteStoreReturn notice:", err);
+  }
+
   const data = await readStoreData();
   if (!data.returns) return false;
   const initialLen = data.returns.length;
@@ -1148,22 +1645,84 @@ export async function getStoreReviews(productId?: string): Promise<StoreReview[]
 }
 
 export async function saveStoreReview(review: StoreReview): Promise<StoreReview> {
+  const reviewId = review.id || `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const cleanReview: StoreReview = { ...review, id: reviewId };
+
+  try {
+    await prisma.review.upsert({
+      where: { id: cleanReview.id },
+      update: {
+        product_id: cleanReview.product_id,
+        product_name: cleanReview.product_name || null,
+        author: cleanReview.author,
+        location: cleanReview.location || null,
+        rating: Number(cleanReview.rating),
+        date: cleanReview.date || "Just now",
+        title: cleanReview.title,
+        comment: cleanReview.comment,
+        verified: cleanReview.verified !== undefined ? Boolean(cleanReview.verified) : true,
+        sizePurchased: cleanReview.sizePurchased || null,
+        fitFeedback: cleanReview.fitFeedback || null,
+        helpfulCount: Number(cleanReview.helpfulCount || 0),
+        is_featured: Boolean(cleanReview.is_featured),
+      },
+      create: {
+        id: cleanReview.id,
+        product_id: cleanReview.product_id,
+        product_name: cleanReview.product_name || null,
+        author: cleanReview.author,
+        location: cleanReview.location || null,
+        rating: Number(cleanReview.rating),
+        date: cleanReview.date || "Just now",
+        title: cleanReview.title,
+        comment: cleanReview.comment,
+        verified: cleanReview.verified !== undefined ? Boolean(cleanReview.verified) : true,
+        sizePurchased: cleanReview.sizePurchased || null,
+        fitFeedback: cleanReview.fitFeedback || null,
+        helpfulCount: Number(cleanReview.helpfulCount || 0),
+        is_featured: Boolean(cleanReview.is_featured),
+        created_at: new Date(cleanReview.created_at || Date.now()),
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma saveStoreReview notice:", err);
+  }
+
   const data = await readStoreData();
   if (!data.reviews) data.reviews = [];
-  const existingIdx = data.reviews.findIndex((r) => r.id === review.id);
+  const existingIdx = data.reviews.findIndex((r) => r.id === cleanReview.id);
   if (existingIdx >= 0) {
-    data.reviews[existingIdx] = { ...data.reviews[existingIdx], ...review };
+    data.reviews[existingIdx] = { ...data.reviews[existingIdx], ...cleanReview };
   } else {
-    data.reviews.unshift(review);
+    data.reviews.unshift(cleanReview);
   }
   await writeStoreData(data);
-  return review;
+  return cleanReview;
 }
 
 export async function updateStoreReview(
   id: string,
   updates: Partial<StoreReview>
 ): Promise<StoreReview | null> {
+  try {
+    await prisma.review.update({
+      where: { id },
+      data: {
+        ...(updates.author !== undefined && { author: updates.author }),
+        ...(updates.title !== undefined && { title: updates.title }),
+        ...(updates.comment !== undefined && { comment: updates.comment }),
+        ...(updates.rating !== undefined && { rating: Number(updates.rating) }),
+        ...(updates.is_featured !== undefined && { is_featured: Boolean(updates.is_featured) }),
+        ...(updates.verified !== undefined && { verified: Boolean(updates.verified) }),
+        ...(updates.helpfulCount !== undefined && { helpfulCount: Number(updates.helpfulCount) }),
+        ...(updates.fitFeedback !== undefined && { fitFeedback: updates.fitFeedback }),
+        ...(updates.sizePurchased !== undefined && { sizePurchased: updates.sizePurchased }),
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma updateStoreReview notice:", err);
+  }
+
   const data = await readStoreData();
   if (!data.reviews) data.reviews = [];
   const review = data.reviews.find((r) => r.id === id);
@@ -1174,6 +1733,12 @@ export async function updateStoreReview(
 }
 
 export async function deleteStoreReview(id: string): Promise<boolean> {
+  try {
+    await prisma.review.delete({ where: { id } });
+  } catch (err) {
+    console.warn("Prisma deleteStoreReview notice:", err);
+  }
+
   const data = await readStoreData();
   if (!data.reviews) return false;
   const initialLen = data.reviews.length;

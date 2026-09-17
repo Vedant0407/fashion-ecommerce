@@ -1,0 +1,219 @@
+// Prisma Schema for GreenO Atelier Relational Database
+// Supports SQLite out of the box and seamlessly switches to PostgreSQL (Supabase/Neon) via DATABASE_URL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  passwordHash   String?
+  provider       String    @default("email") // "email" | "google"
+  email_verified Boolean   @default(false)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  last_login_at  DateTime?
+  orders         Order[]
+
+  @@index([email])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  image       String?
+  description String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  products    Product[]
+
+  @@index([slug])
+}
+
+model Product {
+  id             String      @id
+  name           String
+  price          Float
+  description    String
+  category_id    String?
+  category_slug  String      @default("shirts")
+  category_name  String      @default("SHIRTS")
+  category       Category?   @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  image          String
+  images         String      @default("[]") // JSON stringified array of image URLs
+  stock          Int         @default(50)
+  size_stock     String      @default("{}") // JSON stringified object { S: 10, M: 15, ... }
+  colors         String      @default("[]") // JSON stringified array of color strings
+  color          String      @default("BLACK")
+  product_no     String?
+  material       String?
+  fabric         String?
+  fit            String?
+  is_featured    Boolean     @default(false)
+  is_new         Boolean     @default(false)
+  is_trending    Boolean     @default(false)
+  collection_tag String?
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+  order_items    OrderItem[]
+  reviews        Review[]
+
+  @@index([category_slug])
+  @@index([is_featured])
+  @@index([is_new])
+  @@index([is_trending])
+}
+
+model Order {
+  id             String          @id
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  user_id        String?
+  user           User?           @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  customer_name  String
+  customer_email String
+  customer_phone String
+  address        String
+  city           String
+  state          String
+  pincode        String
+  subtotal       Float
+  shipping       Float
+  discount       Float           @default(0)
+  total          Float
+  status         String          @default("confirmed") // confirmed, processing, shipped, delivered, reached, cancelled
+  payment_method String          @default("COD")
+  payment_status String          @default("pending") // pending, paid, failed
+  notes          String?
+  items          OrderItem[]
+  returns        ReturnRequest[]
+
+  @@index([customer_email])
+  @@index([status])
+  @@index([created_at])
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  order_id   String
+  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product_id String?
+  product    Product? @relation(fields: [product_id], references: [id], onDelete: SetNull)
+  name       String
+  price      Float
+  quantity   Int
+  size       String?
+  color      String?
+  image      String?
+
+  @@index([order_id])
+  @@index([product_id])
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  product_id    String
+  product       Product? @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_name  String?
+  author        String
+  location      String?
+  rating        Float
+  date          String
+  title         String
+  comment       String
+  verified      Boolean  @default(true)
+  sizePurchased String?
+  fitFeedback   String?
+  helpfulCount  Int      @default(0)
+  is_featured   Boolean  @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@index([product_id])
+  @@index([is_featured])
+  @@index([rating])
+}
+
+model ReturnRequest {
+  id              String       @id
+  order_id        String
+  order           Order        @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  created_at      DateTime     @default(now())
+  type            String       @default("return") // return | exchange
+  status          String       @default("pending") // pending, approved, pickup_scheduled, received, completed, rejected
+  reason_category String
+  customer_notes  String?
+  admin_notes     String?
+  pickup_address  String?
+  resolved_at     DateTime?
+  customer_name   String
+  customer_email  String
+  customer_phone  String
+  items           ReturnItem[]
+
+  @@index([order_id])
+  @@index([status])
+}
+
+model ReturnItem {
+  id             String        @id @default(cuid())
+  return_id      String
+  return_request ReturnRequest @relation(fields: [return_id], references: [id], onDelete: Cascade)
+  product_id     String
+  name           String
+  price          Float
+  quantity       Int
+  size           String?
+  color          String?
+  image          String?
+  exchange_size  String?
+  exchange_color String?
+  reason         String?
+
+  @@index([return_id])
+}
+
+model Coupon {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  type        String   @default("percentage") // percentage, fixed, free_shipping
+  value       Float
+  minOrder    Float    @default(0)
+  description String
+  active      Boolean  @default(true)
+  usage_count Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([code])
+}
+
+model StoreSetting {
+  id               String   @id @default("default")
+  announcementText String   @default("COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE")
+  storeNotice      String   @default("All orders placed today are dispatched within 24 hours.")
+  supportPhone     String   @default("+91 98765 43210")
+  supportEmail     String   @default("concierge@greeno.in")
+  adminPasskey     String   @default("aman2026")
+  currency         String   @default("INR")
+  smsApiKey        String?  @default("")
+  smsProvider      String?  @default("2factor")
+  emailProvider    String?  @default("gmail")
+  smtpHost         String?  @default("smtp.gmail.com")
+  smtpPort         Int?     @default(465)
+  smtpSecure       Boolean? @default(true)
+  smtpUser         String?  @default("vedantshrivastava0407@gmail.com")
+  smtpPass         String?  @default("qqzjjbpozvfvhlhv")
+  smtpFrom         String?  @default("GreenO Security <vedantshrivastava0407@gmail.com>")
+  brevoApiKey      String?  @default("")
+  resendApiKey     String?  @default("")
+  updated_at       DateTime @updatedAt
+}

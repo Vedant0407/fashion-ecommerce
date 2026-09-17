@@ -6,22 +6,32 @@
       "price": 10,
       "description": "brand new",
       "category_id": "f538723d-7ba4-4dfa-a3d4-bb97281a127c",
-      "category_name": "PANTS",
       "category_slug": "pants",
+      "category_name": "PANTS",
       "image": "/black-tee.jfif",
       "images": [
         "/black-tee.jfif",
         "/cargo-pants.jfif"
       ],
       "stock": 15,
-      "is_featured": true,
-      "is_new": true,
-      "is_trending": false,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "BLACK"
+      ],
       "color": "BLACK",
       "product_no": "GO-3607",
       "material": "100% Cotton",
       "fabric": "Heavyweight Jersey",
-      "fit": "Oversized Fit"
+      "fit": "Oversized Fit",
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": false
     },
     {
       "id": "urban-grey-hoodie",
@@ -38,14 +48,24 @@
         "/hero.jfif"
       ],
       "stock": 45,
-      "is_featured": true,
-      "is_new": true,
-      "is_trending": true,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "GREY"
+      ],
       "color": "GREY",
       "product_no": "GH-001",
       "material": "Cotton Fleece",
       "fabric": "420 GSM Fleece",
-      "fit": "Boxy Oversized Fit"
+      "fit": "Boxy Oversized Fit",
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true
     },
     {
       "id": "cargo-street-pants",
@@ -62,14 +82,24 @@
         "/black-tee.jfif"
       ],
       "stock": 35,
-      "is_featured": true,
-      "is_new": true,
-      "is_trending": true,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "OLIVE"
+      ],
       "color": "OLIVE",
       "product_no": "GP-001",
       "material": "Cotton Twill",
       "fabric": "Ripstop Twill",
-      "fit": "Relaxed Straight Fit"
+      "fit": "Relaxed Straight Fit",
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true
     },
     {
       "id": "classic-white-tee",
@@ -86,14 +116,24 @@
         "/hero.jfif"
       ],
       "stock": 60,
-      "is_featured": false,
-      "is_new": true,
-      "is_trending": false,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "WHITE"
+      ],
       "color": "WHITE",
       "product_no": "WT-001",
       "material": "100% Organic Cotton",
       "fabric": "Single Jersey",
-      "fit": "Regular Fit"
+      "fit": "Regular Fit",
+      "is_featured": false,
+      "is_new": true,
+      "is_trending": false
     },
     {
       "id": "greeno-dad-cap",
@@ -110,14 +150,24 @@
         "/white-tee.jfif"
       ],
       "stock": 25,
-      "is_featured": false,
-      "is_new": true,
-      "is_trending": true,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "BLACK"
+      ],
       "color": "BLACK",
       "product_no": "CP-001",
       "material": "100% Washed Cotton",
       "fabric": "Chino Cotton",
-      "fit": "Adjustable"
+      "fit": "Adjustable",
+      "is_featured": false,
+      "is_new": true,
+      "is_trending": true
     },
     {
       "id": "tactical-crossbody-bag",
@@ -134,14 +184,24 @@
         "/grey-hoodie.jfif"
       ],
       "stock": 30,
-      "is_featured": true,
-      "is_new": true,
-      "is_trending": true,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "BLACK"
+      ],
       "color": "BLACK",
       "product_no": "BG-001",
       "material": "Cordura Nylon",
       "fabric": "Weatherproof 500D",
-      "fit": "One Size"
+      "fit": "One Size",
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true
     },
     {
       "id": "silver-link-chain",
@@ -157,14 +217,24 @@
         "/hero.jfif"
       ],
       "stock": 40,
-      "is_featured": false,
-      "is_new": false,
-      "is_trending": false,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "SILVER"
+      ],
       "color": "SILVER",
       "product_no": "AC-001",
       "material": "Stainless Steel",
       "fabric": "316L Grade",
-      "fit": "55cm Length"
+      "fit": "55cm Length",
+      "is_featured": false,
+      "is_new": false,
+      "is_trending": false
     },
     {
       "id": "tailored-poplin-shirt",
@@ -180,14 +250,24 @@
         "/atelier-shirt-detail.jpg"
       ],
       "stock": 22,
-      "is_featured": true,
-      "is_new": true,
-      "is_trending": true,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "OFF-WHITE"
+      ],
       "color": "OFF-WHITE",
       "product_no": "AT-SHT-01",
       "material": "100% Egyptian Cotton Poplin",
       "fabric": "Crisp 120s Poplin",
-      "fit": "Oversized Tailored Drape"
+      "fit": "Oversized Tailored Drape",
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true
     },
     {
       "id": "charcoal-oxford-overshirt",
@@ -203,14 +283,24 @@
         "/atelier-oxford-detail.jpg"
       ],
       "stock": 18,
-      "is_featured": true,
-      "is_new": true,
-      "is_trending": true,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "CHARCOAL"
+      ],
       "color": "CHARCOAL",
       "product_no": "AT-SHT-02",
       "material": "100% Italian Oxford Cotton",
       "fabric": "Heavyweight Structured Weave",
-      "fit": "Relaxed Boxy Silhouette"
+      "fit": "Relaxed Boxy Silhouette",
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true
     },
     {
       "id": "oversized-black-tee",
@@ -226,14 +316,24 @@
         "/atelier-tshirt-detail.jpg"
       ],
       "stock": 35,
-      "is_featured": true,
-      "is_new": true,
-      "is_trending": true,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "BLACK"
+      ],
       "color": "BLACK",
       "product_no": "AT-TSH-01",
       "material": "100% Combed Heavyweight Cotton",
       "fabric": "300gsm Dense Jersey",
-      "fit": "Boxy Drop-Shoulder"
+      "fit": "Boxy Drop-Shoulder",
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true
     },
     {
       "id": "minimalist-chalk-tee",
@@ -249,14 +349,24 @@
         "/atelier-white-detail.jpg"
       ],
       "stock": 28,
-      "is_featured": true,
-      "is_new": true,
-      "is_trending": true,
+      "size_stock": {
+        "S": 5,
+        "M": 10,
+        "L": 10,
+        "XL": 5,
+        "XXL": 0
+      },
+      "colors": [
+        "CHALK"
+      ],
       "color": "CHALK",
       "product_no": "AT-TSH-02",
       "material": "100% Combed Heavyweight Cotton",
       "fabric": "320gsm Dense Jersey",
-      "fit": "Relaxed Architectural Fit"
+      "fit": "Relaxed Architectural Fit",
+      "is_featured": true,
+      "is_new": true,
+      "is_trending": true
     }
   ],
   "categories": [
@@ -313,58 +423,67 @@
   "orders": [
     {
       "id": "66b7d37f-6206-48fd-899d-291c75de89c7",
-      "status": "delivered",
-      "total": 4197,
-      "created_at": "13 Sept 2026",
-      "items": [
-        {
-          "product_id": "urban-grey-hoodie",
-          "product_name": "Urban Grey Hoodie",
-          "price": 4197,
-          "quantity": 1
-        }
-      ],
+      "created_at": "2026-09-12T18:30:00.000Z",
       "customer": {
         "fullName": "Customer",
+        "email": "patron@greeno.in",
+        "phone": "",
         "address": "",
         "city": "",
         "state": "",
-        "pincode": "",
-        "phone": "",
-        "email": ""
+        "pincode": ""
       },
-      "subtotal": 0
+      "items": [
+        {
+          "id": "cmu5tv7s40001v3qc3na5pji1",
+          "product_id": "urban-grey-hoodie",
+          "name": "Garment",
+          "price": 4197,
+          "quantity": 1,
+          "size": "M",
+          "color": "BLACK"
+        }
+      ],
+      "subtotal": 4197,
+      "shipping": 0,
+      "discount": 0,
+      "total": 4197,
+      "status": "delivered",
+      "payment_method": "COD",
+      "payment_status": "pending"
     },
     {
       "id": "GO-9482-A1",
       "created_at": "2026-09-09T02:53:22.599Z",
       "customer": {
         "fullName": "Arjun Sharma",
+        "email": "arjun.sharma@example.com",
+        "phone": "+91 98201 12345",
         "address": "Flat 402, Signature Heights, Bandra West",
         "city": "Mumbai",
         "state": "Maharashtra",
-        "pincode": "400050",
-        "phone": "+91 98201 12345",
-        "email": "arjun.sharma@example.com"
+        "pincode": "400050"
       },
       "items": [
         {
+          "id": "cmu5tv8110003v3qc01rhwzio",
           "product_id": "oversized-black-tee",
           "name": "Oversized Black Tee",
           "price": 2499,
           "quantity": 1,
-          "image": "/black-tee.jfif",
           "size": "L",
-          "color": "BLACK"
+          "color": "BLACK",
+          "image": "/black-tee.jfif"
         },
         {
+          "id": "cmu5tv8110004v3qciwhf6j4m",
           "product_id": "urban-grey-hoodie",
           "name": "Urban Grey Hoodie",
           "price": 3999,
           "quantity": 1,
-          "image": "/grey-hoodie.jfif",
           "size": "XL",
-          "color": "GREY"
+          "color": "GREY",
+          "image": "/grey-hoodie.jfif"
         }
       ],
       "subtotal": 6498,
@@ -380,22 +499,23 @@
       "created_at": "2026-09-08T06:53:22.599Z",
       "customer": {
         "fullName": "Priya Nair",
+        "email": "priya.nair@example.com",
+        "phone": "+91 94471 98765",
         "address": "12/4 Lotus Villa, Indiranagar",
         "city": "Bengaluru",
         "state": "Karnataka",
-        "pincode": "560038",
-        "phone": "+91 94471 98765",
-        "email": "priya.nair@example.com"
+        "pincode": "560038"
       },
       "items": [
         {
+          "id": "cmu5tv89u0006v3qcv4n5e4qs",
           "product_id": "cargo-street-pants",
           "name": "Cargo Street Pants",
           "price": 3499,
           "quantity": 1,
-          "image": "/cargo-pants.jfif",
           "size": "32",
-          "color": "OLIVE"
+          "color": "OLIVE",
+          "image": "/cargo-pants.jfif"
         }
       ],
       "subtotal": 3499,
@@ -411,22 +531,23 @@
       "created_at": "2026-09-07T06:53:22.599Z",
       "customer": {
         "fullName": "Kabir Mehta",
+        "email": "kabir.mehta@example.com",
+        "phone": "+91 99100 55432",
         "address": "House 88, Sector 15",
         "city": "Gurugram",
         "state": "Haryana",
-        "pincode": "122001",
-        "phone": "+91 99100 55432",
-        "email": "kabir.mehta@example.com"
+        "pincode": "122001"
       },
       "items": [
         {
+          "id": "cmu5tv8j10008v3qcfxk46xn4",
           "product_id": "classic-white-tee",
           "name": "Classic White Tee",
           "price": 1999,
           "quantity": 2,
-          "image": "/white-tee.jfif",
           "size": "M",
-          "color": "WHITE"
+          "color": "WHITE",
+          "image": "/white-tee.jfif"
         }
       ],
       "subtotal": 3998,
@@ -442,7 +563,7 @@
     {
       "id": "EXC-9482-1",
       "order_id": "GO-9482-A1",
-      "created_at": "2026-09-14T00:30:00.493Z",
+      "created_at": "2026-09-17T06:14:02.031Z",
       "type": "exchange",
       "status": "pending",
       "customer": {
@@ -517,7 +638,6 @@
     "supportEmail": "concierge@greeno.in",
     "adminPasskey": "aman2026",
     "currency": "INR",
-    "smsApiKey": "",
     "smsProvider": "2factor",
     "emailProvider": "gmail",
     "smtpHost": "smtp.gmail.com",
@@ -525,78 +645,21 @@
     "smtpSecure": true,
     "smtpUser": "vedantshrivastava0407@gmail.com",
     "smtpPass": "qqzjjbpozvfvhlhv",
-    "smtpFrom": "GreenO Security <vedantshrivastava0407@gmail.com>",
-    "brevoApiKey": "",
-    "resendApiKey": ""
+    "smtpFrom": "GreenO Security <vedantshrivastava0407@gmail.com>"
   },
   "reviews": [
     {
-      "id": "rev-poplin-1",
+      "id": "test-rev-1789668842036",
       "product_id": "tailored-poplin-shirt",
-      "product_name": "Tailored Poplin Shirt",
-      "author": "Julian V.",
-      "location": "Milan, IT",
+      "author": "Test Patron",
       "rating": 5,
-      "date": "3 days ago",
-      "title": "Impeccable collar stance and refined weave",
-      "comment": "The collar retains its sharp architectural profile with zero buckling. The fabric has an exquisite substantial weight while remaining breathable throughout the day. Finished with refined mother-of-pearl buttons.",
+      "date": "Just now",
+      "title": "Exceptional Silhouette",
+      "comment": "Tested roundtrip database integration successfully.",
       "verified": true,
-      "sizePurchased": "M",
-      "fitFeedback": "True to Size",
-      "helpfulCount": 14,
-      "is_featured": true,
-      "created_at": "2026-09-14T17:35:25.114Z"
-    },
-    {
-      "id": "rev-boxy-1",
-      "product_id": "oversized-black-tee",
-      "product_name": "Heavyweight Boxy Tee",
-      "author": "Dev P.",
-      "location": "Bengaluru, IN",
-      "rating": 5,
-      "date": "4 days ago",
-      "title": "Dense combed cotton that holds its structure",
-      "comment": "The 300gsm combed jersey is phenomenal. Heavyweight without stiffness, hangs with an architectural boxy drape. Zero collar buckling after wash.",
-      "verified": true,
-      "sizePurchased": "L",
-      "fitFeedback": "True to Size",
-      "helpfulCount": 16,
-      "is_featured": true,
-      "created_at": "2026-09-13T17:35:25.114Z"
-    },
-    {
-      "id": "rev-chalk-1",
-      "product_id": "minimalist-chalk-tee",
-      "product_name": "Minimalist Chalk Tee",
-      "author": "Kavya S.",
-      "location": "New Delhi, IN",
-      "rating": 5,
-      "date": "5 days ago",
-      "title": "Quiet elegance, sculptural drop shoulder",
-      "comment": "Substantial tactile handfeel without feeling uncomfortably heavy. The drop shoulder is tailored with precision rather than looking sloppy.",
-      "verified": true,
-      "sizePurchased": "S",
-      "fitFeedback": "True to Size",
-      "helpfulCount": 11,
-      "is_featured": true,
-      "created_at": "2026-09-12T17:35:25.114Z"
-    },
-    {
-      "id": "rev-poplin-2",
-      "product_id": "tailored-poplin-shirt",
-      "product_name": "Tailored Poplin Shirt",
-      "author": "Aarav M.",
-      "location": "Mumbai, IN",
-      "rating": 5,
-      "date": "1 week ago",
-      "title": "Fluid drape, quiet luxury tailoring",
-      "comment": "Fits impeccably through the shoulders with just enough ease in the torso. Doesn't crease easily and moves with an understated elegance. Easily rivals European luxury fashion houses.",
-      "verified": true,
-      "sizePurchased": "L",
-      "fitFeedback": "True to Size",
-      "helpfulCount": 9,
-      "is_featured": true,
-      "created_at": "2026-09-10T17:35:25.114Z"
+      "helpfulCount": 0,
+      "is_featured": false,
+      "created_at": "2026-09-17T18:14:02.037Z"
     },
     {
       "id": "rev-oxford-1",
@@ -613,7 +676,75 @@
       "fitFeedback": "True to Size",
       "helpfulCount": 12,
       "is_featured": true,
-      "created_at": "2026-09-03T17:35:25.114Z"
+      "created_at": "2026-09-17T17:52:58.918Z"
+    },
+    {
+      "id": "rev-poplin-2",
+      "product_id": "tailored-poplin-shirt",
+      "product_name": "Tailored Poplin Shirt",
+      "author": "Aarav M.",
+      "location": "Mumbai, IN",
+      "rating": 5,
+      "date": "1 week ago",
+      "title": "Fluid drape, quiet luxury tailoring",
+      "comment": "Fits impeccably through the shoulders with just enough ease in the torso. Doesn't crease easily and moves with an understated elegance. Easily rivals European luxury fashion houses.",
+      "verified": true,
+      "sizePurchased": "L",
+      "fitFeedback": "True to Size",
+      "helpfulCount": 9,
+      "is_featured": true,
+      "created_at": "2026-09-17T17:52:58.599Z"
+    },
+    {
+      "id": "rev-chalk-1",
+      "product_id": "minimalist-chalk-tee",
+      "product_name": "Minimalist Chalk Tee",
+      "author": "Kavya S.",
+      "location": "New Delhi, IN",
+      "rating": 5,
+      "date": "5 days ago",
+      "title": "Quiet elegance, sculptural drop shoulder",
+      "comment": "Substantial tactile handfeel without feeling uncomfortably heavy. The drop shoulder is tailored with precision rather than looking sloppy.",
+      "verified": true,
+      "sizePurchased": "S",
+      "fitFeedback": "True to Size",
+      "helpfulCount": 11,
+      "is_featured": true,
+      "created_at": "2026-09-17T17:52:58.279Z"
+    },
+    {
+      "id": "rev-boxy-1",
+      "product_id": "oversized-black-tee",
+      "product_name": "Heavyweight Boxy Tee",
+      "author": "Dev P.",
+      "location": "Bengaluru, IN",
+      "rating": 5,
+      "date": "4 days ago",
+      "title": "Dense combed cotton that holds its structure",
+      "comment": "The 300gsm combed jersey is phenomenal. Heavyweight without stiffness, hangs with an architectural boxy drape. Zero collar buckling after wash.",
+      "verified": true,
+      "sizePurchased": "L",
+      "fitFeedback": "True to Size",
+      "helpfulCount": 16,
+      "is_featured": true,
+      "created_at": "2026-09-17T17:52:57.961Z"
+    },
+    {
+      "id": "rev-poplin-1",
+      "product_id": "tailored-poplin-shirt",
+      "product_name": "Tailored Poplin Shirt",
+      "author": "Julian V.",
+      "location": "Milan, IT",
+      "rating": 5,
+      "date": "3 days ago",
+      "title": "Impeccable collar stance and refined weave",
+      "comment": "The collar retains its sharp architectural profile with zero buckling. The fabric has an exquisite substantial weight while remaining breathable throughout the day. Finished with refined mother-of-pearl buttons.",
+      "verified": true,
+      "sizePurchased": "M",
+      "fitFeedback": "True to Size",
+      "helpfulCount": 14,
+      "is_featured": true,
+      "created_at": "2026-09-17T17:52:57.650Z"
     }
   ]
 }

@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { prisma } from "@/lib/prisma";
 
 export type UserRecord = {
   id: string;
@@ -199,9 +200,34 @@ export async function isKnownVerifiedUser(email: string): Promise<boolean> {
 // ----------------- User Management Functions -----------------
 
 export async function getUserByEmail(email: string): Promise<UserRecord | null> {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { email: normalized },
+    });
+    if (dbUser) {
+      const record: UserRecord = {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        passwordHash: dbUser.passwordHash || undefined,
+        provider: dbUser.provider as "email" | "google",
+        email_verified: dbUser.email_verified,
+        created_at: dbUser.created_at.toISOString(),
+        updated_at: dbUser.updated_at.toISOString(),
+        last_login_at: dbUser.last_login_at ? dbUser.last_login_at.toISOString() : undefined,
+      };
+      inMemoryUsersCache.set(normalized, record);
+      return record;
+    }
+  } catch (err) {
+    // fallback to cache
+  }
+
   ensureInitialized();
   loadUsersFromDisk();
-  const normalized = normalizeEmail(email);
   return inMemoryUsersCache.get(normalized) || null;
 }
 
@@ -228,6 +254,18 @@ export async function createUser(params: {
       if (params.name) existing.name = params.name.trim();
       existing.email_verified = true;
       saveUsersToDisk();
+
+      try {
+        await prisma.user.update({
+          where: { email: normalized },
+          data: {
+            passwordHash: existing.passwordHash,
+            name: existing.name,
+            email_verified: true,
+          },
+        });
+      } catch {}
+
       return { success: true, user: toSafeUser(existing), message: "Account password updated." };
     }
 
@@ -252,6 +290,31 @@ export async function createUser(params: {
 
   inMemoryUsersCache.set(normalized, newUser);
   saveUsersToDisk();
+
+  try {
+    await prisma.user.upsert({
+      where: { email: normalized },
+      update: {
+        name: newUser.name,
+        passwordHash: newUser.passwordHash || null,
+        provider: newUser.provider,
+        email_verified: newUser.email_verified,
+        last_login_at: new Date(now),
+      },
+      create: {
+        id: newUser.id,
+        name: newUser.name,
+        email: normalized,
+        passwordHash: newUser.passwordHash || null,
+        provider: newUser.provider,
+        email_verified: newUser.email_verified,
+        created_at: new Date(now),
+        last_login_at: new Date(now),
+      },
+    });
+  } catch (dbErr) {
+    console.warn("Prisma user save notice:", dbErr);
+  }
 
   console.log(`[USER STORE] Created user: ${newUser.email} (ID: ${newUser.id})`);
 
@@ -390,6 +453,29 @@ export async function resetUserPassword(
 
   saveUsersToDisk();
 
+  try {
+    await prisma.user.upsert({
+      where: { email: normalized },
+      update: {
+        passwordHash: user.passwordHash || null,
+        email_verified: true,
+        last_login_at: new Date(now),
+      },
+      create: {
+        id: user.id,
+        name: user.name,
+        email: normalized,
+        passwordHash: user.passwordHash || null,
+        provider: user.provider,
+        email_verified: true,
+        created_at: new Date(now),
+        last_login_at: new Date(now),
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma resetUserPassword notice:", err);
+  }
+
   return {
     success: true,
     user: toSafeUser(user),
@@ -430,6 +516,29 @@ export async function registerOrUpdateGoogleUser(
   }
 
   saveUsersToDisk();
+
+  try {
+    await prisma.user.upsert({
+      where: { email: normalized },
+      update: {
+        name: user.name,
+        email_verified: true,
+        last_login_at: new Date(now),
+      },
+      create: {
+        id: user.id,
+        name: user.name,
+        email: normalized,
+        provider: "google",
+        email_verified: true,
+        created_at: new Date(now),
+        last_login_at: new Date(now),
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma registerOrUpdateGoogleUser notice:", err);
+  }
+
   return toSafeUser(user);
 }
 
@@ -441,10 +550,37 @@ export async function updateUserLastLogin(email: string): Promise<void> {
   if (user) {
     user.last_login_at = new Date().toISOString();
     saveUsersToDisk();
+
+    try {
+      await prisma.user.update({
+        where: { email: normalized },
+        data: { last_login_at: new Date() },
+      });
+    } catch {}
   }
 }
 
 export async function getAllSafeUsers(): Promise<SafeUser[]> {
+  try {
+    const dbUsers = await prisma.user.findMany({
+      orderBy: { created_at: "desc" },
+    });
+    if (dbUsers.length > 0) {
+      return dbUsers.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        provider: u.provider as "email" | "google",
+        email_verified: u.email_verified,
+        created_at: u.created_at.toISOString(),
+        updated_at: u.updated_at.toISOString(),
+        last_login_at: u.last_login_at ? u.last_login_at.toISOString() : undefined,
+      }));
+    }
+  } catch (err) {
+    console.warn("Prisma user fetch notice, falling back to cache:", err);
+  }
+
   ensureInitialized();
   loadUsersFromDisk();
   return Array.from(inMemoryUsersCache.values())
@@ -453,6 +589,11 @@ export async function getAllSafeUsers(): Promise<SafeUser[]> {
 }
 
 export async function getTotalUsersCount(): Promise<number> {
+  try {
+    const count = await prisma.user.count();
+    if (count > 0) return count;
+  } catch {}
+
   ensureInitialized();
   loadUsersFromDisk();
   return inMemoryUsersCache.size;
