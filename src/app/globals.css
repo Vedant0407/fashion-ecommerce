@@ -7714,7 +7714,7 @@ select {
 .atelier-pdp-page {
   background: #F7F6F2;
   min-height: 100vh;
-  padding: 112px clamp(20px, 4vw, 56px) 60px;
+  padding: 140px clamp(20px, 4vw, 56px) 60px;
   color: #121212;
 }
 
@@ -8000,7 +8000,7 @@ select {
 
 .atelier-pdp-info-sticky {
   position: sticky;
-  top: 100px;
+  top: 136px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -8457,7 +8457,7 @@ select {
 
 @media (max-width: 768px) {
   .atelier-pdp-page {
-    padding: 95px 16px 60px;
+    padding: 120px 16px 60px;
   }
 
   .atelier-pdp-nav {
