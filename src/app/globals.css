@@ -87,28 +87,33 @@ select {
   left: 0;
   width: 100%;
   z-index: 1000;
-  background: rgba(247, 246, 242, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: #121212;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .site-header.scrolled {
-  background: rgba(247, 246, 242, 0.98);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   color: #121212;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
 }
 
 .announcement-bar {
   width: 100%;
   height: 32px;
-  background: #121212;
-  color: #f7f6f2;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,6 +124,14 @@ select {
   text-transform: uppercase;
   overflow: hidden;
   white-space: nowrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+.site-header.scrolled .announcement-bar {
+  background: #121212;
+  color: #f7f6f2;
+  border-bottom: none;
 }
 
 .navbar {
@@ -160,7 +173,15 @@ select {
   letter-spacing: 0.26em;
   text-decoration: none;
   text-transform: uppercase;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, color 0.4s ease;
+}
+
+.site-header:not(.scrolled) .logo {
+  color: #ffffff;
+}
+
+.site-header.scrolled .logo {
+  color: #121212;
 }
 
 .logo:hover {
@@ -190,7 +211,15 @@ select {
   line-height: 1;
   text-decoration: none;
   outline: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: color 0.4s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.site-header:not(.scrolled) .header-icon-action {
+  color: #ffffff;
+}
+
+.site-header.scrolled .header-icon-action {
+  color: #121212;
 }
 
 .header-icon-action:hover {
@@ -212,8 +241,6 @@ select {
   position: absolute;
   top: 1px;
   right: -1px;
-  background: #121212;
-  color: #ffffff;
   border-radius: 50%;
   font-family: var(--font-mono, monospace);
   font-size: 9.5px;
@@ -225,12 +252,21 @@ select {
   justify-content: center;
   padding: 0 2px;
   line-height: 1;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-  border: 1.5px solid #F7F6F2;
+  transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+.site-header:not(.scrolled) .header-icon-badge {
+  background: #ffffff;
+  color: #121212;
+  border: 1.5px solid #121212;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .site-header.scrolled .header-icon-badge {
-  border-color: #F7F6F2;
+  background: #121212;
+  color: #ffffff;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .header-text-action {
@@ -7188,32 +7224,41 @@ select {
   min-height: 100vh;
 }
 
-/* --- Atelier Hero Section --- */
+/* --- Atelier Hero Section (Full Page Bleed) --- */
 .atelier-hero-section {
-  padding-top: 116px;
-  padding-bottom: 24px;
-  padding-left: clamp(16px, 2.5vw, 36px);
-  padding-right: clamp(16px, 2.5vw, 36px);
-  background: #F7F6F2;
+  position: relative;
   width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+  margin: 0;
+  background: #0a0a0a;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .atelier-hero-frame {
-  max-width: 1560px;
-  margin: 0 auto;
+  max-width: 100%;
   width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .atelier-hero-image-wrap {
   position: relative;
   width: 100%;
-  height: 85vh;
-  min-height: 600px;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
-  border-radius: 0 0 4px 4px;
-  background: #EFECE6;
+  border-radius: 0;
+  background: #0a0a0a;
+  margin: 0;
+  padding: 0;
 }
 
 .atelier-hero-img {
@@ -7303,7 +7348,7 @@ select {
 
 /* --- Atelier Catalog & Product Grid --- */
 .atelier-catalog-section {
-  padding: 24px 40px 24px;
+  padding: 40px 40px 24px;
   background: #F7F6F2;
   width: 100%;
 }
@@ -7572,16 +7617,29 @@ select {
 
 @media (max-width: 768px) {
   .atelier-hero-section {
-    padding-top: 96px;
-    padding-bottom: 16px;
-    padding-left: 14px;
-    padding-right: 14px;
-    min-height: auto;
+    padding: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .atelier-hero-frame {
+    max-width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   .atelier-hero-image-wrap {
-    height: 85vh;
-    min-height: 520px;
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
   }
 
   .atelier-hero-meta {
@@ -8443,13 +8501,14 @@ select {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 580px;
+  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   background: var(--color-bg, #0a0a0a);
   opacity: 0;
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
-  border-radius: 0 0 4px 4px;
+  border-radius: 0;
 }
 
 .slider-wrapper.loaded {
@@ -8469,7 +8528,7 @@ select {
 
 .slide-number {
   position: absolute;
-  top: clamp(24px, 4vw, 44px);
+  top: calc(116px + clamp(16px, 2.5vw, 28px));
   left: clamp(24px, 4.5vw, 56px);
   font-family: var(--font-mono, monospace);
   font-size: clamp(12px, 1.4vw, 15px);
@@ -8483,7 +8542,7 @@ select {
 
 .atelier-hero-cta-banner {
   position: absolute;
-  top: clamp(24px, 4vw, 44px);
+  top: calc(116px + clamp(16px, 2.5vw, 28px));
   right: clamp(24px, 4.5vw, 56px);
   z-index: 20;
   pointer-events: auto;
@@ -8508,7 +8567,7 @@ select {
 
 .slide-total {
   position: absolute;
-  top: clamp(24px, 4vw, 44px);
+  top: calc(116px + clamp(16px, 2.5vw, 28px));
   left: calc(clamp(24px, 4.5vw, 56px) + 38px);
   font-family: var(--font-mono, monospace);
   font-size: clamp(10px, 1.1vw, 12px);
@@ -8622,6 +8681,11 @@ select {
 }
 
 @media (max-width: 768px) {
+  .slide-number,
+  .slide-total,
+  .atelier-hero-cta-banner {
+    top: calc(116px + 12px);
+  }
   .slides-navigation {
     bottom: 20px;
     gap: 8px;

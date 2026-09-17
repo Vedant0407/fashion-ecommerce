@@ -16,8 +16,8 @@ export default function Header() {
   const router = useRouter();
   const { cartCount, openCart } = useCart();
   const { wishlistCount } = useWishlist();
-
-  const [isScrolled, setIsScrolled] = useState(false);
+  const isHomePage = pathname === "/";
+  const [isScrolled, setIsScrolled] = useState(() => !isHomePage);
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -25,8 +25,6 @@ export default function Header() {
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"
   );
   const accountRef = useRef<HTMLDivElement>(null);
-
-  const isHomePage = pathname === "/";
 
   useEffect(() => {
     async function loadSettings() {
@@ -47,14 +45,14 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(!isHomePage || window.scrollY > 40);
+      setIsScrolled(!isHomePage || window.scrollY > 20);
     };
 
     handleScroll();
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isHomePage]);
+  }, [isHomePage, pathname]);
 
   useEffect(() => {
     const supabase = createClient();
