@@ -25,15 +25,15 @@ export async function POST(request: NextRequest) {
     const uploadedUrls: string[] = [];
 
     for (const file of files) {
-      // Validate that file is an image
-      if (!file.type.startsWith("image/")) {
+      // Validate that file is an image or video
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
         continue;
       }
 
       // Generate a unique safe filename
       const timestamp = Date.now();
       const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const originalExt = path.extname(file.name) || ".jpg";
+      const originalExt = path.extname(file.name) || (file.type.startsWith("video/") ? ".mp4" : ".jpg");
       const cleanBase = path
         .basename(file.name, originalExt)
         .toLowerCase()
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     if (uploadedUrls.length === 0) {
       return NextResponse.json(
-        { success: false, message: "Please upload valid image files (JPG, PNG, WEBP, JFIF)." },
+        { success: false, message: "Please upload valid media files (JPG, PNG, WEBP, MP4, WEBM)." },
         { status: 400 }
       );
     }

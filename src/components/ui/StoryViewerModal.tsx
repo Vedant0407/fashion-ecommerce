@@ -28,6 +28,23 @@ export default function StoryViewerModal({
   const currentStory = activeStories[currentIndex] || activeStories[0];
   const duration = (currentStory?.duration || 5) * 1000; // ms
 
+  const isVideo = Boolean(
+    currentStory?.image &&
+      (/\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(currentStory.image) ||
+        currentStory.image.startsWith("data:video"))
+  );
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isPaused) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [isPaused, currentIndex]);
+
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const elapsedBeforePauseRef = useRef<number>(0);
@@ -146,7 +163,98 @@ export default function StoryViewerModal({
     };
   }, [isOpen, onClose, handleNext, handlePrev]);
 
-  if (!isOpen || !currentStory) return null;
+  if (!isOpen) return null;
+
+  if (activeStories.length === 0 || !currentStory) {
+    return (
+      <div
+        className="story-viewer-backdrop"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <button
+          type="button"
+          className="story-viewer-outer-close"
+          onClick={onClose}
+          aria-label="Close stories"
+        >
+          <X size={24} />
+        </button>
+
+        <div
+          className="story-card-wrapper"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "36px 24px",
+            textAlign: "center",
+            background: "#121212",
+            color: "#ffffff",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            style={{
+              width: "60px",
+              height: "60px",
+              borderRadius: "50%",
+              background: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "20px",
+            }}
+          >
+            <Sparkles size={28} color="#ffffff" />
+          </div>
+          <h3
+            style={{
+              fontSize: "16px",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              marginBottom: "8px",
+            }}
+          >
+            ATELIER STORIES
+          </h3>
+          <p
+            style={{
+              fontSize: "12px",
+              color: "rgba(255, 255, 255, 0.65)",
+              lineHeight: "1.6",
+              maxWidth: "280px",
+              marginBottom: "28px",
+            }}
+          >
+            No live stories published yet. Upload vertical photos or video reels from the Admin Console to feature them here.
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "#ffffff",
+              color: "#121212",
+              border: "none",
+              padding: "12px 28px",
+              fontSize: "11px",
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              borderRadius: "24px",
+              cursor: "pointer",
+            }}
+          >
+            CLOSE VIEWER
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -187,14 +295,29 @@ export default function StoryViewerModal({
       >
         {/* Story Media */}
         <div className="story-media-box">
-          <Image
-            src={currentStory.image}
-            alt={currentStory.title}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 440px"
-            className="story-media-image"
-          />
+          {isVideo ? (
+            <video
+              ref={videoRef}
+              src={currentStory.image}
+              autoPlay
+              playsInline
+              muted={isMuted}
+              loop
+              className="story-media-image"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            <img
+              src={currentStory.image}
+              alt={currentStory.title}
+              className="story-media-image"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src =
+                  "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop";
+              }}
+            />
+          )}
           <div className="story-scrim-top" />
           <div className="story-scrim-bottom" />
         </div>
@@ -251,6 +374,20 @@ export default function StoryViewerModal({
             </div>
 
             <div className="story-header-controls">
+              {isVideo && (
+                <button
+                  type="button"
+                  className="story-icon-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMuted((m) => !m);
+                  }}
+                  aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+                  title={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+                </button>
+              )}
               <button
                 type="button"
                 className="story-icon-btn"

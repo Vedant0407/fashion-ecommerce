@@ -167,11 +167,39 @@ export default function AdminPage() {
   const [editingStory, setEditingStory] = useState<Partial<StoreStory> | null>(null);
   const [storySearch, setStorySearch] = useState<string>("");
   const [storyFilter, setStoryFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [uploadingStoryMedia, setUploadingStoryMedia] = useState<boolean>(false);
+
+  async function handleUploadStoryMedia(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingStoryMedia(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to upload media file.");
+      }
+      const uploadedUrl = data.urls?.[0];
+      if (uploadedUrl) {
+        setEditingStory((prev) => ({ ...prev, image: uploadedUrl }));
+        triggerToast("Story media uploaded successfully!");
+      }
+    } catch (err: any) {
+      alert(err.message || "Media upload failed.");
+    } finally {
+      setUploadingStoryMedia(false);
+    }
+  }
 
   async function handleSaveStory(e: React.FormEvent) {
     e.preventDefault();
     if (!editingStory?.title || !editingStory?.image) {
-      alert("Story Title and Image URL are required.");
+      alert("Story Title and Media (Photo or Video URL) are required.");
       return;
     }
 
@@ -195,6 +223,9 @@ export default function AdminPage() {
         triggerToast(isUpdating ? "Story updated successfully." : "New story published.");
         setIsStoryModalOpen(false);
         setEditingStory(null);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("greeno_stories_updated"));
+        }
         await fetchAllData();
       } else {
         const errData = await res.json();
@@ -219,6 +250,9 @@ export default function AdminPage() {
           prev.map((s) => (s.id === id ? { ...s, active: !currentActive } : s))
         );
         triggerToast(`Story ${!currentActive ? "activated" : "paused"} on storefront.`);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("greeno_stories_updated"));
+        }
       } else {
         triggerToast("Failed to update story status.");
       }
@@ -238,6 +272,9 @@ export default function AdminPage() {
       if (res.ok) {
         setStories((prev) => prev.filter((s) => s.id !== id));
         triggerToast(`Story "${title}" removed.`);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("greeno_stories_updated"));
+        }
       } else {
         triggerToast("Failed to delete story.");
       }
@@ -5012,16 +5049,56 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    {/* Image URL */}
+                    {/* Media Upload (Photo or Video Reel) */}
                     <div className={styles.fullSpan}>
                       <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>Vertical 9:16 Image URL *</label>
+                        <label className={styles.fieldLabel}>
+                          UPLOAD REEL MEDIA (PHOTO OR VIDEO)
+                        </label>
+                        <div
+                          style={{
+                            border: "2px dashed #D0CEBE",
+                            background: "#FDFCFA",
+                            padding: "16px",
+                            textAlign: "center",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                            position: "relative",
+                          }}
+                        >
+                          <input
+                            type="file"
+                            accept="image/*,video/mp4,video/webm"
+                            onChange={handleUploadStoryMedia}
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              opacity: 0,
+                              cursor: "pointer",
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          />
+                          <div style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", color: "#121212" }}>
+                            {uploadingStoryMedia ? "UPLOADING TO ATELIER..." : "📁 CLICK OR DROP PHOTO / REEL TO UPLOAD"}
+                          </div>
+                          <div style={{ fontSize: "10px", color: "#888888", marginTop: "4px" }}>
+                            Supports 9:16 vertical photos (JPG, PNG, WEBP) or video reels (MP4, WEBM). Or paste URL below.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Media URL */}
+                    <div className={styles.fullSpan}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Vertical 9:16 Media URL (Photo or Video Reel) *</label>
                         <input
-                          type="url"
+                          type="text"
                           className={styles.fieldInput}
                           value={editingStory.image || ""}
                           onChange={(e) => setEditingStory({ ...editingStory, image: e.target.value })}
-                          placeholder="https://images.unsplash.com/..."
+                          placeholder="https://... or /uploads/..."
                           required
                         />
                       </div>
@@ -5159,21 +5236,36 @@ export default function AdminPage() {
                         />
                       </div>
 
-                      {/* Phone Image */}
+                      {/* Phone Image or Video Reel */}
                       {editingStory.image ? (
-                        <img
-                          src={editingStory.image}
-                          alt="preview"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src =
-                              "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop";
-                          }}
-                        />
+                        /\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(editingStory.image) || editingStory.image.startsWith("data:video") ? (
+                          <video
+                            src={editingStory.image}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <img
+                            src={editingStory.image}
+                            alt="preview"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop";
+                            }}
+                          />
+                        )
                       ) : (
                         <div
                           style={{

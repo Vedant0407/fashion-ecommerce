@@ -47,7 +47,7 @@ export default function Header() {
 
     async function loadStories() {
       try {
-        const res = await fetch("/api/stories");
+        const res = await fetch(`/api/stories?t=${Date.now()}`, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           if (data.stories && Array.isArray(data.stories)) {
@@ -64,7 +64,11 @@ export default function Header() {
 
     const handleStoriesUpdated = () => loadStories();
     window.addEventListener("greeno_stories_updated", handleStoriesUpdated);
-    return () => window.removeEventListener("greeno_stories_updated", handleStoriesUpdated);
+    window.addEventListener("focus", handleStoriesUpdated);
+    return () => {
+      window.removeEventListener("greeno_stories_updated", handleStoriesUpdated);
+      window.removeEventListener("focus", handleStoriesUpdated);
+    };
   }, []);
 
   useEffect(() => {
@@ -186,6 +190,19 @@ export default function Header() {
     return null;
   }
 
+  const handleOpenStories = () => {
+    // Instantly refresh live stories so any new story uploaded in admin is available immediately
+    fetch(`/api/stories?t=${Date.now()}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.stories && Array.isArray(data.stories)) {
+          setStories(data.stories);
+        }
+      })
+      .catch(() => {});
+    setStoryOpen(true);
+  };
+
   return (
     <>
       <header className={`site-header ${isScrolled ? "scrolled" : ""}`}>
@@ -202,7 +219,7 @@ export default function Header() {
               <button
                 type="button"
                 className="story-launcher-btn"
-                onClick={() => setStoryOpen(true)}
+                onClick={handleOpenStories}
                 aria-label="View Atelier Stories"
                 title="Atelier Stories"
               >

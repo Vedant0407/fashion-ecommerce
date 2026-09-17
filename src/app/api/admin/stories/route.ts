@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   getStoreStories,
   saveStoreStory,
@@ -6,10 +6,20 @@ import {
   deleteStoreStory,
 } from "@/lib/store-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     const stories = await getStoreStories(false); // all stories for admin
-    return NextResponse.json({ success: true, stories });
+    return NextResponse.json(
+      { success: true, stories },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("GET /api/admin/stories error:", error);
     return NextResponse.json(
