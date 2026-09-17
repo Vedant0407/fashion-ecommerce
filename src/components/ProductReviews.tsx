@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Star, CheckCircle2, ThumbsUp, PenLine, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, CheckCircle2, ThumbsUp, PenLine, X, ArrowRight, Sparkles } from "lucide-react";
 
 export interface Review {
   id: string;
@@ -70,6 +70,34 @@ function getDefaultCategoryReviews(productId: string, productName: string, categ
         fitFeedback: "True to Size",
         helpfulCount: 5,
       },
+      {
+        id: `def-${productId}-4`,
+        author: "Devang P.",
+        location: "New Delhi, IN",
+        rating: 5,
+        date: "3 weeks ago",
+        title: "Exceptional tailoring and material handfeel",
+        comment:
+          "The poplin weave is dense yet supple. You can tell immediately upon unboxing that this is genuine atelier-grade craftsmanship.",
+        verified: true,
+        sizePurchased: "M",
+        fitFeedback: "True to Size",
+        helpfulCount: 8,
+      },
+      {
+        id: `def-${productId}-5`,
+        author: "Alexander S.",
+        location: "Zurich, CH",
+        rating: 5,
+        date: "1 month ago",
+        title: "Clean lines, timeless wardrobe staple",
+        comment:
+          "Wears beautifully both tucked into pleated trousers or loose over an undershirt. Will definitely acquire further colorways.",
+        verified: true,
+        sizePurchased: "L",
+        fitFeedback: "True to Size",
+        helpfulCount: 11,
+      },
     ];
   }
 
@@ -117,104 +145,38 @@ function getDefaultCategoryReviews(productId: string, productName: string, categ
         fitFeedback: "True to Size",
         helpfulCount: 7,
       },
-    ];
-  }
-
-  if (cat.includes("pant") || cat.includes("trouser") || cat.includes("cargo")) {
-    return [
       {
-        id: `def-${productId}-1`,
-        author: "Daniel C.",
-        location: "Tokyo, JP",
-        rating: 5,
-        date: "4 days ago",
-        title: "The cut and break on these trousers are flawless",
-        comment:
-          "Deep tailored pleats that cascade cleanly down the leg. The fabric heft creates a sharp, fluid movement when walking. Bespoke atelier craftsmanship at its finest.",
-        verified: true,
-        sizePurchased: "M",
-        fitFeedback: "True to Size",
-        helpfulCount: 16,
-      },
-      {
-        id: `def-${productId}-2`,
-        author: "Rohan V.",
+        id: `def-${productId}-4`,
+        author: "Rohan M.",
         location: "Mumbai, IN",
         rating: 5,
-        date: "10 days ago",
-        title: "Subtle drape, immaculate waistband finishing",
-        comment:
-          "Clean waistband detailing, reinforced side tabs, and deep pocket bags. Sits naturally at the waist and pairs effortlessly with both derbies and minimal trainers.",
-        verified: true,
-        sizePurchased: "L",
-        fitFeedback: "True to Size",
-        helpfulCount: 8,
-      },
-      {
-        id: `def-${productId}-3`,
-        author: "Liam H.",
-        location: "Melbourne, AU",
-        rating: 4,
         date: "3 weeks ago",
-        title: "Substantial drape and timeless silhouette",
+        title: "Unmatched fabric heft and clean drape",
         comment:
-          "The fabric has genuine weight and a dry, tactile handfeel. Length is generous to allow for a gentle break over luxury footwear.",
-        verified: true,
-        sizePurchased: "M",
-        fitFeedback: "True to Size",
-        helpfulCount: 6,
-      },
-    ];
-  }
-
-  if (cat.includes("outerwear") || cat.includes("coat") || cat.includes("jacket") || cat.includes("hoodie")) {
-    return [
-      {
-        id: `def-${productId}-1`,
-        author: "Sophie B.",
-        location: "Paris, FR",
-        rating: 5,
-        date: "3 days ago",
-        title: "Architectural structure with warm virgin wool feel",
-        comment:
-          "The silhouette is commanding yet minimalist. Heavyweight construction with immaculate interior piping and horn buttons. An investment piece that will age with grace.",
-        verified: true,
-        sizePurchased: "M",
-        fitFeedback: "True to Size",
-        helpfulCount: 21,
-      },
-      {
-        id: `def-${productId}-2`,
-        author: "Vikram T.",
-        location: "Chandigarh, IN",
-        rating: 5,
-        date: "1 week ago",
-        title: "Uncompromising density and thermal warmth",
-        comment:
-          "Incredible density and feel. The drape is rigid enough to maintain clean lines while remaining supremely comfortable throughout chilly evenings.",
+          "I have tees from high-end Tokyo and Paris brands, and this surpasses them in fabric density. Zero collar baconing after multiple washes.",
         verified: true,
         sizePurchased: "L",
         fitFeedback: "True to Size",
-        helpfulCount: 12,
+        helpfulCount: 14,
       },
       {
-        id: `def-${productId}-3`,
-        author: "Elena R.",
-        location: "Zurich, CH",
+        id: `def-${productId}-5`,
+        author: "Liam B.",
+        location: "London, UK",
         rating: 5,
-        date: "2 weeks ago",
-        title: "Quiet luxury in its purest form",
+        date: "1 month ago",
+        title: "Architectural silhouette done right",
         comment:
-          "No loud logos, just pure textural mastery. The lining slips on effortlessly over fine knitwear.",
+          "Cuts a sharp, modern silhouette. Heavy enough to hide undershirt lines and breathes exceptionally well.",
         verified: true,
-        sizePurchased: "S",
+        sizePurchased: "M",
         fitFeedback: "True to Size",
         helpfulCount: 9,
       },
     ];
   }
 
-  // Default fallback
+  // Fallback defaults
   return [
     {
       id: `def-${productId}-1`,
@@ -267,7 +229,7 @@ export default function ProductReviews({
   categoryGroup = "atelier",
 }: ProductReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [showAll, setShowAll] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "5star" | "fit">("all");
   const [helpfulVoted, setHelpfulVoted] = useState<Record<string, boolean>>({});
@@ -313,6 +275,34 @@ export default function ProductReviews({
     }
   }, [productId, productName, categoryGroup, storageKey]);
 
+  // Listen for global open review modal events (e.g. from header rating click)
+  useEffect(() => {
+    const handleOpenModal = () => {
+      setIsModalOpen(true);
+    };
+    window.addEventListener("greeno_open_reviews_modal", handleOpenModal);
+    return () => window.removeEventListener("greeno_open_reviews_modal", handleOpenModal);
+  }, []);
+
+  // Lock body scroll and handle Escape key when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setIsModalOpen(false);
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = "";
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [isModalOpen]);
+
   // Aggregate stats
   const totalCount = reviews.length;
   const avgRating = useMemo(() => {
@@ -339,8 +329,6 @@ export default function ProductReviews({
     }
     return reviews;
   }, [reviews, activeFilter]);
-
-  const displayedReviews = showAll ? filteredReviews : filteredReviews.slice(0, 3);
 
   // Handle helpful click
   const handleHelpfulClick = (reviewId: string) => {
@@ -418,395 +406,454 @@ export default function ProductReviews({
   };
 
   return (
-    <section id="atelier-reviews" className="atelier-pdp-reviews">
-      {/* Section Header */}
-      <div className="atelier-reviews-head">
-        <div className="atelier-reviews-kicker">
-          <span>VERIFIED REPUTATION</span>
-          <span className="atelier-kicker-dot">&bull;</span>
-          <span>ATELIER ARCHIVE</span>
+    <>
+      {/* Cover Box below photo: Single compact card showing overall ratings */}
+      <section id="atelier-reviews" className="atelier-reviews-cover-box">
+        <div className="atelier-cover-header">
+          <div className="atelier-cover-kicker">
+            <span>CLIENT REVIEWS</span>
+            <span className="atelier-kicker-dot">&bull;</span>
+            <span>VERIFIED APPRAISALS</span>
+          </div>
+          <span className="atelier-cover-badge">
+            <Sparkles size={10} strokeWidth={2} />
+            <span>98% RECOMMENDED</span>
+          </span>
         </div>
-        <div className="atelier-reviews-title-row">
-          <h2 className="atelier-reviews-title">CLIENT APPRAISALS</h2>
-          <button
-            type="button"
-            className="atelier-reviews-write-btn"
-            onClick={() => setIsFormOpen(!isFormOpen)}
-          >
-            {isFormOpen ? (
-              <>
-                <X size={12} strokeWidth={2} />
-                <span>CLOSE FORM</span>
-              </>
-            ) : (
-              <>
-                <PenLine size={12} strokeWidth={2} />
-                <span>WRITE AN APPRAISAL</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
 
-      {/* Aggregate Score Card */}
-      <div className="atelier-reviews-score-card">
-        <div className="atelier-score-primary">
-          <span className="atelier-score-num">{avgRating.toFixed(1)}</span>
-          <div className="atelier-score-meta">
+        {/* Rating Score Row */}
+        <div className="atelier-cover-score-row" onClick={() => setIsModalOpen(true)} style={{ cursor: "pointer" }}>
+          <span className="atelier-cover-score-num">{avgRating.toFixed(1)}</span>
+          <div className="atelier-cover-score-meta">
             <div className="atelier-stars-row">
               {[1, 2, 3, 4, 5].map((s) => (
                 <Star
                   key={s}
-                  size={14}
+                  size={15}
                   fill={s <= Math.round(avgRating) ? "#121212" : "none"}
                   stroke="#121212"
                   strokeWidth={1.5}
                 />
               ))}
             </div>
-            <span className="atelier-score-caption">
-              {totalCount} {totalCount === 1 ? "Appraisal" : "Appraisals"} &bull; 98% Recommended
+            <span className="atelier-cover-caption">
+              Based on {totalCount} verified client appraisals
             </span>
           </div>
         </div>
 
         {/* Rating Breakdown Bars */}
-        <div className="atelier-breakdown-bars">
+        <div className="atelier-cover-breakdown">
           {[5, 4, 3, 2, 1].map((starVal) => {
             const count = ratingCounts[starVal as 1 | 2 | 3 | 4 | 5] || 0;
             const pct = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
             return (
-              <div key={starVal} className="atelier-bar-row">
-                <span className="atelier-bar-label">{starVal}★</span>
-                <div className="atelier-bar-track">
-                  <div
-                    className="atelier-bar-fill"
-                    style={{ width: `${pct}%` }}
-                  />
+              <div key={starVal} className="atelier-cover-bar-row">
+                <span className="atelier-cover-bar-label">{starVal}★</span>
+                <div className="atelier-cover-bar-track">
+                  <div className="atelier-cover-bar-fill" style={{ width: `${pct}%` }} />
                 </div>
-                <span className="atelier-bar-pct">{pct}%</span>
+                <span className="atelier-cover-bar-pct">{pct}%</span>
               </div>
             );
           })}
         </div>
 
-        {/* Fit Insights */}
-        <div className="atelier-reviews-fit-insights">
-          <div className="atelier-fit-insight-item">
-            <span className="fit-k">FIT ACCURACY</span>
-            <span className="fit-v">True to Silhouette (96%)</span>
-          </div>
-          <div className="atelier-fit-insight-item">
-            <span className="fit-k">FABRIC HEFT</span>
-            <span className="fit-v">Heavyweight &amp; Structured</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Write a Review Drawer */}
-      {isFormOpen && (
-        <form className="atelier-review-form-panel" onSubmit={handleSubmitReview}>
-          <div className="atelier-form-header">
-            <h3 className="atelier-form-title">SUBMIT YOUR APPRAISAL</h3>
-            <p className="atelier-form-sub">
-              Share your perspective on the drape, fabric tactile weight, and silhouette of this piece.
+        {/* Highlight Quote from latest verified review */}
+        {reviews.length > 0 && (
+          <div
+            className="atelier-cover-preview-card"
+            onClick={() => setIsModalOpen(true)}
+            title="Click to view all reviews in modal"
+          >
+            <p className="atelier-cover-preview-text">
+              &ldquo;{reviews[0].comment.length > 115 ? `${reviews[0].comment.slice(0, 115)}...` : reviews[0].comment}&rdquo;
             </p>
+            <span className="atelier-cover-preview-author">
+              &mdash; {reviews[0].author}{reviews[0].location ? `, ${reviews[0].location}` : ""}
+            </span>
           </div>
+        )}
 
-          {submitSuccess ? (
-            <div className="atelier-form-success">
-              <CheckCircle2 size={20} stroke="#121212" />
-              <div>
-                <strong>Appraisal Submitted</strong>
-                <p>Thank you for contributing to the Atelier Client Archive.</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              {formError && <div className="atelier-form-error">{formError}</div>}
+        {/* Action Buttons inside the cover box */}
+        <div className="atelier-cover-actions">
+          <button
+            type="button"
+            className="atelier-cover-more-btn"
+            onClick={() => setIsModalOpen(true)}
+            id="open-reviews-modal-btn"
+          >
+            <span>MORE REVIEWS ({totalCount})</span>
+            <ArrowRight size={13} strokeWidth={2} />
+          </button>
+          <button
+            type="button"
+            className="atelier-cover-write-btn"
+            onClick={() => {
+              setIsModalOpen(true);
+              setIsFormOpen(true);
+            }}
+          >
+            <PenLine size={12} strokeWidth={2} />
+            <span>WRITE A REVIEW</span>
+          </button>
+        </div>
+      </section>
 
-              {/* Star Rating Picker */}
-              <div className="atelier-form-field">
-                <label className="atelier-form-label">OVERALL RATING *</label>
-                <div className="atelier-star-picker">
-                  {[1, 2, 3, 4, 5].map((starVal) => (
-                    <button
-                      key={starVal}
-                      type="button"
-                      className="atelier-star-btn"
-                      onMouseEnter={() => setFormHoverRating(starVal)}
-                      onMouseLeave={() => setFormHoverRating(0)}
-                      onClick={() => setFormRating(starVal)}
-                    >
-                      <Star
-                        size={20}
-                        fill={
-                          starVal <= (formHoverRating || formRating) ? "#121212" : "none"
-                        }
-                        stroke="#121212"
-                        strokeWidth={1.5}
-                      />
-                    </button>
-                  ))}
-                  <span className="atelier-star-picker-text">
-                    {(() => {
-                      const active = formHoverRating || formRating;
-                      if (active === 5) return "5 — Exceptional Atelier Standard";
-                      if (active === 4) return "4 — Very Good Quality";
-                      if (active === 3) return "3 — Standard Handfeel";
-                      if (active === 2) return "2 — Below Expectations";
-                      return "1 — Unsatisfactory";
-                    })()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Name & Location Row */}
-              <div className="atelier-form-row">
-                <div className="atelier-form-field">
-                  <label className="atelier-form-label" htmlFor="review-author">
-                    YOUR NAME *
-                  </label>
-                  <input
-                    id="review-author"
-                    type="text"
-                    className="atelier-form-input"
-                    placeholder="e.g. Julian V."
-                    value={formAuthor}
-                    onChange={(e) => setFormAuthor(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="atelier-form-field">
-                  <label className="atelier-form-label" htmlFor="review-location">
-                    LOCATION (OPTIONAL)
-                  </label>
-                  <input
-                    id="review-location"
-                    type="text"
-                    className="atelier-form-input"
-                    placeholder="e.g. Mumbai, IN"
-                    value={formLocation}
-                    onChange={(e) => setFormLocation(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Size & Fit Row */}
-              <div className="atelier-form-row">
-                <div className="atelier-form-field">
-                  <label className="atelier-form-label" htmlFor="review-size">
-                    SIZE PURCHASED
-                  </label>
-                  <select
-                    id="review-size"
-                    className="atelier-form-select"
-                    value={formSize}
-                    onChange={(e) => setFormSize(e.target.value)}
-                  >
-                    <option value="S">Small (S)</option>
-                    <option value="M">Medium (M)</option>
-                    <option value="L">Large (L)</option>
-                    <option value="XL">Extra Large (XL)</option>
-                    <option value="XXL">Double Extra Large (XXL)</option>
-                  </select>
-                </div>
-                <div className="atelier-form-field">
-                  <label className="atelier-form-label" htmlFor="review-fit">
-                    FIT APPRAISAL
-                  </label>
-                  <select
-                    id="review-fit"
-                    className="atelier-form-select"
-                    value={formFit}
-                    onChange={(e) =>
-                      setFormFit(e.target.value as "Runs Small" | "True to Size" | "Runs Large")
-                    }
-                  >
-                    <option value="Runs Small">Runs Fitted / Small</option>
-                    <option value="True to Size">True to Silhouette</option>
-                    <option value="Runs Large">Runs Relaxed / Large</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Headline */}
-              <div className="atelier-form-field">
-                <label className="atelier-form-label" htmlFor="review-title">
-                  APPRAISAL HEADLINE *
-                </label>
-                <input
-                  id="review-title"
-                  type="text"
-                  className="atelier-form-input"
-                  placeholder="e.g. Architectural drape and immaculate fabric density"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  required
-                />
-              </div>
-
-              {/* Body */}
-              <div className="atelier-form-field">
-                <label className="atelier-form-label" htmlFor="review-comment">
-                  DETAILED COMMENTS *
-                </label>
-                <textarea
-                  id="review-comment"
-                  className="atelier-form-textarea"
-                  rows={4}
-                  placeholder="Detail your experience with the tactile texture, collar or seam construction, and how the garment wears throughout the day..."
-                  value={formComment}
-                  onChange={(e) => setFormComment(e.target.value)}
-                  required
-                />
-              </div>
-
-              {/* Submit CTA */}
-              <div className="atelier-form-actions">
-                <button type="submit" className="atelier-form-submit-btn">
-                  PUBLISH APPRAISAL
-                </button>
-                <button
-                  type="button"
-                  className="atelier-form-cancel-btn"
-                  onClick={() => setIsFormOpen(false)}
-                >
-                  CANCEL
-                </button>
-              </div>
-            </>
-          )}
-        </form>
-      )}
-
-      {/* Filter Tabs */}
-      <div className="atelier-reviews-filter-row">
-        <button
-          type="button"
-          className={`atelier-filter-pill ${activeFilter === "all" ? "active" : ""}`}
-          onClick={() => setActiveFilter("all")}
+      {/* Centered Modal: Opens in middle of screen with scrollable reviews */}
+      {isModalOpen && (
+        <div
+          className="atelier-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
         >
-          ALL ({reviews.length})
-        </button>
-        <button
-          type="button"
-          className={`atelier-filter-pill ${activeFilter === "5star" ? "active" : ""}`}
-          onClick={() => setActiveFilter("5star")}
-        >
-          5 STARS ({ratingCounts[5] || 0})
-        </button>
-        <button
-          type="button"
-          className={`atelier-filter-pill ${activeFilter === "fit" ? "active" : ""}`}
-          onClick={() => setActiveFilter("fit")}
-        >
-          FIT &amp; SILHOUETTE
-        </button>
-      </div>
-
-      {/* Reviews Cards Feed */}
-      <div className="atelier-reviews-list">
-        {displayedReviews.length === 0 ? (
-          <div className="atelier-reviews-empty">
-            <p>No appraisals found in this category.</p>
-          </div>
-        ) : (
-          displayedReviews.map((review) => {
-            const hasVoted = Boolean(helpfulVoted[review.id]);
-            return (
-              <article key={review.id} className="atelier-review-card">
-                {/* Header: Author, Badge, Date */}
-                <div className="atelier-card-header">
-                  <div className="atelier-card-author-info">
-                    <span className="atelier-card-name">{review.author}</span>
-                    {review.location && (
-                      <span className="atelier-card-location">&bull; {review.location}</span>
-                    )}
-                  </div>
-                  <span className="atelier-card-date">{review.date}</span>
-                </div>
-
-                {/* Rating & Verified Tag */}
-                <div className="atelier-card-rating-row">
-                  <div className="atelier-stars-row">
+          <div className="atelier-modal-dialog" role="dialog" aria-modal="true">
+            {/* Modal Header */}
+            <div className="atelier-modal-header">
+              <div className="atelier-modal-header-info">
+                <span className="atelier-modal-kicker">VERIFIED CLIENT ARCHIVE</span>
+                <h3 className="atelier-modal-title">CLIENT APPRAISALS</h3>
+                <div className="atelier-modal-rating-summary">
+                  <span className="atelier-modal-avg-score">{avgRating.toFixed(1)}</span>
+                  <div className="atelier-stars-row mini">
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star
                         key={s}
                         size={12}
-                        fill={s <= review.rating ? "#121212" : "none"}
+                        fill={s <= Math.round(avgRating) ? "#121212" : "none"}
                         stroke="#121212"
                         strokeWidth={1.5}
                       />
                     ))}
                   </div>
+                  <span className="atelier-modal-count-note">
+                    ({totalCount} {totalCount === 1 ? "Appraisal" : "Appraisals"})
+                  </span>
+                </div>
+              </div>
 
-                  {review.verified && (
-                    <span className="atelier-verified-badge">
-                      <CheckCircle2 size={11} strokeWidth={2} />
-                      <span>VERIFIED CLIENT</span>
-                    </span>
+              <div className="atelier-modal-header-actions">
+                <button
+                  type="button"
+                  className="atelier-modal-write-pill"
+                  onClick={() => setIsFormOpen(!isFormOpen)}
+                >
+                  {isFormOpen ? (
+                    <>
+                      <X size={12} strokeWidth={2} />
+                      <span>VIEW REVIEWS</span>
+                    </>
+                  ) : (
+                    <>
+                      <PenLine size={12} strokeWidth={2} />
+                      <span>WRITE A REVIEW</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="atelier-modal-close-btn"
+                  onClick={() => setIsModalOpen(false)}
+                  aria-label="Close appraisals dialog"
+                >
+                  <X size={18} strokeWidth={1.75} />
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Pills (Shown when browsing reviews) */}
+            {!isFormOpen && (
+              <div className="atelier-modal-filter-bar">
+                <button
+                  type="button"
+                  className={`atelier-filter-pill ${activeFilter === "all" ? "active" : ""}`}
+                  onClick={() => setActiveFilter("all")}
+                >
+                  ALL ({reviews.length})
+                </button>
+                <button
+                  type="button"
+                  className={`atelier-filter-pill ${activeFilter === "5star" ? "active" : ""}`}
+                  onClick={() => setActiveFilter("5star")}
+                >
+                  5 STARS ({ratingCounts[5] || 0})
+                </button>
+                <button
+                  type="button"
+                  className={`atelier-filter-pill ${activeFilter === "fit" ? "active" : ""}`}
+                  onClick={() => setActiveFilter("fit")}
+                >
+                  FIT &amp; SILHOUETTE
+                </button>
+              </div>
+            )}
+
+            {/* Scrollable Reviews Container in the middle of the box */}
+            <div className="atelier-modal-scroll-area">
+              {isFormOpen ? (
+                /* Write a Review Form inside Modal */
+                <form className="atelier-review-form-panel" onSubmit={handleSubmitReview}>
+                  <div className="atelier-form-header">
+                    <h4 className="atelier-form-title">SUBMIT YOUR APPRAISAL</h4>
+                    <p className="atelier-form-sub">
+                      Share your perspective on the drape, fabric tactile weight, and silhouette of this piece.
+                    </p>
+                  </div>
+
+                  {submitSuccess ? (
+                    <div className="atelier-form-success">
+                      <CheckCircle2 size={20} stroke="#121212" />
+                      <div>
+                        <strong>Appraisal Submitted</strong>
+                        <p>Thank you for contributing to the Atelier Client Archive.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {formError && <div className="atelier-form-error">{formError}</div>}
+
+                      {/* Star Rating Picker */}
+                      <div className="atelier-form-field">
+                        <label className="atelier-form-label">OVERALL RATING *</label>
+                        <div className="atelier-star-picker">
+                          {[1, 2, 3, 4, 5].map((starVal) => (
+                            <button
+                              key={starVal}
+                              type="button"
+                              className="atelier-star-btn"
+                              onMouseEnter={() => setFormHoverRating(starVal)}
+                              onMouseLeave={() => setFormHoverRating(0)}
+                              onClick={() => setFormRating(starVal)}
+                            >
+                              <Star
+                                size={20}
+                                fill={
+                                  starVal <= (formHoverRating || formRating) ? "#121212" : "none"
+                                }
+                                stroke="#121212"
+                                strokeWidth={1.5}
+                              />
+                            </button>
+                          ))}
+                          <span className="atelier-star-picker-text">
+                            {(() => {
+                              const active = formHoverRating || formRating;
+                              if (active === 5) return "5 — Exceptional Atelier Standard";
+                              if (active === 4) return "4 — Very Good Quality";
+                              if (active === 3) return "3 — Standard Handfeel";
+                              if (active === 2) return "2 — Below Expectations";
+                              return "1 — Unsatisfactory";
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Name & Location Row */}
+                      <div className="atelier-form-row">
+                        <div className="atelier-form-field">
+                          <label className="atelier-form-label" htmlFor="modal-review-author">
+                            YOUR NAME *
+                          </label>
+                          <input
+                            id="modal-review-author"
+                            type="text"
+                            className="atelier-form-input"
+                            placeholder="e.g. Julian V."
+                            value={formAuthor}
+                            onChange={(e) => setFormAuthor(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="atelier-form-field">
+                          <label className="atelier-form-label" htmlFor="modal-review-location">
+                            LOCATION (OPTIONAL)
+                          </label>
+                          <input
+                            id="modal-review-location"
+                            type="text"
+                            className="atelier-form-input"
+                            placeholder="e.g. Mumbai, IN"
+                            value={formLocation}
+                            onChange={(e) => setFormLocation(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Size & Fit Row */}
+                      <div className="atelier-form-row">
+                        <div className="atelier-form-field">
+                          <label className="atelier-form-label" htmlFor="modal-review-size">
+                            SIZE PURCHASED
+                          </label>
+                          <select
+                            id="modal-review-size"
+                            className="atelier-form-select"
+                            value={formSize}
+                            onChange={(e) => setFormSize(e.target.value)}
+                          >
+                            <option value="S">Small (S)</option>
+                            <option value="M">Medium (M)</option>
+                            <option value="L">Large (L)</option>
+                            <option value="XL">Extra Large (XL)</option>
+                            <option value="XXL">Double Extra Large (XXL)</option>
+                          </select>
+                        </div>
+                        <div className="atelier-form-field">
+                          <label className="atelier-form-label" htmlFor="modal-review-fit">
+                            FIT APPRAISAL
+                          </label>
+                          <select
+                            id="modal-review-fit"
+                            className="atelier-form-select"
+                            value={formFit}
+                            onChange={(e) =>
+                              setFormFit(e.target.value as "Runs Small" | "True to Size" | "Runs Large")
+                            }
+                          >
+                            <option value="Runs Small">Runs Fitted / Small</option>
+                            <option value="True to Size">True to Silhouette</option>
+                            <option value="Runs Large">Runs Relaxed / Large</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Headline */}
+                      <div className="atelier-form-field">
+                        <label className="atelier-form-label" htmlFor="modal-review-title">
+                          APPRAISAL HEADLINE *
+                        </label>
+                        <input
+                          id="modal-review-title"
+                          type="text"
+                          className="atelier-form-input"
+                          placeholder="e.g. Architectural drape and immaculate fabric density"
+                          value={formTitle}
+                          onChange={(e) => setFormTitle(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      {/* Body */}
+                      <div className="atelier-form-field">
+                        <label className="atelier-form-label" htmlFor="modal-review-comment">
+                          DETAILED COMMENTS *
+                        </label>
+                        <textarea
+                          id="modal-review-comment"
+                          className="atelier-form-textarea"
+                          rows={4}
+                          placeholder="Detail your experience with the tactile texture, collar or seam construction, and how the garment wears throughout the day..."
+                          value={formComment}
+                          onChange={(e) => setFormComment(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      {/* Submit CTA */}
+                      <div className="atelier-form-actions">
+                        <button type="submit" className="atelier-form-submit-btn">
+                          PUBLISH APPRAISAL
+                        </button>
+                        <button
+                          type="button"
+                          className="atelier-form-cancel-btn"
+                          onClick={() => setIsFormOpen(false)}
+                        >
+                          BACK TO REVIEWS
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </form>
+              ) : (
+                /* All Reviews in the Scrollable Area */
+                <div className="atelier-reviews-list">
+                  {filteredReviews.length === 0 ? (
+                    <div className="atelier-reviews-empty">
+                      <p>No appraisals found in this category.</p>
+                    </div>
+                  ) : (
+                    filteredReviews.map((review) => {
+                      const hasVoted = Boolean(helpfulVoted[review.id]);
+                      return (
+                        <article key={review.id} className="atelier-review-card">
+                          {/* Header: Author, Badge, Date */}
+                          <div className="atelier-card-header">
+                            <div className="atelier-card-author-info">
+                              <span className="atelier-card-name">{review.author}</span>
+                              {review.location && (
+                                <span className="atelier-card-location">&bull; {review.location}</span>
+                              )}
+                            </div>
+                            <span className="atelier-card-date">{review.date}</span>
+                          </div>
+
+                          {/* Rating & Verified Tag */}
+                          <div className="atelier-card-rating-row">
+                            <div className="atelier-stars-row">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star
+                                  key={s}
+                                  size={12}
+                                  fill={s <= review.rating ? "#121212" : "none"}
+                                  stroke="#121212"
+                                  strokeWidth={1.5}
+                                />
+                              ))}
+                            </div>
+
+                            {review.verified && (
+                              <span className="atelier-verified-badge">
+                                <CheckCircle2 size={11} strokeWidth={2} />
+                                <span>VERIFIED CLIENT</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Size & Fit Tag */}
+                          {(review.sizePurchased || review.fitFeedback) && (
+                            <div className="atelier-card-tags">
+                              {review.sizePurchased && (
+                                <span className="atelier-meta-tag">SIZE: {review.sizePurchased}</span>
+                              )}
+                              {review.fitFeedback && (
+                                <span className="atelier-meta-tag">{review.fitFeedback}</span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Review Headline & Comment */}
+                          <h4 className="atelier-card-title">{review.title}</h4>
+                          <p className="atelier-card-comment">{review.comment}</p>
+
+                          {/* Helpful Footer Action */}
+                          <div className="atelier-card-footer">
+                            <button
+                              type="button"
+                              className={`atelier-helpful-btn ${hasVoted ? "voted" : ""}`}
+                              onClick={() => handleHelpfulClick(review.id)}
+                              title={hasVoted ? "You found this helpful" : "Mark as helpful"}
+                            >
+                              <ThumbsUp size={12} strokeWidth={1.75} />
+                              <span>HELPFUL ({review.helpfulCount})</span>
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })
                   )}
                 </div>
+              )}
+            </div>
 
-                {/* Size & Fit Tag */}
-                {(review.sizePurchased || review.fitFeedback) && (
-                  <div className="atelier-card-tags">
-                    {review.sizePurchased && (
-                      <span className="atelier-meta-tag">SIZE: {review.sizePurchased}</span>
-                    )}
-                    {review.fitFeedback && (
-                      <span className="atelier-meta-tag">{review.fitFeedback}</span>
-                    )}
-                  </div>
-                )}
-
-                {/* Review Headline & Comment */}
-                <h4 className="atelier-card-title">{review.title}</h4>
-                <p className="atelier-card-comment">{review.comment}</p>
-
-                {/* Helpful Footer Action */}
-                <div className="atelier-card-footer">
-                  <button
-                    type="button"
-                    className={`atelier-helpful-btn ${hasVoted ? "voted" : ""}`}
-                    onClick={() => handleHelpfulClick(review.id)}
-                    title={hasVoted ? "You found this helpful" : "Mark as helpful"}
-                  >
-                    <ThumbsUp size={12} strokeWidth={1.75} />
-                    <span>
-                      {hasVoted ? "HELPFUL" : "HELPFUL"} ({review.helpfulCount})
-                    </span>
-                  </button>
-                </div>
-              </article>
-            );
-          })
-        )}
-      </div>
-
-      {/* Show More / Show Less Toggle */}
-      {filteredReviews.length > 3 && (
-        <div className="atelier-reviews-more-wrap">
-          <button
-            type="button"
-            className="atelier-reviews-toggle-btn"
-            onClick={() => setShowAll(!showAll)}
-          >
-            {showAll ? (
-              <>
-                <span>SHOW FEWER APPRAISALS</span>
-                <ChevronUp size={13} strokeWidth={2} />
-              </>
-            ) : (
-              <>
-                <span>VIEW ALL {filteredReviews.length} APPRAISALS</span>
-                <ChevronDown size={13} strokeWidth={2} />
-              </>
-            )}
-          </button>
+            {/* Modal Footer Note */}
+            <div className="atelier-modal-footer">
+              <span>ALL APPRAISALS SUBMITTED BY VERIFIED GREENO ATELIER CLIENTS &bull; {totalCount} REVIEWS</span>
+            </div>
+          </div>
         </div>
       )}
-    </section>
+    </>
   );
 }

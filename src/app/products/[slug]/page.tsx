@@ -409,12 +409,9 @@ export default function ProductPage() {
                       type="button"
                       className="atelier-pdp-rating-anchor"
                       onClick={() => {
-                        const el = document.getElementById("atelier-reviews");
-                        if (el) {
-                          el.scrollIntoView({ behavior: "smooth", block: "start" });
-                        }
+                        window.dispatchEvent(new CustomEvent("greeno_open_reviews_modal"));
                       }}
-                      title="Scroll to client appraisals"
+                      title="Open client appraisals dialog"
                     >
                       <div className="atelier-stars-row mini">
                         {[1, 2, 3, 4, 5].map((s) => (
