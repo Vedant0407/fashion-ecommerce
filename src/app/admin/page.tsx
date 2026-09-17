@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import styles from "./admin.module.css";
 import { Product, Category } from "@/lib/catalog";
-import { StoreOrder, StoreCoupon, StoreSettings, ReturnExchangeRequest, StoreReview } from "@/lib/store-data";
+import { StoreOrder, StoreCoupon, StoreSettings, ReturnExchangeRequest, StoreReview, StoreStory } from "@/lib/store-data";
 import { formatShortOrderId } from "@/lib/order-utils";
 
 export default function AdminPage() {
@@ -15,7 +15,7 @@ export default function AdminPage() {
 
   // Navigation
   const [activeTab, setActiveTab] = useState<
-    "overview" | "products" | "categories" | "orders" | "returns" | "coupons" | "reviews" | "clients" | "settings" | "sms" | "email"
+    "overview" | "products" | "categories" | "orders" | "returns" | "coupons" | "reviews" | "clients" | "settings" | "sms" | "email" | "stories"
   >("overview");
 
   // SMS Testing State
@@ -161,6 +161,91 @@ export default function AdminPage() {
     }
   }
 
+  // Stories State & Actions
+  const [stories, setStories] = useState<StoreStory[]>([]);
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState<boolean>(false);
+  const [editingStory, setEditingStory] = useState<Partial<StoreStory> | null>(null);
+  const [storySearch, setStorySearch] = useState<string>("");
+  const [storyFilter, setStoryFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+
+  async function handleSaveStory(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingStory?.title || !editingStory?.image) {
+      alert("Story Title and Image URL are required.");
+      return;
+    }
+
+    try {
+      const isUpdating = Boolean(editingStory.id);
+      const res = await fetch("/api/admin/stories", {
+        method: isUpdating ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingStory),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.story) {
+          if (isUpdating) {
+            setStories((prev) => prev.map((s) => (s.id === data.story.id ? data.story : s)));
+          } else {
+            setStories((prev) => [...prev, data.story]);
+          }
+        }
+        triggerToast(isUpdating ? "Story updated successfully." : "New story published.");
+        setIsStoryModalOpen(false);
+        setEditingStory(null);
+        await fetchAllData();
+      } else {
+        const errData = await res.json();
+        alert(errData.error || "Failed to save story.");
+      }
+    } catch (err: any) {
+      console.error("Error saving story:", err);
+      alert(err.message || "Failed to save story.");
+    }
+  }
+
+  async function handleToggleStoryActive(id: string, currentActive: boolean) {
+    try {
+      const res = await fetch("/api/admin/stories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, active: !currentActive }),
+      });
+
+      if (res.ok) {
+        setStories((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, active: !currentActive } : s))
+        );
+        triggerToast(`Story ${!currentActive ? "activated" : "paused"} on storefront.`);
+      } else {
+        triggerToast("Failed to update story status.");
+      }
+    } catch (err) {
+      console.error("Error toggling story active:", err);
+    }
+  }
+
+  async function handleDeleteStory(id: string, title: string) {
+    if (!confirm(`Permanently delete story "${title}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/stories?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setStories((prev) => prev.filter((s) => s.id !== id));
+        triggerToast(`Story "${title}" removed.`);
+      } else {
+        triggerToast("Failed to delete story.");
+      }
+    } catch (err) {
+      console.error("Error deleting story:", err);
+    }
+  }
+
   // Always require passkey on every open or refresh
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -173,7 +258,7 @@ export default function AdminPage() {
   async function fetchAllData() {
     setLoading(true);
     try {
-      const [prodRes, catRes, orderRes, retRes, coupRes, setRes, userRes, revRes] = await Promise.all([
+      const [prodRes, catRes, orderRes, retRes, coupRes, setRes, userRes, revRes, storyRes] = await Promise.all([
         fetch("/api/admin/products"),
         fetch("/api/admin/categories"),
         fetch(`/api/admin/orders?t=${Date.now()}`, { cache: "no-store" }),
@@ -182,6 +267,7 @@ export default function AdminPage() {
         fetch("/api/admin/settings"),
         fetch("/api/admin/users"),
         fetch("/api/admin/reviews"),
+        fetch("/api/admin/stories"),
       ]);
 
       if (prodRes.ok) {
@@ -377,6 +463,10 @@ export default function AdminPage() {
       if (revRes && revRes.ok) {
         const revData = await revRes.json();
         if (Array.isArray(revData.reviews)) setReviews(revData.reviews);
+      }
+      if (storyRes && storyRes.ok) {
+        const storyData = await storyRes.json();
+        if (Array.isArray(storyData.stories)) setStories(storyData.stories);
       }
     } catch (err) {
       console.error("Error fetching admin data:", err);
@@ -1400,6 +1490,27 @@ export default function AdminPage() {
             COLLECTIONS ({categories.length})
           </button>
           <button
+            className={`${styles.tabBtn} ${activeTab === "stories" ? styles.activeTab : ""}`}
+            onClick={() => setActiveTab("stories")}
+          >
+            ATELIER STORIES ({stories.length})
+            {stories.filter((s) => s.active).length > 0 && (
+              <span
+                style={{
+                  background: "linear-gradient(135deg, #ec4899, #8b5cf6)",
+                  color: "#ffffff",
+                  padding: "1px 6px",
+                  fontSize: "9px",
+                  fontWeight: 800,
+                  marginLeft: "6px",
+                  borderRadius: "2px",
+                }}
+              >
+                {stories.filter((s) => s.active).length} LIVE
+              </span>
+            )}
+          </button>
+          <button
             className={`${styles.tabBtn} ${activeTab === "orders" ? styles.activeTab : ""}`}
             onClick={() => setActiveTab("orders")}
           >
@@ -2020,6 +2131,246 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+
+            {/* -------------------- ATELIER STORIES TAB -------------------- */}
+            {activeTab === "stories" && (
+              <div>
+                <div className={styles.sectionHeader}>
+                  <div>
+                    <div className={styles.sectionTitle}>INSTAGRAM-STYLE ATELIER STORIES</div>
+                    <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>
+                      Curate full-screen 9:16 vertical stories for the storefront header launcher. Visitors tap to view and deep-link directly to silhouettes. Only admins can create and manage stories.
+                    </div>
+                  </div>
+                  <button
+                    className={styles.primaryButton}
+                    onClick={() => {
+                      setEditingStory({
+                        title: "",
+                        caption: "",
+                        image: products[0]?.images?.[0] || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop",
+                        link_url: products[0] ? `/product/${products[0].id}` : "#catalog",
+                        link_text: "EXPLORE PIECE",
+                        duration: 5,
+                        active: true,
+                        order_index: stories.length + 1,
+                      });
+                      setIsStoryModalOpen(true);
+                    }}
+                  >
+                    + CREATE NEW STORY
+                  </button>
+                </div>
+
+                {/* Metrics Cards */}
+                <div className={styles.statsGrid} style={{ marginBottom: "24px" }}>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>TOTAL STORIES</div>
+                    <div className={styles.statValue}>{stories.length}</div>
+                    <div className={styles.statSub}>Curated atelier editorial slides</div>
+                  </div>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>LIVE ON STOREFRONT</div>
+                    <div className={styles.statValue} style={{ color: "#22c55e" }}>
+                      {stories.filter((s) => s.active).length}
+                    </div>
+                    <div className={styles.statSub}>Visible to all visitors in header</div>
+                  </div>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>TOTAL STORY IMPRESSIONS</div>
+                    <div className={styles.statValue}>
+                      {stories.reduce((sum, s) => sum + (s.views_count || 0), 0).toLocaleString("en-IN")}
+                    </div>
+                    <div className={styles.statSub}>Tracked unique view taps</div>
+                  </div>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>SLIDE PACING</div>
+                    <div className={styles.statValue}>
+                      {stories.length > 0
+                        ? (stories.reduce((sum, s) => sum + (s.duration || 5), 0) / stories.length).toFixed(1)
+                        : "5.0"}
+                      s
+                    </div>
+                    <div className={styles.statSub}>Average auto-advance duration</div>
+                  </div>
+                </div>
+
+                {/* Search & Filter Controls */}
+                <div className={styles.controlsBar}>
+                  <input
+                    type="text"
+                    className={styles.searchInput}
+                    placeholder="Search stories by title or caption..."
+                    value={storySearch}
+                    onChange={(e) => setStorySearch(e.target.value)}
+                  />
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    <span style={{ fontSize: "11px", color: "#888888" }}>FILTER:</span>
+                    <select
+                      className={styles.filterSelect}
+                      value={storyFilter}
+                      onChange={(e) => setStoryFilter(e.target.value as any)}
+                    >
+                      <option value="ALL">ALL STORIES ({stories.length})</option>
+                      <option value="ACTIVE">ACTIVE ONLY ({stories.filter((s) => s.active).length})</option>
+                      <option value="INACTIVE">PAUSED ONLY ({stories.filter((s) => !s.active).length})</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Stories Visual Grid */}
+                {stories.filter((s) => {
+                  const matchSearch =
+                    !storySearch ||
+                    s.title.toLowerCase().includes(storySearch.toLowerCase()) ||
+                    (s.caption && s.caption.toLowerCase().includes(storySearch.toLowerCase()));
+                  const matchFilter =
+                    storyFilter === "ALL" ||
+                    (storyFilter === "ACTIVE" && s.active) ||
+                    (storyFilter === "INACTIVE" && !s.active);
+                  return matchSearch && matchFilter;
+                }).length === 0 ? (
+                  <div
+                    style={{
+                      background: "#FFFFFF",
+                      border: "1px dashed #D0CEBE",
+                      padding: "48px 24px",
+                      textAlign: "center",
+                      borderRadius: "6px",
+                      marginTop: "20px",
+                    }}
+                  >
+                    <div style={{ fontSize: "16px", fontWeight: 700, textTransform: "uppercase", marginBottom: "8px" }}>
+                      No Stories Found
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#888888", marginBottom: "20px" }}>
+                      {stories.length === 0
+                        ? "No stories published yet. Create your first Instagram-style story for the storefront."
+                        : "No stories match your current search or filter criteria."}
+                    </div>
+                    <button
+                      className={styles.primaryButton}
+                      onClick={() => {
+                        setEditingStory({
+                          title: "",
+                          caption: "",
+                          image: products[0]?.images?.[0] || "",
+                          link_url: products[0] ? `/product/${products[0].id}` : "#catalog",
+                          link_text: "EXPLORE PIECE",
+                          duration: 5,
+                          active: true,
+                          order_index: stories.length + 1,
+                        });
+                        setIsStoryModalOpen(true);
+                      }}
+                    >
+                      + CREATE NEW STORY
+                    </button>
+                  </div>
+                ) : (
+                  <div className={styles.storyGrid}>
+                    {stories
+                      .filter((s) => {
+                        const matchSearch =
+                          !storySearch ||
+                          s.title.toLowerCase().includes(storySearch.toLowerCase()) ||
+                          (s.caption && s.caption.toLowerCase().includes(storySearch.toLowerCase()));
+                        const matchFilter =
+                          storyFilter === "ALL" ||
+                          (storyFilter === "ACTIVE" && s.active) ||
+                          (storyFilter === "INACTIVE" && !s.active);
+                        return matchSearch && matchFilter;
+                      })
+                      .map((s, idx) => (
+                        <div key={s.id || idx} className={styles.storyCard}>
+                          {/* 9:16 Vertical Preview Container */}
+                          <div className={styles.storyPreviewWrapper}>
+                            <img
+                              src={s.image}
+                              alt={s.title}
+                              className={styles.storyPreviewImg}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src =
+                                  "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop";
+                              }}
+                            />
+                            <div className={styles.storyOverlayGradient} />
+
+                            {/* Top Badges */}
+                            <div className={styles.storyTopBadges}>
+                              <span className={styles.storyOrderPill}>SLIDE #{s.order_index ?? idx + 1}</span>
+                              <div style={{ display: "flex", gap: "6px" }}>
+                                <span className={styles.storyDurationPill}>{s.duration || 5}s</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleStoryActive(s.id, Boolean(s.active))}
+                                  style={{
+                                    border: "none",
+                                    cursor: "pointer",
+                                    padding: "3px 8px",
+                                    borderRadius: "4px",
+                                    fontSize: "10px",
+                                    fontWeight: 700,
+                                    textTransform: "uppercase",
+                                    background: s.active ? "#22c55e" : "#555555",
+                                    color: "#FFFFFF",
+                                  }}
+                                  title="Click to toggle live status"
+                                >
+                                  {s.active ? "LIVE" : "PAUSED"}
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Bottom Content Overlay */}
+                            <div className={styles.storyBottomMeta}>
+                              <div className={styles.storyTitleOnImg}>{s.title}</div>
+                              {s.caption && <div className={styles.storyCaptionOnImg}>{s.caption}</div>}
+                              {s.link_url && (
+                                <div className={styles.storyLinkPillOnImg}>
+                                  <span>{s.link_text || "EXPLORE PIECE"}</span>
+                                  <span>↗</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Footer Actions */}
+                          <div className={styles.storyCardFooter}>
+                            <div className={styles.storyFooterStats}>
+                              <span>
+                                👁 <strong>{(s.views_count || 0).toLocaleString("en-IN")}</strong> impressions
+                              </span>
+                              <span style={{ fontSize: "10px", color: "#999999" }}>
+                                {s.link_url ? s.link_url.replace("/product/", "") : "No link"}
+                              </span>
+                            </div>
+                            <div className={styles.storyActionRow}>
+                              <button
+                                className={styles.smallBtn}
+                                style={{ flex: 1 }}
+                                onClick={() => {
+                                  setEditingStory({ ...s });
+                                  setIsStoryModalOpen(true);
+                                }}
+                              >
+                                EDIT STORY
+                              </button>
+                              <button
+                                className={styles.deleteBtn}
+                                onClick={() => handleDeleteStory(s.id, s.title)}
+                                title="Delete story"
+                              >
+                                DELETE
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -4577,6 +4928,354 @@ export default function AdminPage() {
                 </button>
                 <button type="submit" className={styles.primaryButton}>
                   SAVE COLLECTION
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== STORY MODAL ==================== */}
+      {isStoryModalOpen && editingStory && (
+        <div className={styles.modalBackdrop}>
+          <div className={styles.modalWindow} style={{ maxWidth: "860px" }}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitle}>
+                {editingStory.id ? `EDIT STORY: ${editingStory.title}` : "CREATE NEW ATELIER STORY"}
+              </div>
+              <button
+                className={styles.modalCloseBtn}
+                onClick={() => {
+                  setIsStoryModalOpen(false);
+                  setEditingStory(null);
+                }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStory}>
+              <div className={styles.modalBody}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: "24px" }}>
+                  {/* Left: Form Fields */}
+                  <div className={styles.formGrid} style={{ gridTemplateColumns: "1fr 1fr" }}>
+                    {/* Quick Pick from Existing Silhouette */}
+                    <div className={styles.fullSpan}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel} style={{ color: "#d97706" }}>
+                          ⚡ QUICK-FILL FROM STOREFRONT SILHOUETTE (OPTIONAL)
+                        </label>
+                        <select
+                          className={styles.fieldSelect}
+                          defaultValue=""
+                          onChange={(e) => {
+                            const found = products.find((p) => p.id === e.target.value);
+                            if (found) {
+                              setEditingStory((prev) => ({
+                                ...prev,
+                                title: found.name,
+                                caption: found.description?.slice(0, 80) || "Handcrafted atelier piece.",
+                                image: found.images?.[0] || prev?.image || "",
+                                link_url: `/product/${found.id}`,
+                                link_text: "EXPLORE PIECE",
+                              }));
+                            }
+                          }}
+                        >
+                          <option value="" disabled>
+                            -- Choose a product to auto-fill story --
+                          </option>
+                          {products.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name} (₹{p.price.toLocaleString("en-IN")})
+                            </option>
+                          ))}
+                        </select>
+                        <div style={{ fontSize: "10px", color: "#888888", marginTop: "4px" }}>
+                          Selecting a product automatically fills Title, Image, Caption, and Deep-link.
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Story Title */}
+                    <div className={styles.fullSpan}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Story Title *</label>
+                        <input
+                          type="text"
+                          className={styles.fieldInput}
+                          value={editingStory.title || ""}
+                          onChange={(e) => setEditingStory({ ...editingStory, title: e.target.value })}
+                          placeholder="e.g. SUMMER SOLSTICE '26"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Image URL */}
+                    <div className={styles.fullSpan}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Vertical 9:16 Image URL *</label>
+                        <input
+                          type="url"
+                          className={styles.fieldInput}
+                          value={editingStory.image || ""}
+                          onChange={(e) => setEditingStory({ ...editingStory, image: e.target.value })}
+                          placeholder="https://images.unsplash.com/..."
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Caption */}
+                    <div className={styles.fullSpan}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Editorial Caption / Subtitle</label>
+                        <textarea
+                          className={styles.fieldInput}
+                          style={{ minHeight: "65px", resize: "vertical" }}
+                          value={editingStory.caption || ""}
+                          onChange={(e) => setEditingStory({ ...editingStory, caption: e.target.value })}
+                          placeholder="e.g. Sculpted linens & sun-washed silks crafted for effortless summer evenings."
+                        />
+                      </div>
+                    </div>
+
+                    {/* Product Link URL */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Product Link / Deep URL</label>
+                      <input
+                        type="text"
+                        className={styles.fieldInput}
+                        value={editingStory.link_url || ""}
+                        onChange={(e) => setEditingStory({ ...editingStory, link_url: e.target.value })}
+                        placeholder="e.g. /product/silk-slip or #catalog"
+                      />
+                    </div>
+
+                    {/* Link Button Text */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Link Button Text</label>
+                      <input
+                        type="text"
+                        className={styles.fieldInput}
+                        value={editingStory.link_text || "EXPLORE PIECE"}
+                        onChange={(e) => setEditingStory({ ...editingStory, link_text: e.target.value })}
+                        placeholder="e.g. EXPLORE PIECE or SHOP NOW"
+                      />
+                    </div>
+
+                    {/* Pacing Duration */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Slide Duration (Seconds)</label>
+                      <input
+                        type="number"
+                        min={3}
+                        max={30}
+                        className={styles.fieldInput}
+                        value={editingStory.duration ?? 5}
+                        onChange={(e) =>
+                          setEditingStory({ ...editingStory, duration: parseInt(e.target.value) || 5 })
+                        }
+                      />
+                    </div>
+
+                    {/* Order Index */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Display Order Position</label>
+                      <input
+                        type="number"
+                        min={1}
+                        className={styles.fieldInput}
+                        value={editingStory.order_index ?? 1}
+                        onChange={(e) =>
+                          setEditingStory({ ...editingStory, order_index: parseInt(e.target.value) || 1 })
+                        }
+                      />
+                    </div>
+
+                    {/* Active Checkbox */}
+                    <div className={styles.fullSpan} style={{ marginTop: "6px" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+                        <input
+                          type="checkbox"
+                          checked={editingStory.active ?? true}
+                          onChange={(e) => setEditingStory({ ...editingStory, active: e.target.checked })}
+                          style={{ width: "16px", height: "16px", accentColor: "#121212" }}
+                        />
+                        <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase" }}>
+                          Publish as LIVE on storefront Story Launcher
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Right: Live Interactive Phone Preview Mockup */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        color: "#888888",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      LIVE STORY PREVIEW
+                    </div>
+                    <div
+                      style={{
+                        width: "220px",
+                        aspectRatio: "9 / 16",
+                        background: "#000000",
+                        borderRadius: "18px",
+                        border: "5px solid #262626",
+                        position: "relative",
+                        overflow: "hidden",
+                        boxShadow: "0 16px 36px rgba(0, 0, 0, 0.35)",
+                      }}
+                    >
+                      {/* Fake Progress Bar */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          left: "8px",
+                          right: "8px",
+                          height: "2px",
+                          background: "rgba(255, 255, 255, 0.3)",
+                          borderRadius: "1px",
+                          overflow: "hidden",
+                          zIndex: 5,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "60%",
+                            height: "100%",
+                            background: "#FFFFFF",
+                          }}
+                        />
+                      </div>
+
+                      {/* Phone Image */}
+                      {editingStory.image ? (
+                        <img
+                          src={editingStory.image}
+                          alt="preview"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop";
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#666666",
+                            fontSize: "11px",
+                          }}
+                        >
+                          Enter image URL
+                        </div>
+                      )}
+
+                      {/* Gradient Overlay */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background:
+                            "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.85) 100%)",
+                          pointerEvents: "none",
+                        }}
+                      />
+
+                      {/* Bottom Info */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: "12px",
+                          left: "10px",
+                          right: "10px",
+                          color: "#FFFFFF",
+                          zIndex: 4,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 800,
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                            marginBottom: "2px",
+                          }}
+                        >
+                          {editingStory.title || "Story Title"}
+                        </div>
+                        {editingStory.caption && (
+                          <div
+                            style={{
+                              fontSize: "9px",
+                              color: "rgba(255, 255, 255, 0.8)",
+                              lineHeight: 1.25,
+                              marginBottom: "6px",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {editingStory.caption}
+                          </div>
+                        )}
+                        {editingStory.link_url && (
+                          <div
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              background: "#FFFFFF",
+                              color: "#000000",
+                              fontSize: "8px",
+                              fontWeight: 800,
+                              letterSpacing: "0.08em",
+                              padding: "3px 8px",
+                              borderRadius: "12px",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {editingStory.link_text || "EXPLORE PIECE"} ↗
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className={styles.ghostButton}
+                  onClick={() => {
+                    setIsStoryModalOpen(false);
+                    setEditingStory(null);
+                  }}
+                >
+                  CANCEL
+                </button>
+                <button type="submit" className={styles.primaryButton}>
+                  {editingStory.id ? "SAVE CHANGES" : "PUBLISH STORY"}
                 </button>
               </div>
             </form>

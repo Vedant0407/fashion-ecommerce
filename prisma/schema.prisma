@@ -217,3 +217,22 @@ model StoreSetting {
   resendApiKey     String?  @default("")
   updated_at       DateTime @updatedAt
 }
+
+model Story {
+  id          String   @id @default(cuid())
+  title       String
+  caption     String?
+  image       String
+  link_url    String?
+  link_text   String?  @default("EXPLORE PIECE")
+  duration    Int      @default(5) // in seconds
+  active      Boolean  @default(true)
+  order_index Int      @default(0)
+  views_count Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([active])
+  @@index([order_index])
+}
+

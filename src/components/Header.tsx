@@ -9,7 +9,9 @@ import { useWishlist } from "@/context/WishlistContext";
 import { createClient } from "@/lib/supabase/client";
 import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
-import { Search, Heart, User, ShoppingBag } from "lucide-react";
+import StoryViewerModal from "@/components/ui/StoryViewerModal";
+import { Search, Heart, User, ShoppingBag, Sparkles } from "lucide-react";
+import { StoreStory } from "@/lib/store-data";
 
 export default function Header() {
   const pathname = usePathname();
@@ -20,6 +22,8 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(() => !isHomePage);
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(false);
+  const [stories, setStories] = useState<StoreStory[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [announcementText, setAnnouncementText] = useState(
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"
@@ -40,7 +44,27 @@ export default function Header() {
         // Fallback already set
       }
     }
+
+    async function loadStories() {
+      try {
+        const res = await fetch("/api/stories");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.stories && Array.isArray(data.stories)) {
+            setStories(data.stories);
+          }
+        }
+      } catch (err) {
+        // Fallback
+      }
+    }
+
     loadSettings();
+    loadStories();
+
+    const handleStoriesUpdated = () => loadStories();
+    window.addEventListener("greeno_stories_updated", handleStoriesUpdated);
+    return () => window.removeEventListener("greeno_stories_updated", handleStoriesUpdated);
   }, []);
 
   useEffect(() => {
@@ -173,7 +197,25 @@ export default function Header() {
         </div>
 
         <nav className="navbar atelier-navbar">
-          <div className="header-side nav-links-left" />
+          <div className="header-side nav-links-left">
+            <div className="story-launcher-wrapper">
+              <button
+                type="button"
+                className="story-launcher-btn"
+                onClick={() => setStoryOpen(true)}
+                aria-label="View Atelier Stories"
+                title="Atelier Stories"
+              >
+                <div className={`story-launcher-ring ${stories.length > 0 ? "has-stories" : ""}`}>
+                  <div className="story-launcher-inner">
+                    <Sparkles className="story-launcher-icon" />
+                  </div>
+                </div>
+                {stories.length > 0 && <span className="story-launcher-badge" />}
+              </button>
+              <span className="story-launcher-tooltip">ATELIER STORIES</span>
+            </div>
+          </div>
 
           <Link href="/" className="logo atelier-logo font-serif">
             GREENO
@@ -368,6 +410,12 @@ export default function Header() {
       />
 
       <CartDrawer />
+
+      <StoryViewerModal
+        isOpen={storyOpen}
+        onClose={() => setStoryOpen(false)}
+        stories={stories}
+      />
     </>
   );
 }

@@ -471,6 +471,76 @@ async function main() {
   });
   console.log("✓ Store Settings seeded");
 
+  // 8. Seed Stories
+  const stories = [
+    {
+      id: "story-drop-1",
+      title: "DROP 01 // AUTUMN ATELIER",
+      caption: "Architectural Italian Poplin shirting engineered with sculptural collar stances.",
+      image: "/atelier-shirt.jpg",
+      link_url: "/products/tailored-poplin-shirt",
+      link_text: "EXPLORE PIECE",
+      duration: 5,
+      active: true,
+      order_index: 0,
+      views_count: 142,
+    },
+    {
+      id: "story-heavyweight-tee",
+      title: "300GSM COMBED JERSEY",
+      caption: "Heavyweight drop-shoulder tee that moves with quiet elegance.",
+      image: "/atelier-tshirt.jpg",
+      link_url: "/products/oversized-black-tee",
+      link_text: "VIEW PIECE",
+      duration: 5,
+      active: true,
+      order_index: 1,
+      views_count: 98,
+    },
+    {
+      id: "story-oxford-overshirt",
+      title: "STRUCTURED OXFORD WEAVE",
+      caption: "Deep charcoal Italian cotton overshirt for layered architectural silhouettes.",
+      image: "/atelier-oxford-shirt.jpg",
+      link_url: "/products/charcoal-oxford-overshirt",
+      link_text: "EXPLORE PIECE",
+      duration: 5,
+      active: true,
+      order_index: 2,
+      views_count: 76,
+    },
+    {
+      id: "story-minimalist-chalk",
+      title: "MINIMALIST CHALK PALETTE",
+      caption: "Crisp luxury drop-shoulder crewneck tailored in Milan.",
+      image: "/atelier-white-tee.jpg",
+      link_url: "/products/minimalist-chalk-tee",
+      link_text: "VIEW SILHOUETTE",
+      duration: 5,
+      active: true,
+      order_index: 3,
+      views_count: 54,
+    },
+  ];
+
+  for (const s of stories) {
+    await prisma.story.upsert({
+      where: { id: s.id },
+      update: {
+        title: s.title,
+        caption: s.caption,
+        image: s.image,
+        link_url: s.link_url,
+        link_text: s.link_text,
+        duration: s.duration,
+        active: s.active,
+        order_index: s.order_index,
+      },
+      create: s,
+    });
+  }
+  console.log(`✓ Atelier Stories seeded (${stories.length})`);
+
   console.log("✨ GreenO Atelier Relational Database Successfully Seeded!");
 }
 

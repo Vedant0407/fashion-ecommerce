@@ -125,6 +125,21 @@ export type StoreReview = {
   created_at: string;
 };
 
+export type StoreStory = {
+  id: string;
+  title: string;
+  caption?: string;
+  image: string;
+  link_url?: string;
+  link_text?: string;
+  duration?: number;
+  active: boolean;
+  order_index?: number;
+  views_count?: number;
+  created_at: string;
+  updated_at?: string;
+};
+
 export type StoreData = {
   products: Product[];
   categories: Category[];
@@ -133,6 +148,7 @@ export type StoreData = {
   coupons: StoreCoupon[];
   settings: StoreSettings;
   reviews?: StoreReview[];
+  stories?: StoreStory[];
 };
 
 const DATA_DIR = path.join(process.cwd(), "src", "data");
@@ -491,6 +507,61 @@ export const DEFAULT_REVIEWS: StoreReview[] = [
   },
 ];
 
+export const DEFAULT_STORIES: StoreStory[] = [
+  {
+    id: "story-drop-1",
+    title: "DROP 01 // AUTUMN ATELIER",
+    caption: "Architectural Italian Poplin shirting engineered with sculptural collar stances.",
+    image: "/atelier-shirt.jpg",
+    link_url: "/products/tailored-poplin-shirt",
+    link_text: "EXPLORE PIECE",
+    duration: 5,
+    active: true,
+    order_index: 0,
+    views_count: 142,
+    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+  },
+  {
+    id: "story-heavyweight-tee",
+    title: "300GSM COMBED JERSEY",
+    caption: "Heavyweight drop-shoulder tee that moves with quiet elegance.",
+    image: "/atelier-tshirt.jpg",
+    link_url: "/products/oversized-black-tee",
+    link_text: "VIEW PIECE",
+    duration: 5,
+    active: true,
+    order_index: 1,
+    views_count: 98,
+    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
+  },
+  {
+    id: "story-oxford-overshirt",
+    title: "STRUCTURED OXFORD WEAVE",
+    caption: "Deep charcoal Italian cotton overshirt for layered architectural silhouettes.",
+    image: "/atelier-oxford-shirt.jpg",
+    link_url: "/products/charcoal-oxford-overshirt",
+    link_text: "EXPLORE PIECE",
+    duration: 5,
+    active: true,
+    order_index: 2,
+    views_count: 76,
+    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
+  },
+  {
+    id: "story-minimalist-chalk",
+    title: "MINIMALIST CHALK PALETTE",
+    caption: "Crisp luxury drop-shoulder crewneck tailored in Milan.",
+    image: "/atelier-white-tee.jpg",
+    link_url: "/products/minimalist-chalk-tee",
+    link_text: "VIEW SILHOUETTE",
+    duration: 5,
+    active: true,
+    order_index: 3,
+    views_count: 54,
+    created_at: new Date(Date.now() - 3600000 * 96).toISOString(),
+  },
+];
+
 export function getInitialData(): StoreData {
   return {
     products: FALLBACK_PRODUCTS,
@@ -500,6 +571,7 @@ export function getInitialData(): StoreData {
     coupons: DEFAULT_COUPONS,
     settings: DEFAULT_SETTINGS,
     reviews: DEFAULT_REVIEWS,
+    stories: DEFAULT_STORIES,
   };
 }
 
@@ -509,7 +581,7 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
   loadOrderStatusOverrides();
 
   try {
-    const [dbProducts, dbCategories, dbOrders, dbReturns, dbReviews, dbCoupons, dbSettings] =
+    const [dbProducts, dbCategories, dbOrders, dbReturns, dbReviews, dbCoupons, dbStories, dbSettings] =
       await Promise.all([
         prisma.product.findMany(),
         prisma.category.findMany(),
@@ -525,6 +597,9 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
           orderBy: { created_at: "desc" },
         }),
         prisma.coupon.findMany(),
+        prisma.story.findMany({
+          orderBy: { order_index: "asc" },
+        }),
         prisma.storeSetting.findUnique({ where: { id: "default" } }),
       ]);
 
@@ -704,6 +779,24 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
           }
         : initial.settings;
 
+      const parsedStories: StoreStory[] =
+        dbStories && dbStories.length > 0
+          ? dbStories.map((s) => ({
+              id: s.id,
+              title: s.title,
+              caption: s.caption || undefined,
+              image: s.image,
+              link_url: s.link_url || undefined,
+              link_text: s.link_text || "EXPLORE PIECE",
+              duration: s.duration || 5,
+              active: s.active,
+              order_index: s.order_index,
+              views_count: s.views_count,
+              created_at: s.created_at.toISOString(),
+              updated_at: s.updated_at.toISOString(),
+            }))
+          : initial.stories || DEFAULT_STORIES;
+
       memoryData = {
         products: parsedProducts,
         categories: parsedCategories,
@@ -712,6 +805,7 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
         coupons: parsedCoupons,
         settings: parsedSettings,
         reviews: parsedReviews,
+        stories: parsedStories,
       };
 
       return memoryData;
@@ -1748,5 +1842,147 @@ export async function deleteStoreReview(id: string): Promise<boolean> {
     return true;
   }
   return false;
+}
+
+// ----------------- Story Helpers -----------------
+
+export async function getStoreStories(activeOnly = false): Promise<StoreStory[]> {
+  const data = await readStoreData();
+  const stories = (data.stories || []).sort(
+    (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
+  );
+  if (activeOnly) {
+    return stories.filter((s) => s.active);
+  }
+  return stories;
+}
+
+export async function saveStoreStory(
+  story: Partial<StoreStory> & { title: string; image: string }
+): Promise<StoreStory> {
+  const storyId = story.id || `story-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const cleanStory: StoreStory = {
+    id: storyId,
+    title: story.title.trim(),
+    caption: story.caption?.trim() || undefined,
+    image: story.image.trim(),
+    link_url: story.link_url?.trim() || undefined,
+    link_text: story.link_text?.trim() || "EXPLORE PIECE",
+    duration: Number(story.duration) || 5,
+    active: story.active !== undefined ? Boolean(story.active) : true,
+    order_index: Number(story.order_index) || 0,
+    views_count: Number(story.views_count) || 0,
+    created_at: story.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  try {
+    await prisma.story.upsert({
+      where: { id: cleanStory.id },
+      update: {
+        title: cleanStory.title,
+        caption: cleanStory.caption || null,
+        image: cleanStory.image,
+        link_url: cleanStory.link_url || null,
+        link_text: cleanStory.link_text || "EXPLORE PIECE",
+        duration: cleanStory.duration,
+        active: cleanStory.active,
+        order_index: cleanStory.order_index,
+      },
+      create: {
+        id: cleanStory.id,
+        title: cleanStory.title,
+        caption: cleanStory.caption || null,
+        image: cleanStory.image,
+        link_url: cleanStory.link_url || null,
+        link_text: cleanStory.link_text || "EXPLORE PIECE",
+        duration: cleanStory.duration,
+        active: cleanStory.active,
+        order_index: cleanStory.order_index,
+        views_count: cleanStory.views_count || 0,
+        created_at: new Date(cleanStory.created_at),
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma saveStoreStory notice:", err);
+  }
+
+  const data = await readStoreData();
+  if (!data.stories) data.stories = [];
+  const existingIdx = data.stories.findIndex((s) => s.id === cleanStory.id);
+  if (existingIdx >= 0) {
+    data.stories[existingIdx] = { ...data.stories[existingIdx], ...cleanStory };
+  } else {
+    data.stories.push(cleanStory);
+  }
+  await writeStoreData(data);
+  return cleanStory;
+}
+
+export async function updateStoreStory(
+  id: string,
+  updates: Partial<StoreStory>
+): Promise<StoreStory | null> {
+  try {
+    await prisma.story.update({
+      where: { id },
+      data: {
+        ...(updates.title !== undefined && { title: updates.title }),
+        ...(updates.caption !== undefined && { caption: updates.caption }),
+        ...(updates.image !== undefined && { image: updates.image }),
+        ...(updates.link_url !== undefined && { link_url: updates.link_url }),
+        ...(updates.link_text !== undefined && { link_text: updates.link_text }),
+        ...(updates.duration !== undefined && { duration: Number(updates.duration) }),
+        ...(updates.active !== undefined && { active: Boolean(updates.active) }),
+        ...(updates.order_index !== undefined && { order_index: Number(updates.order_index) }),
+      },
+    });
+  } catch (err) {
+    console.warn("Prisma updateStoreStory notice:", err);
+  }
+
+  const data = await readStoreData();
+  if (!data.stories) data.stories = [];
+  const story = data.stories.find((s) => s.id === id);
+  if (!story) return null;
+  Object.assign(story, updates, { updated_at: new Date().toISOString() });
+  await writeStoreData(data);
+  return story;
+}
+
+export async function deleteStoreStory(id: string): Promise<boolean> {
+  try {
+    await prisma.story.delete({ where: { id } });
+  } catch (err) {
+    console.warn("Prisma deleteStoreStory notice:", err);
+  }
+
+  const data = await readStoreData();
+  if (!data.stories) return false;
+  const initialLen = data.stories.length;
+  data.stories = data.stories.filter((s) => s.id !== id);
+  if (data.stories.length !== initialLen) {
+    await writeStoreData(data);
+    return true;
+  }
+  return false;
+}
+
+export async function incrementStoryViews(id: string): Promise<void> {
+  try {
+    await prisma.story.update({
+      where: { id },
+      data: { views_count: { increment: 1 } },
+    });
+  } catch {}
+
+  const data = await readStoreData();
+  if (data.stories) {
+    const story = data.stories.find((s) => s.id === id);
+    if (story) {
+      story.views_count = (story.views_count || 0) + 1;
+      await writeStoreData(data);
+    }
+  }
 }
 
