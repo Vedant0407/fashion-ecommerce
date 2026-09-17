@@ -311,14 +311,14 @@ export function Component() {
         gsap.killTweensOf(titleEl.children);
         gsap.killTweensOf(descEl);
 
-        const outDuration = isFast ? 0.12 : 0.4;
-        const inDelay = isFast ? 100 : 380;
+        const outDuration = isFast ? 0.2 : 0.4;
+        const inDelay = isFast ? 200 : 380;
 
         gsap.to(titleEl.children, {
           y: -15,
           opacity: 0,
           duration: outDuration,
-          stagger: isFast ? 0.01 : 0.02,
+          stagger: isFast ? 0.015 : 0.02,
           ease: "power2.in",
         });
         gsap.to(descEl, { y: -8, opacity: 0, duration: outDuration, ease: "power2.in" });
@@ -332,9 +332,9 @@ export function Component() {
           gsap.set(descEl, { y: 15, opacity: 0 });
 
           const children = titleEl.children;
-          const animDuration = isFast ? 0.45 : 0.8;
-          const staggerDuration = isFast ? 0.015 : 0.03;
-          const descDelay = isFast ? 0.06 : 0.2;
+          const animDuration = isFast ? 0.7 : 0.8;
+          const staggerDuration = isFast ? 0.02 : 0.03;
+          const descDelay = isFast ? 0.12 : 0.2;
 
           switch (idx % 6) {
             case 0:
@@ -494,8 +494,9 @@ export function Component() {
         updateCounter(currentSlideIndex);
         updateNavigationState(currentSlideIndex);
 
-        // Fast responsive transition (0.55s) for manual arrow / nav clicks, 1.3s for ambient auto-slide
-        const duration = isFast ? 0.55 : 1.3;
+        // Smooth balanced transition (1.05s for manual clicks, 1.4s for auto-slide)
+        // allows the liquid glass opening bubble reveal animation to be clearly visible and enjoyed
+        const duration = isFast ? 1.05 : 1.4;
 
         activeTween = gsap.fromTo(
           shaderMaterial.uniforms.uProgress,
