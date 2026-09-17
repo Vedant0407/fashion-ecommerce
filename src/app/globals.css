@@ -7224,20 +7224,23 @@ select {
   min-height: 100vh;
 }
 
-/* --- Atelier Hero Section (Full Page Bleed) --- */
+/* --- Atelier Hero Section (Flush Below Navbar) --- */
 .atelier-hero-section {
   position: relative;
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: 0;
+  min-height: 600px;
+  padding-top: 116px;
+  padding-bottom: 0;
+  padding-left: 0;
+  padding-right: 0;
   margin: 0;
   background: #0a0a0a;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .atelier-hero-frame {
@@ -7252,8 +7255,6 @@ select {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
   overflow: hidden;
   border-radius: 0;
   background: #0a0a0a;
@@ -7617,12 +7618,15 @@ select {
 
 @media (max-width: 768px) {
   .atelier-hero-section {
-    padding: 0;
+    padding-top: 96px;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
     width: 100%;
     height: 100vh;
     height: 100dvh;
-    min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 520px;
+    box-sizing: border-box;
   }
 
   .atelier-hero-frame {
@@ -7635,8 +7639,6 @@ select {
   .atelier-hero-image-wrap {
     width: 100%;
     height: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
     border-radius: 0;
     margin: 0;
     padding: 0;
@@ -8501,8 +8503,7 @@ select {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100%;
   overflow: hidden;
   background: var(--color-bg, #0a0a0a);
   opacity: 0;
@@ -8528,7 +8529,7 @@ select {
 
 .slide-number {
   position: absolute;
-  top: calc(116px + clamp(16px, 2.5vw, 28px));
+  top: clamp(20px, 3vw, 36px);
   left: clamp(24px, 4.5vw, 56px);
   font-family: var(--font-mono, monospace);
   font-size: clamp(12px, 1.4vw, 15px);
@@ -8542,7 +8543,7 @@ select {
 
 .atelier-hero-cta-banner {
   position: absolute;
-  top: calc(116px + clamp(16px, 2.5vw, 28px));
+  top: clamp(20px, 3vw, 36px);
   right: clamp(24px, 4.5vw, 56px);
   z-index: 20;
   pointer-events: auto;
@@ -8567,7 +8568,7 @@ select {
 
 .slide-total {
   position: absolute;
-  top: calc(116px + clamp(16px, 2.5vw, 28px));
+  top: clamp(20px, 3vw, 36px);
   left: calc(clamp(24px, 4.5vw, 56px) + 38px);
   font-family: var(--font-mono, monospace);
   font-size: clamp(10px, 1.1vw, 12px);
@@ -8684,7 +8685,7 @@ select {
   .slide-number,
   .slide-total,
   .atelier-hero-cta-banner {
-    top: calc(116px + 12px);
+    top: 16px;
   }
   .slides-navigation {
     bottom: 20px;
