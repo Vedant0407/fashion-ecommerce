@@ -9377,30 +9377,6 @@ select {
   align-items: center;
 }
 
-.atelier-hero-cta-banner {
-  position: absolute;
-  top: calc(84px + clamp(16px, 2.2vw, 26px));
-  right: clamp(24px, 4.5vw, 56px);
-  z-index: 20;
-  pointer-events: auto;
-}
-
-.atelier-hero-cta-banner .atelier-hero-link {
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 8px 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  transition: background 0.25s, border-color 0.25s, transform 0.25s;
-}
-
-.atelier-hero-cta-banner .atelier-hero-link:hover {
-  background: rgba(255, 255, 255, 0.95);
-  color: #121212;
-  border-color: #ffffff;
-  transform: translateY(-1px);
-}
 
 .slide-total {
   position: absolute;
@@ -9519,8 +9495,7 @@ select {
 
 @media (max-width: 768px) {
   .slide-number,
-  .slide-total,
-  .atelier-hero-cta-banner {
+  .slide-total {
     top: calc(64px + 12px);
   }
   .slides-navigation {
