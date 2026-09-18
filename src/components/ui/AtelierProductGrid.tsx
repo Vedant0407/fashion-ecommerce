@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Heart, ShoppingBag, Check } from "lucide-react";
 import { Product, getAllProducts } from "@/lib/catalog";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -88,6 +88,7 @@ export default function AtelierProductGrid() {
   const [products, setProducts] = useState<Product[]>(CURATED_ATELIER_PRODUCTS);
   const [activeTab, setActiveTab] = useState("all");
   const [loading, setLoading] = useState(false);
+  const [addedId, setAddedId] = useState<string | null>(null);
   const { addToCart, openCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
@@ -166,7 +167,11 @@ export default function AtelierProductGrid() {
       image: product.image,
       size: "M",
     });
+    setAddedId(product.id);
     openCart();
+    setTimeout(() => {
+      setAddedId(null);
+    }, 1800);
   };
 
   const handleWishlistClick = (e: React.MouseEvent, product: Product) => {
@@ -239,15 +244,25 @@ export default function AtelierProductGrid() {
                       />
                     </button>
 
-                    {/* Quick Add Overlay */}
+                    {/* Add to Cart Button Overlay on Photo */}
                     <div className="atelier-quick-add">
                       <button
                         type="button"
-                        className="atelier-quick-btn"
+                        className={`atelier-quick-btn ${addedId === product.id ? "added" : ""}`}
                         onClick={(e) => handleQuickAdd(e, product)}
+                        aria-label={`Add ${product.name} to cart`}
                       >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>QUICK ADD</span>
+                        {addedId === product.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>ADDED TO CART</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            <span>ADD TO CART</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
