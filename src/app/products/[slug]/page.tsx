@@ -734,8 +734,9 @@ export default function ProductPage() {
                             aria-label={`Add ${item.name} to cart`}
                             title="Add to cart"
                           >
-                            <Plus size={18} strokeWidth={2.4} className="atelier-quick-icon" />
-                            <span className="atelier-quick-text">QUICK ADD &bull; M</span>
+                            <ShoppingBag size={15} strokeWidth={2} className="atelier-quick-icon desktop-icon" />
+                            <Plus size={19} strokeWidth={2.4} className="atelier-quick-icon mobile-icon" />
+                            <span className="atelier-quick-text">ADD TO CART</span>
                           </button>
                         </div>
                       </div>

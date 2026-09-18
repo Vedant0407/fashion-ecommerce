@@ -177,24 +177,25 @@ function WishlistItemCard({
           </>
         )}
 
-        {/* Hover Quick Add to Bag / Mobile Squircle */}
+        {/* Permanent Desktop Bar / Mobile Squircle Add to Cart */}
         <div className="atelier-quick-add">
           <button
             type="button"
             className={`atelier-quick-btn ${isAdded ? "added" : ""}`}
             onClick={handleAddToCart}
-            aria-label="Add to bag"
-            title="Add to bag"
+            aria-label="Add to cart"
+            title="Add to cart"
           >
             {isAdded ? (
               <>
-                <Check size={16} strokeWidth={2.6} className="atelier-quick-icon" />
-                <span className="atelier-quick-text">ADDED TO BAG</span>
+                <Check size={16} strokeWidth={2.6} className="atelier-quick-icon check-icon" />
+                <span className="atelier-quick-text">ADDED TO CART</span>
               </>
             ) : (
               <>
-                <Plus size={18} strokeWidth={2.4} className="atelier-quick-icon" />
-                <span className="atelier-quick-text">ADD TO BAG</span>
+                <ShoppingBag size={15} strokeWidth={2} className="atelier-quick-icon desktop-icon" />
+                <Plus size={19} strokeWidth={2.4} className="atelier-quick-icon mobile-icon" />
+                <span className="atelier-quick-text">ADD TO CART</span>
               </>
             )}
           </button>

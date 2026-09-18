@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Check, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Plus, ShoppingBag } from "lucide-react";
 import { Product } from "@/lib/catalog";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
@@ -196,7 +196,7 @@ export default function ProductCard({
           <ChevronRight size={20} strokeWidth={2.2} />
         </button>
 
-        {/* Hover Pop-Up / Mobile Squircle ADD TO CART Button on Photo */}
+        {/* Permanent Desktop Bar / Mobile Squircle ADD TO CART Button on Photo */}
         <button
           type="button"
           className={`product-add-to-cart-btn ${isAdded ? "added" : ""}`}
@@ -206,12 +206,13 @@ export default function ProductCard({
         >
           {isAdded ? (
             <>
-              <Check size={16} strokeWidth={2.6} className="product-cart-btn-icon" />
+              <Check size={16} strokeWidth={2.6} className="product-cart-btn-icon check-icon" />
               <span className="product-cart-btn-text">ADDED TO CART</span>
             </>
           ) : (
             <>
-              <Plus size={18} strokeWidth={2.4} className="product-cart-btn-icon" />
+              <ShoppingBag size={15} strokeWidth={2} className="product-cart-btn-icon desktop-icon" />
+              <Plus size={18} strokeWidth={2.4} className="product-cart-btn-icon mobile-icon" />
               <span className="product-cart-btn-text">ADD TO CART</span>
             </>
           )}

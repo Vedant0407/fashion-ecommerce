@@ -1145,14 +1145,14 @@ select {
 
 .product-add-to-cart-btn {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  padding: 13px 0;
-  background: rgba(18, 18, 18, 0.94);
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  width: auto;
+  padding: 12px 16px;
+  background: #111111;
   color: #ffffff;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -1161,13 +1161,15 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   z-index: 6;
-  transform: translateY(100%);
-  opacity: 0;
-  pointer-events: none;
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, background 0.2s ease;
-  backdrop-filter: blur(6px);
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+  transition: transform 0.15s ease, opacity 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(8px);
 }
 
 .product-card:hover .product-add-to-cart-btn,
@@ -1179,11 +1181,18 @@ select {
 
 .product-add-to-cart-btn:hover {
   background: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.product-add-to-cart-btn:active {
+  transform: scale(0.98);
 }
 
 .product-add-to-cart-btn.added {
-  background: #16a34a;
-  color: #ffffff;
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #ffffff !important;
   transform: translateY(0);
   opacity: 1;
 }
@@ -7547,14 +7556,15 @@ select {
 
 .atelier-quick-add {
   position: absolute;
-  bottom: 14px;
-  left: 14px;
-  right: 14px;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
   z-index: 5;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  pointer-events: none;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  display: flex;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .atelier-card:hover .atelier-quick-add {
@@ -7565,34 +7575,52 @@ select {
 
 .atelier-quick-btn {
   width: 100%;
-  background: rgba(18, 18, 18, 0.94);
+  background: #111111;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: #ffffff;
-  border: none;
-  padding: 11px 16px;
-  font-size: 10.5px;
-  letter-spacing: 0.2em;
-  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 12px 16px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  font-weight: 700;
   text-transform: uppercase;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  border-radius: 2px;
-  transition: background 0.2s ease, transform 0.15s ease;
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   outline: none;
 }
 
 .atelier-quick-btn:hover {
   background: #000000;
-  transform: scale(1.01);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.atelier-quick-btn:active {
+  transform: scale(0.98);
 }
 
 .atelier-quick-btn.added {
   background: #16a34a !important;
+  border-color: #16a34a !important;
   color: #ffffff !important;
+}
+
+/* Quick Add Icon classes: Desktop vs Mobile */
+.atelier-quick-icon.desktop-icon,
+.product-cart-btn-icon.desktop-icon {
+  display: inline-block !important;
+}
+
+.atelier-quick-icon.mobile-icon,
+.product-cart-btn-icon.mobile-icon {
+  display: none !important;
 }
 
 @media (hover: none) {
@@ -7648,6 +7676,14 @@ select {
     height: 19px !important;
     stroke-width: 2.4 !important;
     color: #ffffff !important;
+    display: block !important;
+  }
+
+  .desktop-icon {
+    display: none !important;
+  }
+
+  .mobile-icon {
     display: block !important;
   }
 }
@@ -7854,6 +7890,14 @@ select {
     height: 19px !important;
     stroke-width: 2.4 !important;
     color: #ffffff !important;
+    display: block !important;
+  }
+
+  .desktop-icon {
+    display: none !important;
+  }
+
+  .mobile-icon {
     display: block !important;
   }
 

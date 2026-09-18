@@ -244,7 +244,7 @@ export default function AtelierProductGrid() {
                       />
                     </button>
 
-                    {/* Add to Cart Squircle / Hover Overlay on Photo */}
+                    {/* Add to Cart Photo Button (Permanent Desktop Bar / Mobile Squircle) */}
                     <div className="atelier-quick-add">
                       <button
                         type="button"
@@ -255,12 +255,13 @@ export default function AtelierProductGrid() {
                       >
                         {addedId === product.id ? (
                           <>
-                            <Check className="atelier-quick-icon" size={17} strokeWidth={2.6} />
+                            <Check className="atelier-quick-icon check-icon" size={16} strokeWidth={2.6} />
                             <span className="atelier-quick-text">ADDED TO CART</span>
                           </>
                         ) : (
                           <>
-                            <Plus className="atelier-quick-icon" size={19} strokeWidth={2.4} />
+                            <ShoppingBag className="atelier-quick-icon desktop-icon" size={15} strokeWidth={2} />
+                            <Plus className="atelier-quick-icon mobile-icon" size={19} strokeWidth={2.4} />
                             <span className="atelier-quick-text">ADD TO CART</span>
                           </>
                         )}
