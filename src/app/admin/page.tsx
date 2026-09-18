@@ -173,25 +173,77 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 25 * 1024 * 1024) {
-      alert("Please upload a file smaller than 25MB.");
-      return;
-    }
-
-    setUploadingStoryMedia(true);
-    try {
+    if (file.type.startsWith("video/")) {
+      if (file.size > 4.5 * 1024 * 1024) {
+        alert(
+          "This video exceeds 4.5MB (serverless upload limit). Please use a video under 4MB, or paste a hosted video URL below."
+        );
+        return;
+      }
+      setUploadingStoryMedia(true);
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
         if (dataUrl) {
           setEditingStory((prev) => ({ ...prev, image: dataUrl }));
-          triggerToast("Story media loaded successfully!");
+          triggerToast("Video reel loaded successfully!");
         }
         setUploadingStoryMedia(false);
       };
       reader.onerror = () => {
         setUploadingStoryMedia(false);
-        alert("Could not read media file from your device.");
+        alert("Could not read video file from your device.");
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // For images: compress to max 1080x1920 for ultra-fast uploads and serverless compatibility
+    setUploadingStoryMedia(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const rawDataUrl = reader.result as string;
+        const img = new window.Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            let { width, height } = img;
+            const maxW = 1080;
+            const maxH = 1920;
+
+            if (width > maxW || height > maxH) {
+              const ratio = Math.min(maxW / width, maxH / height);
+              width = Math.round(width * ratio);
+              height = Math.round(height * ratio);
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              const compressedUrl = canvas.toDataURL("image/webp", 0.88);
+              setEditingStory((prev) => ({ ...prev, image: compressedUrl }));
+              triggerToast("Editorial photo optimized and loaded!");
+            } else {
+              setEditingStory((prev) => ({ ...prev, image: rawDataUrl }));
+              triggerToast("Photo loaded successfully!");
+            }
+          } catch {
+            setEditingStory((prev) => ({ ...prev, image: rawDataUrl }));
+          }
+          setUploadingStoryMedia(false);
+        };
+        img.onerror = () => {
+          setEditingStory((prev) => ({ ...prev, image: rawDataUrl }));
+          setUploadingStoryMedia(false);
+        };
+        img.src = rawDataUrl;
+      };
+      reader.onerror = () => {
+        setUploadingStoryMedia(false);
+        alert("Could not read image file from your device.");
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
@@ -2192,7 +2244,7 @@ export default function AdminPage() {
                         title: "",
                         caption: "",
                         image: products[0]?.images?.[0] || "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop",
-                        link_url: products[0] ? `/product/${products[0].id}` : "#catalog",
+                        link_url: products[0] ? `/products/${products[0].id}` : "#catalog",
                         link_text: "EXPLORE PIECE",
                         duration: 5,
                         active: true,
@@ -2298,7 +2350,7 @@ export default function AdminPage() {
                           title: "",
                           caption: "",
                           image: products[0]?.images?.[0] || "",
-                          link_url: products[0] ? `/product/${products[0].id}` : "#catalog",
+                          link_url: products[0] ? `/products/${products[0].id}` : "#catalog",
                           link_text: "EXPLORE PIECE",
                           duration: 5,
                           active: true,
@@ -2328,15 +2380,27 @@ export default function AdminPage() {
                         <div key={s.id || idx} className={styles.storyCard}>
                           {/* 9:16 Vertical Preview Container */}
                           <div className={styles.storyPreviewWrapper}>
-                            <img
-                              src={s.image}
-                              alt={s.title}
-                              className={styles.storyPreviewImg}
-                              onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).src =
-                                  "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop";
-                              }}
-                            />
+                            {/\.(mp4|webm|mov|ogg)(\?.*)?$/i.test(s.image) || s.image.startsWith("data:video") ? (
+                              <video
+                                src={s.image}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className={styles.storyPreviewImg}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                              />
+                            ) : (
+                              <img
+                                src={s.image}
+                                alt={s.title}
+                                className={styles.storyPreviewImg}
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src =
+                                    "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1000&auto=format&fit=crop";
+                                }}
+                              />
+                            )}
                             <div className={styles.storyOverlayGradient} />
 
                             {/* Top Badges */}
@@ -5074,7 +5138,7 @@ export default function AdminPage() {
                                 title: found.name,
                                 caption: found.description?.slice(0, 80) || "Handcrafted atelier piece.",
                                 image: found.images?.[0] || prev?.image || "",
-                                link_url: `/product/${found.id}`,
+                                link_url: `/products/${found.id}`,
                                 link_text: "EXPLORE PIECE",
                               }));
                             }
@@ -5187,7 +5251,7 @@ export default function AdminPage() {
                         className={styles.fieldInput}
                         value={editingStory.link_url || ""}
                         onChange={(e) => setEditingStory({ ...editingStory, link_url: e.target.value })}
-                        placeholder="e.g. /product/silk-slip or #catalog"
+                        placeholder="e.g. /products/tailored-poplin-shirt or #catalog"
                       />
                     </div>
 

@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { X, ChevronLeft, ChevronRight, ArrowUpRight, Volume2, VolumeX, Pause, Play, Sparkles } from "lucide-react";
-import { StoreStory } from "@/lib/store-data";
+import { DEFAULT_STORIES, type StoreStory } from "@/lib/story-constants";
 
 interface StoryViewerModalProps {
   isOpen: boolean;
@@ -19,14 +18,20 @@ export default function StoryViewerModal({
   stories,
   initialIndex = 0,
 }: StoryViewerModalProps) {
+  // Use active stories, fallback to DEFAULT_STORIES if empty
+  const rawActive = (stories && stories.length > 0) ? stories.filter((s) => s.active) : [];
+  const activeStories = rawActive.length > 0 ? rawActive : DEFAULT_STORIES;
+
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [videoDurationMs, setVideoDurationMs] = useState<number | null>(null);
 
-  const activeStories = stories.filter((s) => s.active);
   const currentStory = activeStories[currentIndex] || activeStories[0];
-  const duration = (currentStory?.duration || 5) * 1000; // ms
+  const configuredDuration = (currentStory?.duration || 5) * 1000;
+  const effectiveDuration = videoDurationMs || configuredDuration;
 
   const isVideo = Boolean(
     currentStory?.image &&
@@ -35,32 +40,54 @@ export default function StoryViewerModal({
   );
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
+  const elapsedBeforePauseRef = useRef<number>(0);
+
+  // Pointer tracking for tap vs hold
+  const pointerDownTimeRef = useRef<number>(0);
+  const pointerDownPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Reset progress and video on slide change
+  useEffect(() => {
+    setProgress(0);
+    elapsedBeforePauseRef.current = 0;
+    startTimeRef.current = Date.now();
+    setVideoDurationMs(null);
+
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      if (!isPaused) {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [currentIndex]);
+
+  // Video play/pause effect
   useEffect(() => {
     if (videoRef.current) {
-      if (isPaused) {
+      if (isPaused || isHolding) {
         videoRef.current.pause();
       } else {
         videoRef.current.play().catch(() => {});
       }
     }
-  }, [isPaused, currentIndex]);
+  }, [isPaused, isHolding]);
 
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef<number>(Date.now());
-  const elapsedBeforePauseRef = useRef<number>(0);
-  const isHoldingRef = useRef<boolean>(false);
-
-  // Sync index if initialIndex changes
+  // Sync index when modal opens
   useEffect(() => {
     if (isOpen) {
-      setCurrentIndex(Math.min(initialIndex, Math.max(0, activeStories.length - 1)));
+      const validIndex = Math.min(Math.max(0, initialIndex), activeStories.length - 1);
+      setCurrentIndex(validIndex);
       setProgress(0);
       elapsedBeforePauseRef.current = 0;
       startTimeRef.current = Date.now();
+      setIsPaused(false);
+      setIsHolding(false);
     }
   }, [isOpen, initialIndex, activeStories.length]);
 
-  // Track views
+  // Track impressions
   useEffect(() => {
     if (isOpen && currentStory?.id) {
       fetch("/api/stories", {
@@ -74,9 +101,6 @@ export default function StoryViewerModal({
   const handleNext = useCallback(() => {
     if (currentIndex < activeStories.length - 1) {
       setCurrentIndex((prev) => prev + 1);
-      setProgress(0);
-      elapsedBeforePauseRef.current = 0;
-      startTimeRef.current = Date.now();
     } else {
       onClose();
     }
@@ -85,20 +109,20 @@ export default function StoryViewerModal({
   const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
-      setProgress(0);
-      elapsedBeforePauseRef.current = 0;
-      startTimeRef.current = Date.now();
     } else {
-      // Restart current story
+      // Replay current
       setProgress(0);
       elapsedBeforePauseRef.current = 0;
       startTimeRef.current = Date.now();
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+      }
     }
   }, [currentIndex]);
 
   // Progress Bar Timer Loop
   useEffect(() => {
-    if (!isOpen || !currentStory || isPaused) {
+    if (!isOpen || !currentStory || isPaused || isHolding) {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
       return;
     }
@@ -107,33 +131,60 @@ export default function StoryViewerModal({
 
     progressIntervalRef.current = setInterval(() => {
       const elapsed = Date.now() - startTimeRef.current;
-      const currentPct = Math.min((elapsed / duration) * 100, 100);
+      const currentPct = Math.min((elapsed / effectiveDuration) * 100, 100);
       setProgress(currentPct);
 
       if (currentPct >= 100) {
         if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
         handleNext();
       }
-    }, 30);
+    }, 25);
 
     return () => {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     };
-  }, [isOpen, currentStory, isPaused, duration, handleNext]);
+  }, [isOpen, currentStory, isPaused, isHolding, effectiveDuration, handleNext]);
 
-  // Handle pause on hold
-  const handleHoldStart = () => {
-    isHoldingRef.current = true;
+  // Pointer interactions (Hold to pause vs Tap to navigate)
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button, a, input, select, textarea")) {
+      return;
+    }
+    pointerDownTimeRef.current = Date.now();
+    pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
     elapsedBeforePauseRef.current = Date.now() - startTimeRef.current;
-    setIsPaused(true);
+    setIsHolding(true);
   };
 
-  const handleHoldEnd = () => {
-    if (isHoldingRef.current) {
-      isHoldingRef.current = false;
-      startTimeRef.current = Date.now() - elapsedBeforePauseRef.current;
-      setIsPaused(false);
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button, a, input, select, textarea")) {
+      return;
     }
+    const holdDuration = Date.now() - pointerDownTimeRef.current;
+    const dx = Math.abs(e.clientX - pointerDownPosRef.current.x);
+    const dy = Math.abs(e.clientY - pointerDownPosRef.current.y);
+
+    setIsHolding(false);
+    startTimeRef.current = Date.now() - elapsedBeforePauseRef.current;
+
+    // If hold was longer than 220ms or user dragged, it was a hold/drag — DO NOT ADVANCE!
+    if (holdDuration > 220 || dx > 25 || dy > 25) {
+      return;
+    }
+
+    // It was a crisp intentional tap: determine left 30% vs right 70%
+    const rect = e.currentTarget.getBoundingClientRect();
+    const tapX = e.clientX - rect.left;
+    if (tapX < rect.width * 0.3) {
+      handlePrev();
+    } else {
+      handleNext();
+    }
+  };
+
+  const handlePointerCancel = () => {
+    setIsHolding(false);
+    startTimeRef.current = Date.now() - elapsedBeforePauseRef.current;
   };
 
   // Keyboard navigation & body scroll lock
@@ -165,96 +216,10 @@ export default function StoryViewerModal({
 
   if (!isOpen) return null;
 
-  if (activeStories.length === 0 || !currentStory) {
-    return (
-      <div
-        className="story-viewer-backdrop"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
-      >
-        <button
-          type="button"
-          className="story-viewer-outer-close"
-          onClick={onClose}
-          aria-label="Close stories"
-        >
-          <X size={24} />
-        </button>
-
-        <div
-          className="story-card-wrapper"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "36px 24px",
-            textAlign: "center",
-            background: "#121212",
-            color: "#ffffff",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div
-            style={{
-              width: "60px",
-              height: "60px",
-              borderRadius: "50%",
-              background: "rgba(255, 255, 255, 0.08)",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "20px",
-            }}
-          >
-            <Sparkles size={28} color="#ffffff" />
-          </div>
-          <h3
-            style={{
-              fontSize: "16px",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              marginBottom: "8px",
-            }}
-          >
-            ATELIER STORIES
-          </h3>
-          <p
-            style={{
-              fontSize: "12px",
-              color: "rgba(255, 255, 255, 0.65)",
-              lineHeight: "1.6",
-              maxWidth: "280px",
-              marginBottom: "28px",
-            }}
-          >
-            No live stories published yet. Upload vertical photos or video reels from the Admin Console to feature them here.
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: "#ffffff",
-              color: "#121212",
-              border: "none",
-              padding: "12px 28px",
-              fontSize: "11px",
-              fontWeight: 800,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              borderRadius: "24px",
-              cursor: "pointer",
-            }}
-          >
-            CLOSE VIEWER
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Sanitize deep links so /product/ automatically becomes /products/
+  const cleanLinkUrl = currentStory?.link_url
+    ? currentStory.link_url.replace(/^\/product\//, "/products/")
+    : undefined;
 
   return (
     <div
@@ -285,15 +250,14 @@ export default function StoryViewerModal({
         </button>
       )}
 
-      {/* Main Story Container (9:16 vertical ratio) */}
+      {/* Main Story Card (9:16 vertical ratio) */}
       <div
-        className={`story-card-wrapper ${isPaused ? "paused" : ""}`}
-        onMouseDown={handleHoldStart}
-        onMouseUp={handleHoldEnd}
-        onTouchStart={handleHoldStart}
-        onTouchEnd={handleHoldEnd}
+        className={`story-card-wrapper ${isHolding ? "holding" : ""} ${isPaused ? "paused" : ""}`}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
       >
-        {/* Story Media */}
+        {/* Story Media Box */}
         <div className="story-media-box">
           {isVideo ? (
             <video
@@ -302,9 +266,18 @@ export default function StoryViewerModal({
               autoPlay
               playsInline
               muted={isMuted}
-              loop
+              loop={false}
               className="story-media-image"
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              onLoadedMetadata={(e) => {
+                const d = e.currentTarget.duration;
+                if (d && !isNaN(d) && d > 0) {
+                  setVideoDurationMs(Math.round(d * 1000));
+                }
+              }}
+              onEnded={() => {
+                handleNext();
+              }}
             />
           ) : (
             <img
@@ -322,26 +295,11 @@ export default function StoryViewerModal({
           <div className="story-scrim-bottom" />
         </div>
 
-        {/* Tap Interaction Areas */}
-        <div
-          className="story-tap-area left"
-          onClick={(e) => {
-            e.stopPropagation();
-            handlePrev();
-          }}
-          aria-label="Previous story segment"
-        />
-        <div
-          className="story-tap-area right"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleNext();
-          }}
-          aria-label="Next story segment"
-        />
-
         {/* Top Header Chrome */}
-        <div className="story-header-chrome">
+        <div
+          className="story-header-chrome"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {/* Progress Segment Bars */}
           <div className="story-progress-segments">
             {activeStories.map((s, idx) => {
@@ -416,7 +374,11 @@ export default function StoryViewerModal({
         </div>
 
         {/* Bottom Caption & Product Link Card */}
-        <div className="story-bottom-card" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="story-bottom-card"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="story-badge-row">
             <span className="story-curated-badge">EXCLUSIVE ATELIER DROP</span>
           </div>
@@ -427,10 +389,10 @@ export default function StoryViewerModal({
             <p className="story-caption-text">{currentStory.caption}</p>
           )}
 
-          {currentStory.link_url && (
+          {cleanLinkUrl && (
             <div className="story-cta-row">
               <Link
-                href={currentStory.link_url}
+                href={cleanLinkUrl}
                 className="story-cta-button"
                 onClick={() => onClose()}
               >

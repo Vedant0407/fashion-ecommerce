@@ -2,6 +2,11 @@ import fs from "fs";
 import path from "path";
 import { Product, Category, FALLBACK_CATEGORIES, FALLBACK_PRODUCTS } from "./catalog";
 import { prisma } from "@/lib/prisma";
+import type { StoreStory } from "./story-constants";
+import { DEFAULT_STORIES } from "./story-constants";
+
+export type { StoreStory };
+export { DEFAULT_STORIES };
 
 export type OrderItem = {
   id?: string;
@@ -125,20 +130,7 @@ export type StoreReview = {
   created_at: string;
 };
 
-export type StoreStory = {
-  id: string;
-  title: string;
-  caption?: string;
-  image: string;
-  link_url?: string;
-  link_text?: string;
-  duration?: number;
-  active: boolean;
-  order_index?: number;
-  views_count?: number;
-  created_at: string;
-  updated_at?: string;
-};
+
 
 export type StoreData = {
   products: Product[];
@@ -507,60 +499,7 @@ export const DEFAULT_REVIEWS: StoreReview[] = [
   },
 ];
 
-export const DEFAULT_STORIES: StoreStory[] = [
-  {
-    id: "story-drop-1",
-    title: "DROP 01 // AUTUMN ATELIER",
-    caption: "Architectural Italian Poplin shirting engineered with sculptural collar stances.",
-    image: "/atelier-shirt.jpg",
-    link_url: "/products/tailored-poplin-shirt",
-    link_text: "EXPLORE PIECE",
-    duration: 5,
-    active: true,
-    order_index: 0,
-    views_count: 142,
-    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-  },
-  {
-    id: "story-heavyweight-tee",
-    title: "300GSM COMBED JERSEY",
-    caption: "Heavyweight drop-shoulder tee that moves with quiet elegance.",
-    image: "/atelier-tshirt.jpg",
-    link_url: "/products/oversized-black-tee",
-    link_text: "VIEW PIECE",
-    duration: 5,
-    active: true,
-    order_index: 1,
-    views_count: 98,
-    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-  },
-  {
-    id: "story-oxford-overshirt",
-    title: "STRUCTURED OXFORD WEAVE",
-    caption: "Deep charcoal Italian cotton overshirt for layered architectural silhouettes.",
-    image: "/atelier-oxford-shirt.jpg",
-    link_url: "/products/charcoal-oxford-overshirt",
-    link_text: "EXPLORE PIECE",
-    duration: 5,
-    active: true,
-    order_index: 2,
-    views_count: 76,
-    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
-  },
-  {
-    id: "story-minimalist-chalk",
-    title: "MINIMALIST CHALK PALETTE",
-    caption: "Crisp luxury drop-shoulder crewneck tailored in Milan.",
-    image: "/atelier-white-tee.jpg",
-    link_url: "/products/minimalist-chalk-tee",
-    link_text: "VIEW SILHOUETTE",
-    duration: 5,
-    active: true,
-    order_index: 3,
-    views_count: 54,
-    created_at: new Date(Date.now() - 3600000 * 96).toISOString(),
-  },
-];
+
 
 export function getInitialData(): StoreData {
   return {
@@ -1002,6 +941,22 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
     }
   }
 
+  // Merge atelier stories
+  const storyMap = new Map<string, StoreStory>();
+  for (const s of initial.stories || DEFAULT_STORIES) {
+    storyMap.set(s.id, s);
+  }
+  if (fileData?.stories && Array.isArray(fileData.stories)) {
+    for (const s of fileData.stories) {
+      storyMap.set(s.id, s);
+    }
+  }
+  if (tmpData?.stories && Array.isArray(tmpData.stories)) {
+    for (const s of tmpData.stories) {
+      storyMap.set(s.id, s);
+    }
+  }
+
   const base = tmpData || fileData || {};
   memoryData = {
     products: Array.from(productMap.values()),
@@ -1016,6 +971,9 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
     settings: { ...initial.settings, ...(fileData?.settings || {}), ...(tmpData?.settings || {}) },
     reviews: Array.from(reviewMap.values()).sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ),
+    stories: Array.from(storyMap.values()).sort(
+      (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
     ),
   };
 
