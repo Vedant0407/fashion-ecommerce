@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Check, ShoppingBag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, ShoppingBag, Plus } from "lucide-react";
 
 import { useWishlist, WishlistItem } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
@@ -177,20 +177,24 @@ function WishlistItemCard({
           </>
         )}
 
-        {/* Hover Quick Add to Bag */}
+        {/* Hover Quick Add to Bag / Mobile Squircle */}
         <div className="atelier-quick-add">
           <button
             type="button"
-            className="atelier-quick-btn"
+            className={`atelier-quick-btn ${isAdded ? "added" : ""}`}
             onClick={handleAddToCart}
+            aria-label="Add to bag"
+            title="Add to bag"
           >
             {isAdded ? (
               <>
-                <Check size={13} strokeWidth={2.5} /> ADDED TO BAG
+                <Check size={16} strokeWidth={2.6} className="atelier-quick-icon" />
+                <span className="atelier-quick-text">ADDED TO BAG</span>
               </>
             ) : (
               <>
-                <ShoppingBag size={13} strokeWidth={2} /> ADD TO SHOPPING BAG
+                <Plus size={18} strokeWidth={2.4} className="atelier-quick-icon" />
+                <span className="atelier-quick-text">ADD TO BAG</span>
               </>
             )}
           </button>

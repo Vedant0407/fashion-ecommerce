@@ -1190,9 +1190,52 @@ select {
 
 @media (hover: none) {
   .product-add-to-cart-btn {
-    transform: translateY(0);
-    opacity: 1;
-    pointer-events: auto;
+    display: flex !important;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+    bottom: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    top: auto !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    background: #111111 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45) !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    z-index: 6 !important;
+    transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease !important;
+  }
+
+  .product-add-to-cart-btn:active {
+    transform: scale(0.9) !important;
+  }
+
+  .product-add-to-cart-btn.added {
+    background: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #ffffff !important;
+  }
+
+  .product-add-to-cart-btn span,
+  .product-cart-btn-text {
+    display: none !important;
+  }
+
+  .product-cart-btn-icon {
+    width: 19px !important;
+    height: 19px !important;
+    stroke-width: 2.4 !important;
+    color: #ffffff !important;
+    display: block !important;
   }
 }
 
@@ -6397,8 +6440,11 @@ select {
   }
 
   .product-add-to-cart-btn {
-    padding: 7px 0 !important;
-    font-size: 9px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
   }
 
   .new-in-info {
@@ -7551,9 +7597,58 @@ select {
 
 @media (hover: none) {
   .atelier-quick-add {
+    display: flex !important;
     opacity: 1 !important;
-    transform: translateY(0) !important;
+    transform: none !important;
     pointer-events: auto !important;
+    position: absolute !important;
+    bottom: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    z-index: 5 !important;
+  }
+
+  .atelier-quick-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    background: #111111 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    cursor: pointer !important;
+    transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease !important;
+  }
+
+  .atelier-quick-btn:active {
+    transform: scale(0.9) !important;
+  }
+
+  .atelier-quick-btn.added {
+    background: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #ffffff !important;
+  }
+
+  .atelier-quick-btn span,
+  .atelier-quick-text {
+    display: none !important;
+  }
+
+  .atelier-quick-icon {
+    width: 19px !important;
+    height: 19px !important;
+    stroke-width: 2.4 !important;
+    color: #ffffff !important;
+    display: block !important;
   }
 }
 
@@ -7710,24 +7805,56 @@ select {
   .atelier-quick-add {
     display: flex !important;
     opacity: 1 !important;
-    transform: translateY(0) !important;
+    transform: none !important;
     pointer-events: auto !important;
     position: absolute !important;
-    bottom: 8px !important;
-    left: 8px !important;
-    right: 8px !important;
+    bottom: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
     z-index: 5 !important;
   }
 
   .atelier-quick-btn {
-    padding: 9px 12px !important;
-    font-size: 9.5px !important;
-    letter-spacing: 0.14em !important;
-    font-weight: 700 !important;
-    background: rgba(18, 18, 18, 0.94) !important;
-    backdrop-filter: blur(8px) !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
-    border-radius: 4px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    background: #111111 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    cursor: pointer !important;
+    transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease !important;
+  }
+
+  .atelier-quick-btn:active {
+    transform: scale(0.9) !important;
+  }
+
+  .atelier-quick-btn.added {
+    background: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #ffffff !important;
+  }
+
+  .atelier-quick-btn span,
+  .atelier-quick-text {
+    display: none !important;
+  }
+
+  .atelier-quick-icon {
+    width: 19px !important;
+    height: 19px !important;
+    stroke-width: 2.4 !important;
+    color: #ffffff !important;
+    display: block !important;
   }
 
   .atelier-navbar .nav-links-left {

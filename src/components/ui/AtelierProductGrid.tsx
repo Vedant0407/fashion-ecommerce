@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Heart, ShoppingBag, Check } from "lucide-react";
+import { Heart, ShoppingBag, Check, Plus } from "lucide-react";
 import { Product, getAllProducts } from "@/lib/catalog";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -244,23 +244,24 @@ export default function AtelierProductGrid() {
                       />
                     </button>
 
-                    {/* Add to Cart Button Overlay on Photo */}
+                    {/* Add to Cart Squircle / Hover Overlay on Photo */}
                     <div className="atelier-quick-add">
                       <button
                         type="button"
                         className={`atelier-quick-btn ${addedId === product.id ? "added" : ""}`}
                         onClick={(e) => handleQuickAdd(e, product)}
                         aria-label={`Add ${product.name} to cart`}
+                        title="Add to cart"
                       >
                         {addedId === product.id ? (
                           <>
-                            <Check className="w-3.5 h-3.5" />
-                            <span>ADDED TO CART</span>
+                            <Check className="atelier-quick-icon" size={17} strokeWidth={2.6} />
+                            <span className="atelier-quick-text">ADDED TO CART</span>
                           </>
                         ) : (
                           <>
-                            <ShoppingBag className="w-3.5 h-3.5" />
-                            <span>ADD TO CART</span>
+                            <Plus className="atelier-quick-icon" size={19} strokeWidth={2.4} />
+                            <span className="atelier-quick-text">ADD TO CART</span>
                           </>
                         )}
                       </button>

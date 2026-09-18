@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Heart, ShoppingBag, ArrowLeft, ChevronLeft, ChevronRight, ShieldCheck, Truck, RefreshCw, ZoomIn, Star } from "lucide-react";
+import { Heart, ShoppingBag, ArrowLeft, ChevronLeft, ChevronRight, ShieldCheck, Truck, RefreshCw, ZoomIn, Star, Plus } from "lucide-react";
 
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -731,9 +731,11 @@ export default function ProductPage() {
                               });
                               openCart();
                             }}
+                            aria-label={`Add ${item.name} to cart`}
+                            title="Add to cart"
                           >
-                            <ShoppingBag size={12} />
-                            <span>QUICK ADD &bull; M</span>
+                            <Plus size={18} strokeWidth={2.4} className="atelier-quick-icon" />
+                            <span className="atelier-quick-text">QUICK ADD &bull; M</span>
                           </button>
                         </div>
                       </div>

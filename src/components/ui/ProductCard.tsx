@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Plus } from "lucide-react";
 import { Product } from "@/lib/catalog";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
@@ -196,19 +196,24 @@ export default function ProductCard({
           <ChevronRight size={20} strokeWidth={2.2} />
         </button>
 
-        {/* Hover Pop-Up ADD TO CART Button on Bottom of Photo */}
+        {/* Hover Pop-Up / Mobile Squircle ADD TO CART Button on Photo */}
         <button
           type="button"
           className={`product-add-to-cart-btn ${isAdded ? "added" : ""}`}
           onClick={handleAddToCart}
           aria-label={isAdded ? "Added to cart" : `Add ${product.name} to cart`}
+          title="Add to cart"
         >
           {isAdded ? (
             <>
-              <Check size={14} /> ADDED TO CART
+              <Check size={16} strokeWidth={2.6} className="product-cart-btn-icon" />
+              <span className="product-cart-btn-text">ADDED TO CART</span>
             </>
           ) : (
-            "ADD TO CART"
+            <>
+              <Plus size={18} strokeWidth={2.4} className="product-cart-btn-icon" />
+              <span className="product-cart-btn-text">ADD TO CART</span>
+            </>
           )}
         </button>
       </div>
