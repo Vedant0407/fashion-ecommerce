@@ -4580,10 +4580,16 @@ select {
 
 .premium-auth-wrapper {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px 16px;
+  /* Header is 116px (32px announcement bar + 84px navbar).
+     By applying padding-top: calc(116px + clamp(28px, 5vh, 60px)) and padding-bottom: clamp(32px, 5vh, 60px),
+     the auth card is positioned smoothly in the middle of the available space below the navbar,
+     preventing it from sticking or crowding against the top navigation bar. */
+  padding: calc(116px + clamp(28px, 5vh, 60px)) 16px clamp(32px, 5vh, 60px);
   background: radial-gradient(circle at 50% 35%, #2a1111 0%, #150909 45%, #050505 100%);
   position: relative;
   overflow-y: auto;
@@ -4593,13 +4599,13 @@ select {
 .premium-auth-wrapper::before {
   content: "";
   position: absolute;
-  top: -15%;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  width: 700px;
-  height: 500px;
+  transform: translate(-50%, -50%);
+  width: 760px;
+  height: 560px;
   background: radial-gradient(circle, rgba(235, 60, 40, 0.12) 0%, rgba(0, 0, 0, 0) 70%);
-  filter: blur(60px);
+  filter: blur(70px);
   pointer-events: none;
 }
 
@@ -4976,7 +4982,7 @@ select {
   }
 
   .premium-auth-wrapper {
-    padding: 80px 16px 40px;
+    padding: calc(116px + 24px) 16px 40px;
   }
 }
 
@@ -4996,6 +5002,7 @@ select {
   overflow: hidden;
   height: 520px;
   min-height: 520px;
+  margin: auto 0;
 }
 
 .auth-sliding-form {
@@ -5282,6 +5289,7 @@ select {
     height: auto;
     min-height: auto;
     position: relative;
+    margin: auto 0;
   }
 
   .auth-sliding-toggle-container {
