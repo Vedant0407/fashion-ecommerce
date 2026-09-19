@@ -11,7 +11,7 @@ import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
 import StoryViewerModal from "@/components/ui/StoryViewerModal";
 import { Search, Heart, User, ShoppingBag, Sparkles } from "lucide-react";
-import { DEFAULT_STORIES, type StoreStory } from "@/lib/story-constants";
+import { type StoreStory } from "@/lib/story-constants";
 
 export default function Header() {
   const pathname = usePathname();
@@ -23,7 +23,7 @@ export default function Header() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [storyOpen, setStoryOpen] = useState(false);
-  const [stories, setStories] = useState<StoreStory[]>(DEFAULT_STORIES);
+  const [stories, setStories] = useState<StoreStory[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [announcementText, setAnnouncementText] = useState(
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"

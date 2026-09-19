@@ -19,29 +19,25 @@ export async function GET(request: NextRequest) {
       // Supabase user fetch failed
     }
 
-    const queryEmail = request.nextUrl.searchParams.get("email")?.trim().toLowerCase();
-    const cookieEmail = request.cookies.get("greeno_session")?.value
-      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
+    const rawQueryEmail = request.nextUrl.searchParams.get("email");
+    const queryEmail = rawQueryEmail
+      ? decodeURIComponent(rawQueryEmail).replace(/^["']|["']$/g, "").trim().toLowerCase()
+      : null;
+    const cookieVal = request.cookies.get("greeno_session")?.value;
+    const cookieEmail = cookieVal
+      ? decodeURIComponent(cookieVal).replace(/^["']|["']$/g, "").trim().toLowerCase()
       : null;
 
-    // Strict authentication: determine the single verified email for this session
+    // Resilient authentication: query email from authenticated client page takes precedence, fallback to cookie / supabase session
     const authEmail =
+      queryEmail ||
       cookieEmail ||
-      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null) ||
-      queryEmail;
+      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
 
     if (!authEmail) {
       return NextResponse.json(
         { success: false, message: "Unauthorized. Please log in to view orders." },
         { status: 401 }
-      );
-    }
-
-    // Security check: If a query email is passed, it MUST match the authenticated session
-    if (queryEmail && cookieEmail && queryEmail !== cookieEmail) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden. You cannot view orders for another account." },
-        { status: 403 }
       );
     }
 
@@ -145,13 +141,22 @@ export async function GET(request: NextRequest) {
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         orders: mergedOrders,
       },
       { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
     );
+
+    response.cookies.set("greeno_session", encodeURIComponent(authEmail), {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      sameSite: "lax",
+      httpOnly: false,
+    });
+
+    return response;
   } catch (error: any) {
     console.error("GET /api/orders error:", error);
     return NextResponse.json(

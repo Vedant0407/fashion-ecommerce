@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
-import { DEFAULT_STORIES, type StoreStory } from "@/lib/story-constants";
+import { type StoreStory } from "@/lib/story-constants";
 import StoryViewerModal from "@/components/ui/StoryViewerModal";
 
 export default function AtelierStoryTray() {
-  const [stories, setStories] = useState<StoreStory[]>(DEFAULT_STORIES);
+  const [stories, setStories] = useState<StoreStory[]>([]);
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState<boolean>(false);
 
@@ -16,12 +16,12 @@ export default function AtelierStoryTray() {
         const res = await fetch(`/api/stories?t=${Date.now()}`, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
-          if (data.stories && Array.isArray(data.stories) && data.stories.length > 0) {
+          if (data.stories && Array.isArray(data.stories)) {
             setStories(data.stories);
           }
         }
       } catch (err) {
-        // Keeps DEFAULT_STORIES
+        // Keeps stories
       }
     }
 
@@ -38,7 +38,7 @@ export default function AtelierStoryTray() {
   }, []);
 
   const activeStories = stories.filter((s) => s.active);
-  const displayStories = activeStories.length > 0 ? activeStories : DEFAULT_STORIES;
+  const displayStories = activeStories;
 
   const handleOpenStory = (index: number) => {
     setActiveStoryIndex(index);

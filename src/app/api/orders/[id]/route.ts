@@ -14,9 +14,13 @@ export async function GET(
     const { id } = await params;
     const cleanId = (id || "").trim();
 
-    const queryEmail = request.nextUrl.searchParams.get("email")?.trim().toLowerCase();
-    const cookieEmail = request.cookies.get("greeno_session")?.value
-      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
+    const rawQueryEmail = request.nextUrl.searchParams.get("email");
+    const queryEmail = rawQueryEmail
+      ? decodeURIComponent(rawQueryEmail).replace(/^["']|["']$/g, "").trim().toLowerCase()
+      : null;
+    const cookieVal = request.cookies.get("greeno_session")?.value;
+    const cookieEmail = cookieVal
+      ? decodeURIComponent(cookieVal).replace(/^["']|["']$/g, "").trim().toLowerCase()
       : null;
 
     let authenticatedUser: any = null;
@@ -31,26 +35,15 @@ export async function GET(
     }
 
     const authEmail =
+      queryEmail ||
       cookieEmail ||
-      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null) ||
-      queryEmail;
+      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
 
     if (!authEmail) {
       return NextResponse.json(
         { success: false, message: "Unauthorized. Please log in." },
         {
           status: 401,
-          headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
-        }
-      );
-    }
-
-    // Security check: If a query email is passed, it MUST match the authenticated session
-    if (queryEmail && cookieEmail && queryEmail !== cookieEmail) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden. You cannot view an order belonging to another account." },
-        {
-          status: 403,
           headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
         }
       );

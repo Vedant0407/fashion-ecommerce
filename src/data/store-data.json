@@ -422,35 +422,142 @@
   ],
   "orders": [
     {
+      "id": "GO-2026-V1",
+      "created_at": "2026-09-18T10:15:00.000Z",
+      "customer": {
+        "fullName": "Vedant Shrivastava",
+        "email": "vedantshrivastava0407@gmail.com",
+        "phone": "+91 90393 53101",
+        "address": "Atelier Penthouse Suite 402, Signature Heights, Bandra West",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400050"
+      },
+      "items": [
+        {
+          "id": "item-v1-shirt",
+          "product_id": "tailored-poplin-shirt",
+          "name": "Tailored Poplin Shirt",
+          "price": 3999,
+          "quantity": 1,
+          "size": "L",
+          "color": "WHITE",
+          "image": "/atelier-shirt.jpg"
+        },
+        {
+          "id": "item-v1-tee",
+          "product_id": "oversized-black-tee",
+          "name": "Oversized Black Tee",
+          "price": 2499,
+          "quantity": 1,
+          "size": "L",
+          "color": "BLACK",
+          "image": "/black-tee.jfif"
+        }
+      ],
+      "subtotal": 6498,
+      "shipping": 0,
+      "discount": 0,
+      "total": 6498,
+      "status": "shipped",
+      "payment_method": "Prepaid / UPI",
+      "payment_status": "paid"
+    },
+    {
+      "id": "GO-1094-V2",
+      "created_at": "2026-09-15T14:30:00.000Z",
+      "customer": {
+        "fullName": "Vedant Shrivastava",
+        "email": "vedantshrivastava0407@gmail.com",
+        "phone": "+91 90393 53101",
+        "address": "Atelier Penthouse Suite 402, Signature Heights, Bandra West",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400050"
+      },
+      "items": [
+        {
+          "id": "item-v2-hoodie",
+          "product_id": "urban-grey-hoodie",
+          "name": "Urban Grey Hoodie",
+          "price": 3999,
+          "quantity": 1,
+          "size": "XL",
+          "color": "GREY",
+          "image": "/grey-hoodie.jfif"
+        }
+      ],
+      "subtotal": 3999,
+      "shipping": 0,
+      "discount": 0,
+      "total": 3999,
+      "status": "delivered",
+      "payment_method": "Prepaid / Card",
+      "payment_status": "paid"
+    },
+    {
+      "id": "GO-8842-P1",
+      "created_at": "2026-09-17T16:00:00.000Z",
+      "customer": {
+        "fullName": "GreenO Patron",
+        "email": "patron@greeno.in",
+        "phone": "+91 90393 53101",
+        "address": "Atelier Penthouse Suite, MG Road",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "pincode": "560001"
+      },
+      "items": [
+        {
+          "id": "item-p1-pants",
+          "product_id": "cargo-street-pants",
+          "name": "Cargo Street Pants",
+          "price": 3499,
+          "quantity": 1,
+          "size": "32",
+          "color": "OLIVE",
+          "image": "/cargo-pants.jfif"
+        }
+      ],
+      "subtotal": 3499,
+      "shipping": 0,
+      "discount": 0,
+      "total": 3499,
+      "status": "shipped",
+      "payment_method": "COD",
+      "payment_status": "pending"
+    },
+    {
       "id": "66b7d37f-6206-48fd-899d-291c75de89c7",
       "created_at": "2026-09-12T18:30:00.000Z",
       "customer": {
-        "fullName": "Customer",
+        "fullName": "GreenO Patron",
         "email": "patron@greeno.in",
-        "phone": "",
-        "address": "",
-        "city": "",
-        "state": "",
-        "pincode": ""
+        "phone": "+91 90393 53101",
+        "address": "Atelier Penthouse Suite, MG Road",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "pincode": "560001"
       },
       "items": [
         {
           "id": "cmu5tv7s40001v3qc3na5pji1",
-          "product_id": "urban-grey-hoodie",
-          "name": "Garment",
-          "price": 4197,
+          "product_id": "tailored-poplin-shirt",
+          "name": "Tailored Poplin Shirt",
+          "price": 3999,
           "quantity": 1,
           "size": "M",
-          "color": "BLACK"
+          "color": "WHITE",
+          "image": "/atelier-shirt.jpg"
         }
       ],
-      "subtotal": 4197,
-      "shipping": 0,
+      "subtotal": 3999,
+      "shipping": 198,
       "discount": 0,
       "total": 4197,
       "status": "delivered",
-      "payment_method": "COD",
-      "payment_status": "pending"
+      "payment_method": "Prepaid / Card",
+      "payment_status": "paid"
     },
     {
       "id": "GO-9482-A1",

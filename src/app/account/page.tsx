@@ -11,11 +11,37 @@ import styles from "./account.module.css";
 
 type TabKey = "account" | "orders" | "address" | "wallet";
 
+interface OrderItemSummary {
+  id?: string;
+  product_id?: string;
+  name?: string;
+  product_name?: string;
+  price?: number;
+  quantity?: number;
+  image?: string;
+  size?: string;
+  color?: string;
+}
+
 interface OrderSummary {
   id: string;
   created_at: string;
   status: string;
   total: number;
+  subtotal?: number;
+  shipping?: number;
+  payment_method?: string;
+  payment_status?: string;
+  items?: OrderItemSummary[];
+  customer?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+  };
 }
 
 function AccountPageContent() {
@@ -104,6 +130,11 @@ function AccountPageContent() {
 
         const cleanEmail = authEmail.trim().toLowerCase();
         const displayName = authName || cleanEmail.split("@")[0];
+
+        // Ensure session cookie is refreshed and synchronized
+        if (typeof document !== "undefined") {
+          document.cookie = `greeno_session=${encodeURIComponent(cleanEmail)}; path=/; max-age=2592000; SameSite=Lax`;
+        }
 
         setUserEmail(cleanEmail);
         setUserName(displayName);
@@ -362,7 +393,63 @@ function AccountPageContent() {
     <main className={styles.page}>
       <div className={styles.container}>
         <p className={styles.breadcrumb}>GREENO / MY ACCOUNT</p>
-        <h1 className={styles.title}>ACCOUNT DETAILS</h1>
+        <h1 className={styles.title}>
+          {activeTab === "orders"
+            ? "ORDER HISTORY"
+            : activeTab === "address"
+            ? "SHIPPING ADDRESS"
+            : activeTab === "wallet"
+            ? "WALLET DETAILS"
+            : "ACCOUNT DETAILS"}
+        </h1>
+
+        {/* Mobile Tab Navigation Strip (Horizontal luxury pill tabs for phone view) */}
+        <div className={styles.mobileTabNav}>
+          <button
+            type="button"
+            className={`${styles.mobileTabBtn} ${activeTab === "account" ? styles.mobileTabBtnActive : ""}`}
+            onClick={() => switchTab("account")}
+          >
+            <User className={styles.mobileTabIcon} />
+            <span>Account</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.mobileTabBtn} ${activeTab === "orders" ? styles.mobileTabBtnActive : ""}`}
+            onClick={() => switchTab("orders")}
+          >
+            <Package className={styles.mobileTabIcon} />
+            <span>Orders{orders.length > 0 ? ` (${orders.length})` : ""}</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.mobileTabBtn} ${activeTab === "address" ? styles.mobileTabBtnActive : ""}`}
+            onClick={() => switchTab("address")}
+          >
+            <MapPin className={styles.mobileTabIcon} />
+            <span>Address</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.mobileTabBtn} ${activeTab === "wallet" ? styles.mobileTabBtnActive : ""}`}
+            onClick={() => switchTab("wallet")}
+          >
+            <Wallet className={styles.mobileTabIcon} />
+            <span>Wallet</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.mobileTabBtn} ${styles.mobileLogoutBtn}`}
+            onClick={handleLogout}
+          >
+            <LogOut className={styles.mobileTabIcon} />
+            <span>Log out</span>
+          </button>
+        </div>
 
         {/* Main Reference Card Container */}
         <div className={styles.accountCard}>
@@ -529,7 +616,7 @@ function AccountPageContent() {
                     </Link>
                   </div>
                 ) : (
-                  <div>
+                  <div className={styles.ordersListContainer}>
                     {orders.map((o) => {
                       const st = (o.status || "confirmed").toLowerCase();
                       const statusClass =
@@ -549,22 +636,65 @@ function AccountPageContent() {
                           })
                         : "Recent";
 
+                      const orderItems = Array.isArray(o.items) ? o.items : [];
+                      const itemCount = orderItems.reduce((acc, it) => acc + (it.quantity || 1), 0) || 1;
+
                       return (
                         <div key={o.id} className={styles.orderCardItem}>
-                          <div className={styles.orderInfo}>
-                            <span className={styles.orderIdText}>{formatShortOrderId(o.id)}</span>
-                            <span className={styles.orderDateText}>Placed on {formattedDate}</span>
-                          </div>
-
-                          <div className={styles.orderMeta}>
+                          {/* Top Header of the Order Card */}
+                          <div className={styles.orderCardHeader}>
+                            <div className={styles.orderInfo}>
+                              <span className={styles.orderIdText}>{formatShortOrderId(o.id)}</span>
+                              <span className={styles.orderDateText}>Placed on {formattedDate}</span>
+                            </div>
                             <span className={`${styles.orderStatusBadge} ${statusClass}`}>
                               {o.status || "Confirmed"}
                             </span>
-                            <span className={styles.orderTotalText}>
-                              ₹{(o.total || 0).toLocaleString("en-IN")}
-                            </span>
+                          </div>
+
+                          {/* Ordered Items Preview with Thumbnails */}
+                          {orderItems.length > 0 && (
+                            <div className={styles.orderItemsPreview}>
+                              {orderItems.slice(0, 3).map((item, idx) => (
+                                <div key={item.id || idx} className={styles.orderItemRow}>
+                                  <div className={styles.orderItemThumb}>
+                                    {item.image ? (
+                                      <img src={item.image} alt={item.name || item.product_name || "Piece"} />
+                                    ) : (
+                                      <Package style={{ width: 18, height: 18, color: "#888888" }} />
+                                    )}
+                                  </div>
+                                  <div className={styles.orderItemDetails}>
+                                    <span className={styles.orderItemName}>{item.name || item.product_name || "Atelier Piece"}</span>
+                                    <span className={styles.orderItemMeta}>
+                                      {item.size ? `Size: ${item.size}` : ""}{item.color ? ` • ${item.color}` : ""}{` • Qty: ${item.quantity || 1}`}
+                                    </span>
+                                    <span className={styles.orderItemPrice}>
+                                      ₹{(item.price || 0).toLocaleString("en-IN")}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                              {orderItems.length > 3 && (
+                                <span className={styles.moreItemsText}>
+                                  +{orderItems.length - 3} more item{orderItems.length - 3 > 1 ? "s" : ""}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Bottom Footer with Total and View Details Action */}
+                          <div className={styles.orderCardFooter}>
+                            <div className={styles.orderTotalGroup}>
+                              <span className={styles.orderTotalLabel}>
+                                Total ({itemCount} {itemCount === 1 ? "item" : "items"}):
+                              </span>
+                              <span className={styles.orderTotalText}>
+                                ₹{(o.total || 0).toLocaleString("en-IN")}
+                              </span>
+                            </div>
                             <Link href={`/account/orders/${o.id}`} className={styles.viewOrderBtn}>
-                              Details
+                              View Details &#8594;
                             </Link>
                           </div>
                         </div>

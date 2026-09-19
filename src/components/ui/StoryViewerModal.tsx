@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { X, ChevronLeft, ChevronRight, ArrowUpRight, Volume2, VolumeX, Pause, Play, Sparkles } from "lucide-react";
-import { DEFAULT_STORIES, type StoreStory } from "@/lib/story-constants";
+import { type StoreStory } from "@/lib/story-constants";
 
 interface StoryViewerModalProps {
   isOpen: boolean;
@@ -18,9 +18,8 @@ export default function StoryViewerModal({
   stories,
   initialIndex = 0,
 }: StoryViewerModalProps) {
-  // Use active stories, fallback to DEFAULT_STORIES if empty
-  const rawActive = (stories && stories.length > 0) ? stories.filter((s) => s.active) : [];
-  const activeStories = rawActive.length > 0 ? rawActive : DEFAULT_STORIES;
+  // Use real active stories only - do not resurrect deleted default stories
+  const activeStories = (stories && stories.length > 0) ? stories.filter((s) => s.active) : [];
 
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);

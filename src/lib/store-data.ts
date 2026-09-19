@@ -345,6 +345,7 @@ const inMemoryOrderStatusOverrides = new Map<
   string,
   { status: StoreOrder["status"]; payment_status?: StoreOrder["payment_status"] }
 >();
+const inMemoryDeletedStoryIds = new Set<string>();
 
 const OVERRIDES_FILE = path.join(
   typeof process !== "undefined" && process.platform === "win32"
@@ -353,6 +354,54 @@ const OVERRIDES_FILE = path.join(
   "order-status-overrides.json"
 );
 const DATA_OVERRIDES_FILE = path.join(DATA_DIR, "order-status-overrides.json");
+
+const DELETED_STORIES_FILE = path.join(DATA_DIR, "deleted-stories.json");
+const TMP_DELETED_STORIES_FILE = path.join(
+  typeof process !== "undefined" && process.platform === "win32"
+    ? DATA_DIR
+    : "/tmp",
+  "deleted-stories.json"
+);
+
+export function loadDeletedStories() {
+  try {
+    const fileToRead = fs.existsSync(DATA_DELETED_FILE)
+      ? DATA_DELETED_FILE
+      : fs.existsSync(TMP_DELETED_STORIES_FILE)
+      ? TMP_DELETED_STORIES_FILE
+      : fs.existsSync(DELETED_STORIES_FILE)
+      ? DELETED_STORIES_FILE
+      : null;
+    if (fileToRead) {
+      const content = fs.readFileSync(fileToRead, "utf-8");
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) {
+        for (const id of parsed) {
+          if (typeof id === "string") inMemoryDeletedStoryIds.add(id);
+        }
+      }
+    }
+  } catch {}
+}
+
+const DATA_DELETED_FILE = path.join(DATA_DIR, "deleted-stories.json");
+
+export function addDeletedStoryId(id: string) {
+  inMemoryDeletedStoryIds.add(id);
+  try {
+    const list = Array.from(inMemoryDeletedStoryIds);
+    const raw = JSON.stringify(list, null, 2);
+    try {
+      if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(DATA_DELETED_FILE, raw, "utf-8");
+    } catch {}
+    try {
+      const dir = path.dirname(TMP_DELETED_STORIES_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(TMP_DELETED_STORIES_FILE, raw, "utf-8");
+    } catch {}
+  } catch {}
+}
 
 export function loadOrderStatusOverrides() {
   try {
@@ -718,28 +767,97 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
           }
         : initial.settings;
 
+      loadDeletedStories();
       const parsedStories: StoreStory[] =
         dbStories && dbStories.length > 0
-          ? dbStories.map((s) => ({
-              id: s.id,
-              title: s.title,
-              caption: s.caption || undefined,
-              image: s.image,
-              link_url: s.link_url || undefined,
-              link_text: s.link_text || "EXPLORE PIECE",
-              duration: s.duration || 5,
-              active: s.active,
-              order_index: s.order_index,
-              views_count: s.views_count,
-              created_at: s.created_at.toISOString(),
-              updated_at: s.updated_at.toISOString(),
-            }))
-          : initial.stories || DEFAULT_STORIES;
+          ? dbStories
+              .filter((s) => !inMemoryDeletedStoryIds.has(s.id))
+              .map((s) => ({
+                id: s.id,
+                title: s.title,
+                caption: s.caption || undefined,
+                image: s.image,
+                link_url: s.link_url || undefined,
+                link_text: s.link_text || "EXPLORE PIECE",
+                duration: s.duration || 5,
+                active: s.active,
+                order_index: s.order_index,
+                views_count: s.views_count,
+                created_at: s.created_at.toISOString(),
+                updated_at: s.updated_at.toISOString(),
+              }))
+          : [];
+
+      // Read any fileData/tmpData/memory orders and custom stories so nothing placed or configured is ever lost
+      let extraOrders: StoreOrder[] = [];
+      try {
+        if (fs.existsSync(DATA_FILE)) {
+          const raw = fs.readFileSync(DATA_FILE, "utf-8");
+          const disk = JSON.parse(raw);
+          if (disk?.orders && Array.isArray(disk.orders)) extraOrders.push(...disk.orders);
+          if (disk?.stories && Array.isArray(disk.stories)) {
+            for (const s of disk.stories) {
+              if (s?.id && !inMemoryDeletedStoryIds.has(s.id) && !parsedStories.some((ps) => ps.id === s.id)) {
+                parsedStories.push(s);
+              }
+            }
+          }
+        }
+      } catch {}
+
+      try {
+        if (fs.existsSync(TMP_FILE)) {
+          const raw = fs.readFileSync(TMP_FILE, "utf-8");
+          const tmp = JSON.parse(raw);
+          if (tmp?.orders && Array.isArray(tmp.orders)) extraOrders.push(...tmp.orders);
+          if (tmp?.stories && Array.isArray(tmp.stories)) {
+            for (const s of tmp.stories) {
+              if (s?.id && !inMemoryDeletedStoryIds.has(s.id) && !parsedStories.some((ps) => ps.id === s.id)) {
+                parsedStories.push(s);
+              }
+            }
+          }
+        }
+      } catch {}
+
+      if (memoryData?.orders && Array.isArray(memoryData.orders)) {
+        extraOrders.push(...memoryData.orders);
+      }
+
+      const mergedOrderMap = new Map<string, StoreOrder>();
+      for (const o of parsedOrders) {
+        mergedOrderMap.set(o.id, o);
+      }
+      for (const eo of extraOrders) {
+        if (!eo?.id) continue;
+        const existing = mergedOrderMap.get(eo.id);
+        if (!existing) {
+          mergedOrderMap.set(eo.id, eo);
+        } else {
+          const items =
+            Array.isArray(existing.items) && existing.items.length > 0
+              ? existing.items
+              : Array.isArray(eo.items) && eo.items.length > 0
+              ? eo.items
+              : [];
+          mergedOrderMap.set(eo.id, {
+            ...eo,
+            ...existing,
+            items,
+          });
+        }
+      }
+
+      const finalOrders = Array.from(mergedOrderMap.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      parsedStories.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
 
       memoryData = {
         products: parsedProducts,
         categories: parsedCategories,
-        orders: parsedOrders,
+        orders: finalOrders,
         returns: parsedReturns,
         coupons: parsedCoupons,
         settings: parsedSettings,
@@ -942,18 +1060,31 @@ export async function readStoreData(forceFresh = false): Promise<StoreData> {
   }
 
   // Merge atelier stories
+  loadDeletedStories();
   const storyMap = new Map<string, StoreStory>();
-  for (const s of initial.stories || DEFAULT_STORIES) {
-    storyMap.set(s.id, s);
+  const hasCustomStories =
+    (fileData?.stories && Array.isArray(fileData.stories)) ||
+    (tmpData?.stories && Array.isArray(tmpData.stories));
+
+  if (!hasCustomStories) {
+    for (const s of DEFAULT_STORIES) {
+      if (!inMemoryDeletedStoryIds.has(s.id)) {
+        storyMap.set(s.id, s);
+      }
+    }
   }
   if (fileData?.stories && Array.isArray(fileData.stories)) {
     for (const s of fileData.stories) {
-      storyMap.set(s.id, s);
+      if (!inMemoryDeletedStoryIds.has(s.id)) {
+        storyMap.set(s.id, s);
+      }
     }
   }
   if (tmpData?.stories && Array.isArray(tmpData.stories)) {
     for (const s of tmpData.stories) {
-      storyMap.set(s.id, s);
+      if (!inMemoryDeletedStoryIds.has(s.id)) {
+        storyMap.set(s.id, s);
+      }
     }
   }
 
@@ -1865,6 +1996,8 @@ export async function saveStoreStory(
     console.warn("Prisma saveStoreStory notice:", err);
   }
 
+  inMemoryDeletedStoryIds.delete(cleanStory.id);
+
   const data = await readStoreData();
   if (!data.stories) data.stories = [];
   const existingIdx = data.stories.findIndex((s) => s.id === cleanStory.id);
@@ -1909,6 +2042,7 @@ export async function updateStoreStory(
 }
 
 export async function deleteStoreStory(id: string): Promise<boolean> {
+  addDeletedStoryId(id);
   try {
     await prisma.story.delete({ where: { id } });
   } catch (err) {
@@ -1916,14 +2050,14 @@ export async function deleteStoreStory(id: string): Promise<boolean> {
   }
 
   const data = await readStoreData();
-  if (!data.stories) return false;
-  const initialLen = data.stories.length;
-  data.stories = data.stories.filter((s) => s.id !== id);
-  if (data.stories.length !== initialLen) {
-    await writeStoreData(data);
-    return true;
+  if (data.stories) {
+    data.stories = data.stories.filter((s) => s.id !== id);
   }
-  return false;
+  if (memoryData?.stories) {
+    memoryData.stories = memoryData.stories.filter((s) => s.id !== id);
+  }
+  await writeStoreData(data);
+  return true;
 }
 
 export async function incrementStoryViews(id: string): Promise<void> {
