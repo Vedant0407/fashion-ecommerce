@@ -11811,72 +11811,47 @@ select {
 }
 
 /* ==========================================================================
-   PURE CORNER ASSEMBLY HERO ENTRANCE (16 DECONSTRUCTED DIVISIONS -> 1 PHOTO)
+   FULLSCREEN ASSEMBLE HERO ENTRANCE (5 DIVISIONS MATCHING EXACT USER SKETCH)
    ========================================================================== */
 
-.assemble-hero-pure {
+.assemble-fullscreen-hero {
   position: relative;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   height: 100dvh;
-  min-height: 600px;
-  background: #080808;
-  color: #ffffff;
+  min-height: 100vh;
   overflow: hidden;
+  background: #080808;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  perspective: 1200px;
-  box-sizing: border-box;
+  justify-content: center;
   user-select: none;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Subtle atmospheric backdrop */
-.assemble-pure-bg {
+.assemble-fullscreen-bg {
   position: absolute;
   inset: 0;
-  pointer-events: none;
+  background: #080808;
   z-index: 1;
-}
-
-.assemble-pure-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(85vw, 900px);
-  height: min(85vw, 900px);
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0.015) 45%,
-    transparent 72%
-  );
-  filter: blur(80px);
-}
-
-.assemble-pure-grain {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 0);
-  background-size: 24px 24px;
-  opacity: 0.55;
+  pointer-events: none;
 }
 
 /* Discreet Replay Button (Top Right) */
-.assemble-pure-replay {
+.assemble-fullscreen-replay {
   position: absolute;
-  top: clamp(20px, 3.5vh, 32px);
-  right: clamp(20px, 4vw, 56px);
-  z-index: 25;
-  width: 36px;
-  height: 36px;
+  top: clamp(20px, 3vh, 32px);
+  right: clamp(20px, 3.5vw, 48px);
+  z-index: 30;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11884,165 +11859,162 @@ select {
   transition: all 0.25s ease;
 }
 
-.assemble-pure-replay:hover {
+.assemble-fullscreen-replay:hover {
   background: rgba(255, 255, 255, 0.18);
   border-color: rgba(255, 255, 255, 0.45);
   color: #ffffff;
   transform: rotate(-45deg);
 }
 
-/* Center Stage for Pure Image */
-.assemble-pure-center {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  padding: calc(58px + 12px) 24px clamp(48px, 8vh, 72px);
-  box-sizing: border-box;
-}
-
-/* 3D Photo Frame */
-.assemble-pure-frame {
-  position: relative;
-  width: clamp(280px, 42vw, 580px);
-  aspect-ratio: 3 / 4;
-  max-height: min(78vh, 760px);
-  transform-style: preserve-3d;
-  border-radius: 4px;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  background: #111111;
-}
-
-/* 16-Division Grid Container */
-.assemble-pure-grid {
+/* Fullscreen 100vw x 100vh Stage */
+.assemble-fullscreen-stage {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  z-index: 10;
   pointer-events: none;
-  z-index: 5;
 }
 
-/* Individual Tiles */
-.assemble-pure-tile {
+/* 5 Slices */
+.assemble-fullscreen-piece {
   position: absolute;
   pointer-events: none;
-  transform-origin: center center;
+  will-change: transform, opacity;
 }
 
-.assemble-pure-tile-crop {
+.assemble-fullscreen-crop {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border: 0.5px solid rgba(255, 255, 255, 0.2);
-  background: #121212;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+  background: #0d0d0d;
+  transition: border-color 0.45s ease, box-shadow 0.45s ease;
 }
 
-.assemble-pure-tile-img {
+.assemble-fullscreen-crop.assembled {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.assemble-fullscreen-slice-img {
   position: absolute;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  object-fit: cover;
+  display: block;
   max-width: none;
-  object-fit: cover;
-  display: block;
-  user-select: none;
   pointer-events: none;
-}
-
-.assemble-pure-tile-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.35) 100%);
-  pointer-events: none;
-}
-
-/* Unified Master Image (Locks in seamlessly) */
-.assemble-pure-master {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 4px;
-  z-index: 10;
-  pointer-events: auto;
-}
-
-.assemble-pure-master-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
   user-select: none;
 }
 
-.assemble-pure-master-overlay {
+.assemble-fullscreen-slice-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.06) 0%,
+    rgba(0, 0, 0, 0.05) 0%,
     transparent 50%,
-    rgba(0, 0, 0, 0.45) 100%
+    rgba(0, 0, 0, 0.25) 100%
   );
   pointer-events: none;
 }
 
-/* Seam Glint on Unification */
-.assemble-pure-glint {
+/* Seamless Master Overlay (Takes over once assembled) */
+.assemble-fullscreen-master {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  z-index: 15;
+  pointer-events: auto;
+}
+
+.assemble-fullscreen-master-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+}
+
+.assemble-fullscreen-master-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.08) 0%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  pointer-events: none;
+}
+
+/* Subtle Unification Glint */
+.assemble-fullscreen-glint {
   position: absolute;
   inset: 0;
   pointer-events: none;
   opacity: 0;
 }
 
-.assemble-pure-glint.pulse {
-  animation: pureGlint 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.assemble-fullscreen-glint.pulse {
+  animation: fsGlint 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes pureGlint {
+@keyframes fsGlint {
   0% {
     opacity: 0;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 35px rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 35px rgba(255, 255, 255, 0.6);
   }
-  35% {
-    opacity: 0.95;
-    box-shadow: inset 0 0 0 2px #ffffff, 0 0 45px rgba(255, 255, 255, 0.85);
+  30% {
+    opacity: 0.9;
+    box-shadow: inset 0 0 0 2px #ffffff, 0 0 45px rgba(255, 255, 255, 0.8);
   }
   100% {
     opacity: 0;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 0 0 rgba(255, 255, 255, 0);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 0 rgba(255, 255, 255, 0);
   }
 }
 
-/* Discreet Minimal Scroll Indicator (Bottom Center) */
-.assemble-pure-scroll {
+/* Minimal Scroll Indicator */
+.assemble-fullscreen-scroll {
   position: absolute;
-  bottom: clamp(16px, 2.8vh, 28px);
+  bottom: clamp(18px, 3vh, 32px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 20;
+  z-index: 25;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: rgba(255, 255, 255, 0.65);
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.24em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 8px 20px;
+  border-radius: 9999px;
   transition: all 0.25s ease;
-  padding: 6px 14px;
 }
 
-.assemble-pure-scroll:hover {
+.assemble-fullscreen-scroll:hover {
   color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-.assemble-pure-scroll-arrow {
+.assemble-fullscreen-scroll-arrow {
   animation: bounceDown 2s infinite ease-in-out;
 }
 
@@ -12074,15 +12046,6 @@ select {
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
-}
-
-/* RESPONSIVE RULES */
-@media (max-width: 768px) {
-  .assemble-pure-frame {
-    width: clamp(260px, 82vw, 360px);
-    aspect-ratio: 3 / 4;
-    max-height: 62vh;
-  }
 }
 
 
