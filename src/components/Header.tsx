@@ -205,16 +205,22 @@ export default function Header() {
 
   return (
     <>
-      <header className={`site-header ${isScrolled ? "scrolled" : ""}`}>
-        {/* Top Announcement Bar */}
-        <div className="announcement-bar">
-          <div className="announcement-content">
-            <span>{announcementText}</span>
+      <header className={`site-header ${isScrolled ? "scrolled" : "transparent-hero"}`}>
+        {/* Top Announcement Bar - Only displayed when scrolled or on internal pages */}
+        {(!isHomePage || isScrolled) && (
+          <div className="announcement-bar">
+            <div className="announcement-content">
+              <span>{announcementText}</span>
+            </div>
           </div>
-        </div>
+        )}
 
-        <nav className="navbar atelier-navbar">
+        <nav className="navbar atelier-navbar editorial-nav">
           <div className="header-side nav-links-left">
+            <Link href="/shop" className="editorial-nav-text-link">
+              COLLECTION
+            </Link>
+
             <div className="story-launcher-wrapper">
               <button
                 type="button"
@@ -246,7 +252,7 @@ export default function Header() {
               title="Search"
               onClick={() => setSearchOpen(true)}
             >
-              <Search size={21} strokeWidth={1.8} />
+              <Search size={19} strokeWidth={1.6} />
             </button>
 
             <Link
@@ -255,7 +261,7 @@ export default function Header() {
               aria-label="Wishlist"
               title="Saved pieces"
             >
-              <Heart size={21} strokeWidth={1.8} />
+              <Heart size={19} strokeWidth={1.6} />
               {wishlistCount > 0 && (
                 <span className="header-icon-badge">{wishlistCount}</span>
               )}
@@ -270,7 +276,7 @@ export default function Header() {
                 title="Client account"
                 aria-expanded={accountOpen}
               >
-                <User size={21} strokeWidth={1.8} />
+                <User size={19} strokeWidth={1.6} />
               </button>
 
               {accountOpen && (
@@ -314,7 +320,7 @@ export default function Header() {
               aria-label="Shopping bag"
               title="Shopping bag"
             >
-              <ShoppingBag size={21} strokeWidth={1.8} />
+              <ShoppingBag size={19} strokeWidth={1.6} />
               {cartCount > 0 && (
                 <span className="header-icon-badge">{cartCount}</span>
               )}
