@@ -11811,301 +11811,113 @@ select {
 }
 
 /* ==========================================================================
-   CORNER ASSEMBLY HERO ENTRANCE SYSTEM (FRAGMENTS CONVERGE INTO ONE PHOTO)
+   PURE CORNER ASSEMBLY HERO ENTRANCE (16 DECONSTRUCTED DIVISIONS -> 1 PHOTO)
    ========================================================================== */
 
-.assemble-hero-section {
+.assemble-hero-pure {
   position: relative;
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 600px;
   background: #080808;
   color: #ffffff;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: calc(58px + clamp(16px, 2.5vh, 28px)) clamp(24px, 5vw, 72px) clamp(20px, 3vh, 32px);
+  justify-content: center;
+  align-items: center;
   perspective: 1200px;
   box-sizing: border-box;
+  user-select: none;
 }
 
-.assemble-hero-bg {
+/* Subtle atmospheric backdrop */
+.assemble-pure-bg {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 1;
 }
 
-.assemble-hero-glow {
+.assemble-pure-glow {
   position: absolute;
-  top: 40%;
-  left: 55%;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  width: min(80vw, 800px);
-  height: min(80vw, 800px);
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 45%, transparent 70%);
-  filter: blur(60px);
+  width: min(85vw, 900px);
+  height: min(85vw, 900px);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.015) 45%,
+    transparent 72%
+  );
+  filter: blur(80px);
 }
 
-.assemble-hero-grain {
+.assemble-pure-grain {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
-  background-size: 28px 28px;
-  opacity: 0.6;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 0);
+  background-size: 24px 24px;
+  opacity: 0.55;
 }
 
-/* TOP STATUS BAR */
-.assemble-top-bar {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 10.5px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
-  padding-bottom: 12px;
-}
-
-.assemble-top-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.assemble-pulse-dot {
-  width: 5px;
-  height: 5px;
+/* Discreet Replay Button (Top Right) */
+.assemble-pure-replay {
+  position: absolute;
+  top: clamp(20px, 3.5vh, 32px);
+  right: clamp(20px, 4vw, 56px);
+  z-index: 25;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
-  animation: pulseDot 2s ease-in-out infinite;
-}
-
-@keyframes pulseDot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.6; }
-}
-
-.assemble-top-status {
-  display: flex;
-  align-items: center;
-}
-
-.assemble-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-/* MAIN STAGE */
-.assemble-main-stage {
-  position: relative;
-  z-index: 10;
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  align-items: center;
-  gap: clamp(32px, 5vw, 84px);
-  width: 100%;
-  max-width: 1540px;
-  margin: auto 0;
-  padding: clamp(14px, 2vh, 28px) 0;
-}
-
-/* LEFT TEXT COLUMN */
-.assemble-text-column {
-  max-width: 620px;
-}
-
-.assemble-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 12px;
-}
-
-.assemble-kicker-sep {
-  color: rgba(255, 255, 255, 0.25);
-}
-
-.assemble-title {
-  font-size: clamp(34px, 4.8vw, 68px);
-  font-weight: 300;
-  line-height: 0.98;
-  letter-spacing: -0.015em;
-  color: #ffffff;
-  text-transform: uppercase;
-  margin: 0 0 14px;
-  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-}
-
-.assemble-subname {
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-  margin: 0 0 16px;
-}
-
-.assemble-desc {
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.65);
-  max-width: 480px;
-  margin: 0 0 28px;
-}
-
-.assemble-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 34px;
-}
-
-.assemble-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #ffffff;
-  color: #000000;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  padding: 12px 24px;
-  border-radius: 9999px;
-  text-decoration: none;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
-}
-
-.assemble-btn-primary:hover {
-  background: #f0f0f0;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 26px rgba(255, 255, 255, 0.25);
-}
-
-.assemble-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: transparent;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  padding: 11px 22px;
-  border-radius: 9999px;
-  text-decoration: none;
-  transition: all 0.25s ease;
-}
-
-.assemble-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
-}
-
-/* LOOK SELECTOR */
-.assemble-look-selector {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 16px;
-}
-
-.assemble-selector-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.48);
-  margin-bottom: 10px;
-}
-
-.assemble-look-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.assemble-look-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
   color: rgba(255, 255, 255, 0.7);
-  padding: 6px 14px;
-  border-radius: 9999px;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
-.assemble-look-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+.assemble-pure-replay:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
+  transform: rotate(-45deg);
 }
 
-.assemble-look-btn.active {
-  background: #ffffff;
-  color: #000000;
-  border-color: #ffffff;
-  box-shadow: 0 2px 14px rgba(255, 255, 255, 0.2);
-}
-
-.assemble-look-btn-num {
-  font-weight: 700;
-  opacity: 0.7;
-}
-
-/* RIGHT PHOTO WRAPPER & 3D FRAME */
-.assemble-photo-wrapper {
+/* Center Stage for Pure Image */
+.assemble-pure-center {
+  position: relative;
+  z-index: 10;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
+  height: 100%;
+  padding: calc(58px + 12px) 24px clamp(48px, 8vh, 72px);
+  box-sizing: border-box;
 }
 
-.assemble-photo-frame {
+/* 3D Photo Frame */
+.assemble-pure-frame {
   position: relative;
-  width: 100%;
-  max-width: 480px;
+  width: clamp(280px, 42vw, 580px);
   aspect-ratio: 3 / 4;
+  max-height: min(78vh, 760px);
   transform-style: preserve-3d;
   border-radius: 4px;
-  box-shadow: 0 35px 95px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
   background: #111111;
 }
 
-/* 4 CORNER QUADRANTS FLYING IN */
-.assemble-quadrants-container {
+/* 16-Division Grid Container */
+.assemble-pure-grid {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -12115,118 +11927,41 @@ select {
   z-index: 5;
 }
 
-.assemble-quadrant {
+/* Individual Tiles */
+.assemble-pure-tile {
   position: absolute;
-  width: 50%;
-  height: 50%;
   pointer-events: none;
   transform-origin: center center;
 }
 
-.assemble-quadrant-tl {
-  top: 0;
-  left: 0;
-}
-
-.assemble-quadrant-tr {
-  top: 0;
-  left: 50%;
-}
-
-.assemble-quadrant-bl {
-  top: 50%;
-  left: 0;
-}
-
-.assemble-quadrant-br {
-  top: 50%;
-  left: 50%;
-}
-
-.assemble-quadrant-crop {
+.assemble-pure-tile-crop {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: #141414;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  background: #121212;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
 }
 
-.assemble-img-slice {
+.assemble-pure-tile-img {
   position: absolute;
-  width: 200%;
-  height: 200%;
   max-width: none;
   object-fit: cover;
   display: block;
   user-select: none;
+  pointer-events: none;
 }
 
-.assemble-img-slice-tl {
-  top: 0;
-  left: 0;
-}
-
-.assemble-img-slice-tr {
-  top: 0;
-  left: -100%;
-}
-
-.assemble-img-slice-bl {
-  top: -100%;
-  left: 0;
-}
-
-.assemble-img-slice-br {
-  top: -100%;
-  left: -100%;
-}
-
-.assemble-quadrant-overlay {
+.assemble-pure-tile-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.35) 100%);
   pointer-events: none;
 }
 
-.assemble-corner-tag {
-  position: absolute;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  padding: 3px 6px;
-  border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  z-index: 5;
-  pointer-events: none;
-}
-
-.assemble-tag-tl {
-  top: 8px;
-  left: 8px;
-}
-
-.assemble-tag-tr {
-  top: 8px;
-  right: 8px;
-}
-
-.assemble-tag-bl {
-  bottom: 8px;
-  left: 8px;
-}
-
-.assemble-tag-br {
-  bottom: 8px;
-  right: 8px;
-}
-
-/* UNIFIED SINGLE MASTER PHOTO */
-.assemble-master-unified-wrap {
+/* Unified Master Image (Locks in seamlessly) */
+.assemble-pure-master {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -12237,189 +11972,83 @@ select {
   pointer-events: auto;
 }
 
-.assemble-master-img {
+.assemble-pure-master-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  user-select: none;
 }
 
-.assemble-master-overlay {
+.assemble-pure-master-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.08) 0%,
-    transparent 45%,
-    rgba(0, 0, 0, 0.55) 100%
+    rgba(0, 0, 0, 0.06) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.45) 100%
   );
   pointer-events: none;
 }
 
-/* SEAM UNIFICATION GLINT */
-.assemble-seam-flash {
+/* Seam Glint on Unification */
+.assemble-pure-glint {
   position: absolute;
   inset: 0;
   pointer-events: none;
   opacity: 0;
 }
 
-.assemble-seam-flash.pulse {
-  animation: seamFlashGlint 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.assemble-pure-glint.pulse {
+  animation: pureGlint 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes seamFlashGlint {
+@keyframes pureGlint {
   0% {
     opacity: 0;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 35px rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 35px rgba(255, 255, 255, 0.7);
   }
-  30% {
-    opacity: 0.9;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 1), 0 0 45px rgba(255, 255, 255, 0.8);
+  35% {
+    opacity: 0.95;
+    box-shadow: inset 0 0 0 2px #ffffff, 0 0 45px rgba(255, 255, 255, 0.85);
   }
   100% {
     opacity: 0;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15), 0 0 0 rgba(255, 255, 255, 0);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 0 0 rgba(255, 255, 255, 0);
   }
 }
 
-.assemble-view-pill {
+/* Discreet Minimal Scroll Indicator (Bottom Center) */
+.assemble-pure-scroll {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: clamp(16px, 2.8vh, 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  color: #ffffff;
-  padding: 7px 16px;
-  border-radius: 9999px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.65);
   text-decoration: none;
-  transition: all 0.25s ease;
-  z-index: 12;
-}
-
-.assemble-view-pill:hover {
-  background: #ffffff;
-  color: #000000;
-  border-color: #ffffff;
-}
-
-/* CROSSHAIRS */
-.assemble-frame-crosshairs {
-  position: absolute;
-  inset: -14px;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.crosshair-tl {
-  position: absolute;
-  top: 0;
-  left: 0;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.35);
-  line-height: 1;
-}
-
-.crosshair-tr {
-  position: absolute;
-  top: 0;
-  right: 0;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.35);
-  line-height: 1;
-}
-
-.crosshair-bl {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.35);
-  line-height: 1;
-}
-
-.crosshair-br {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.35);
-  line-height: 1;
-}
-
-/* BOTTOM CONTROL BAR */
-.assemble-bottom-bar {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
-  padding-top: 16px;
-  margin-top: auto;
-  font-size: 10.5px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.assemble-replay-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  padding: 6px 14px;
-  border-radius: 9999px;
-  cursor: pointer;
   font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  transition: all 0.25s ease;
-}
-
-.assemble-replay-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.45);
-}
-
-.assemble-bottom-footnote {
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 9.5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.assemble-footnote-sep {
-  opacity: 0.3;
-}
-
-.assemble-scroll-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: rgba(255, 255, 255, 0.85);
-  text-decoration: none;
-  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.18em;
-  transition: all 0.2s ease;
+  letter-spacing: 0.24em;
+  transition: all 0.25s ease;
+  padding: 6px 14px;
 }
 
-.assemble-scroll-btn:hover {
+.assemble-pure-scroll:hover {
   color: #ffffff;
-  transform: translateY(2px);
+}
+
+.assemble-pure-scroll-arrow {
+  animation: bounceDown 2s infinite ease-in-out;
+}
+
+@keyframes bounceDown {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
 }
 
 /* EDITORIAL RUNWAY HERO KICKER (FOR SECOND SECTION) */
@@ -12447,40 +12076,12 @@ select {
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
 }
 
-/* RESPONSIVE BREAKPOINTS */
-@media (max-width: 960px) {
-  .assemble-main-stage {
-    grid-template-columns: 1fr;
-    gap: 32px;
-    text-align: center;
-  }
-
-  .assemble-text-column {
-    max-width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .assemble-actions {
-    justify-content: center;
-  }
-
-  .assemble-look-buttons {
-    justify-content: center;
-  }
-
-  .assemble-photo-frame {
-    max-width: 320px;
+/* RESPONSIVE RULES */
+@media (max-width: 768px) {
+  .assemble-pure-frame {
+    width: clamp(260px, 82vw, 360px);
     aspect-ratio: 3 / 4;
-  }
-
-  .assemble-bottom-footnote {
-    display: none;
-  }
-
-  .assemble-bottom-bar {
-    justify-content: space-between;
+    max-height: 62vh;
   }
 }
 
