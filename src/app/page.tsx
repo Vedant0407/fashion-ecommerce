@@ -1,5 +1,4 @@
-"use client";
-
+import AssemblyHero from "@/components/ui/AssemblyHero";
 import EditorialHero from "@/components/ui/EditorialHero";
 import EditorialNewIn from "@/components/ui/EditorialNewIn";
 import OrganicCategorySection from "@/components/ui/OrganicCategorySection";
@@ -10,7 +9,10 @@ import EditorialFooter from "@/components/ui/EditorialFooter";
 export default function HomePage() {
   return (
     <main className="editorial-home-page">
-      {/* 2. Full-screen Hero */}
+      {/* 1. Corner Assembly Hero (Parts fly in from corners to form one photo) */}
+      <AssemblyHero />
+
+      {/* 2. Runway Carousel Hero (Continuous physical track with ghosted side looks) */}
       <EditorialHero />
 
       {/* 3. New In / Latest Collection (Asymmetric Magazine Grid) */}

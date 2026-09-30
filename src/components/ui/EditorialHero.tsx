@@ -179,7 +179,13 @@ export default function EditorialHero() {
   const activeSlide = HERO_SLIDES[currentIndex];
 
   return (
-    <section ref={heroSectionRef} className="editorial-runway-hero">
+    <section id="runway-hero" ref={heroSectionRef} className="editorial-runway-hero">
+      {/* Editorial Section Header Kicker */}
+      <div className="editorial-runway-section-kicker">
+        <span className="editorial-runway-kicker-dot" />
+        <span>02 // RUNWAY SHOWCASE • CONTINUOUS ARCHIVE</span>
+      </div>
+
       {/* Ambient Atmospheric Backdrop of Active Piece */}
       <div className="editorial-runway-backdrop">
         <AnimatePresence mode="sync">
