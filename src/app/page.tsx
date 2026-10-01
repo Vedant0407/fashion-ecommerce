@@ -1,5 +1,5 @@
 import ThreeDHero from "@/components/ui/ThreeDHero";
-import EditorialHero from "@/components/ui/EditorialHero";
+import DualPaneShowcase from "@/components/ui/DualPaneShowcase";
 import EditorialStorySection from "@/components/ui/EditorialStorySection";
 import EditorialFooter from "@/components/ui/EditorialFooter";
 
@@ -9,8 +9,8 @@ export default function HomePage() {
       {/* 1. 3D T-Shirt Hero (Scroll-driven zoom in middle with back design turn) */}
       <ThreeDHero />
 
-      {/* 2. Runway Carousel Hero (Continuous physical track with ghosted side looks) */}
-      <EditorialHero />
+      {/* 2. Dual-Pane Showcase (Left Model Photo, Right Scrollable Product Card) */}
+      <DualPaneShowcase />
 
       {/* 3. Editorial / Campaign Storytelling Section */}
       <EditorialStorySection />
