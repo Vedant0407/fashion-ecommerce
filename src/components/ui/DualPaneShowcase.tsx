@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { ShoppingBag, Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export interface ShowcaseProduct {
@@ -197,19 +197,6 @@ export default function DualPaneShowcase() {
     }
   };
 
-  // Up/down stepper buttons
-  const handleNext = () => {
-    if (activeIndex < total - 1) {
-      setActiveIndex((prev) => prev + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (activeIndex > 0) {
-      setActiveIndex((prev) => prev - 1);
-    }
-  };
-
   // Clicking on the visible pill scrollbar track jumps directly to that piece
   const handleScrollbarClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!scrollbarTrackRef.current) return;
@@ -297,37 +284,6 @@ export default function DualPaneShowcase() {
           onTouchEnd={handleTouchEnd}
           className="dual-pane-right-box"
         >
-          {/* Header Bar with Counter & Up/Down Steppers */}
-          <div className="dual-pane-box-header">
-            <span className="dual-pane-box-collection">{activeProduct.collection}</span>
-
-            <div className="dual-pane-box-nav">
-              <button
-                type="button"
-                onClick={handlePrev}
-                disabled={activeIndex === 0}
-                className="dual-pane-nav-arrow"
-                aria-label="Previous product"
-                title="Previous product"
-              >
-                <ChevronUp size={16} strokeWidth={2.2} />
-              </button>
-              <span className="dual-pane-slide-num">
-                {String(activeIndex + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-              </span>
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={activeIndex === total - 1}
-                className="dual-pane-nav-arrow"
-                aria-label="Next product"
-                title="Next product"
-              >
-                <ChevronDown size={16} strokeWidth={2.2} />
-              </button>
-            </div>
-          </div>
-
           {/* Continuous Vertical Reel Viewport */}
           <div className="dual-pane-reel-viewport">
             <motion.div
@@ -348,9 +304,6 @@ export default function DualPaneShowcase() {
                         alt={product.name}
                         className="dual-pane-product-image"
                       />
-                      <div className="dual-pane-product-badge">
-                        <span>STILL LIFE // DETAIL</span>
-                      </div>
                     </div>
 
                     {/* Product Details & Price */}

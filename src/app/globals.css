@@ -12547,7 +12547,7 @@ select {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  margin: 8px 0;
+  margin: 0;
   padding-right: 18px; /* Room for custom scrollbar */
   overscroll-behavior: contain;
 }
@@ -12612,7 +12612,7 @@ select {
 .dual-pane-product-window {
   position: relative;
   width: 100%;
-  height: clamp(140px, 20vh, 205px);
+  height: clamp(160px, 24vh, 235px);
   border-radius: 18px;
   overflow: hidden;
   background: #09090c;
