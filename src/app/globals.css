@@ -12283,30 +12283,20 @@ select {
 }
 
 /* ==========================================================================
-   DUAL-PANE SHOWCASE (LEFT MODEL PHOTO, RIGHT SCROLLABLE PRODUCT CARD)
+   DUAL-PANE SHOWCASE (SLIDER ON RIGHT BOX ONLY)
    ========================================================================== */
 
-.dual-pane-scroll-track {
+.dual-pane-section {
   position: relative;
   width: 100%;
-  height: 420vh;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.dual-pane-sticky-viewport {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   background: #0d0c10;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 68px clamp(16px, 3.5vw, 48px) 20px;
+  padding: 72px clamp(16px, 3.5vw, 48px) 24px;
   box-sizing: border-box;
   z-index: 20;
 }
@@ -12480,26 +12470,31 @@ select {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* RIGHT BOX: Rounded Card for Product Details, Price & Add To Cart */
+/* RIGHT BOX: DEDICATED SLIDER CARD */
 .dual-pane-right-box {
   flex: 0.95;
   max-width: 480px;
   min-width: 360px;
   border-radius: 28px;
   border: 1.5px solid rgba(255, 255, 255, 0.14);
-  background: rgba(18, 16, 22, 0.88);
+  background: rgba(18, 16, 22, 0.92);
   backdrop-filter: blur(28px);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: clamp(18px, 2.2vw, 26px);
+  padding: clamp(18px, 2.2vw, 24px);
   box-sizing: border-box;
   overflow: hidden;
   user-select: none;
+  cursor: grab;
 }
 
-/* Box Header Controls */
+.dual-pane-right-box:active {
+  cursor: grabbing;
+}
+
+/* Slider Header Bar */
 .dual-pane-box-header {
   display: flex;
   align-items: center;
@@ -12528,7 +12523,7 @@ select {
   height: 28px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
@@ -12537,29 +12532,44 @@ select {
   transition: all 0.2s ease;
 }
 
-.dual-pane-nav-arrow:hover:not(:disabled) {
+.dual-pane-nav-arrow:hover {
   background: #ffffff;
   color: #000000;
   border-color: #ffffff;
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 
-.dual-pane-nav-arrow:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+.dual-pane-slide-num {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
 }
 
-.dual-pane-nav-slash {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
+/* Slider Body Wrap */
+.dual-pane-slider-content-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  margin: 6px 0;
 }
 
-/* Product Photo Window inside Right Box */
+.dual-pane-slide-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Product Photo Window */
 .dual-pane-product-window {
   position: relative;
   width: 100%;
-  height: clamp(170px, 25vh, 230px);
-  margin: 12px 0;
+  height: clamp(165px, 24vh, 220px);
   border-radius: 18px;
   overflow: hidden;
   background: #09090c;
@@ -12572,18 +12582,19 @@ select {
   object-fit: cover;
   object-position: center center;
   display: block;
+  pointer-events: none;
   transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dual-pane-right-box:hover .dual-pane-product-image {
-  transform: scale(1.03);
+  transform: scale(1.02);
 }
 
 .dual-pane-product-badge {
   position: absolute;
   top: 10px;
   left: 10px;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.14);
   padding: 4px 10px;
@@ -12599,7 +12610,7 @@ select {
 .dual-pane-box-details {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dual-pane-title-row {
@@ -12611,7 +12622,7 @@ select {
 
 .dual-pane-product-title {
   margin: 0;
-  font-size: clamp(15px, 1.8vw, 19px);
+  font-size: clamp(15px, 1.8vw, 18px);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -12626,7 +12637,7 @@ select {
 }
 
 .dual-pane-price {
-  font-size: clamp(16px, 1.8vw, 20px);
+  font-size: clamp(16px, 1.8vw, 19px);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: #ffffff;
@@ -12640,7 +12651,7 @@ select {
 
 .dual-pane-silhouette-desc {
   margin: 0;
-  font-size: 11.5px;
+  font-size: 11px;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.6);
   display: -webkit-box;
@@ -12755,55 +12766,49 @@ select {
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Scroll Hint at bottom of box */
-.dual-pane-scroll-hint {
+/* Slider Footer */
+.dual-pane-slider-footer {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
 }
 
-.dual-pane-hint-arrow {
-  animation: bounceDown 2s infinite ease-in-out;
-}
-
-/* Progress Dots Bar */
-.dual-pane-dots-bar {
-  position: relative;
-  z-index: 10;
-  display: flex;
+.dual-pane-slider-dots {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding-top: 8px;
+  gap: 5px;
 }
 
-.dual-pane-dot {
-  width: 24px;
-  height: 2px;
+.dual-pane-slider-dot {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
   border: none;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.22s ease;
   padding: 0;
 }
 
-.dual-pane-dot.active {
-  width: 44px;
+.dual-pane-slider-dot.active {
+  width: 28px;
   background: #ffffff;
+}
+
+.dual-pane-slider-hint {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 /* Mobile & Tablet Responsiveness */
 @media (max-width: 1024px) {
-  .dual-pane-sticky-viewport {
-    padding: 60px 14px 14px;
+  .dual-pane-section {
+    padding: 64px 14px 20px;
     height: auto;
     min-height: 100vh;
   }
@@ -12814,7 +12819,7 @@ select {
   }
 
   .dual-pane-left-area {
-    height: 40vh;
+    height: 42vh;
     flex: none;
   }
 
@@ -12826,7 +12831,7 @@ select {
   }
 
   .dual-pane-product-window {
-    height: 140px;
+    height: 145px;
   }
 }
 
