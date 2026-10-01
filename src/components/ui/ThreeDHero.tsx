@@ -194,20 +194,6 @@ export default function ThreeDHero() {
           <div className="hero-3d-vignette" />
         </div>
 
-        {/* Top Navbar Touchpoint Guide Indicator */}
-        <div
-          className={`hero-3d-navbar-guide ${
-            scrollProgress > 0.85 ? "touching" : ""
-          }`}
-        >
-          <div className="hero-3d-guide-line" />
-          <span className="hero-3d-guide-label">
-            {scrollProgress > 0.88
-              ? "BACK DESIGN // 3D FOCUS • ENTERING RUNWAY"
-              : "GREENO 3D SILHOUETTE // SCROLL TO ROTATE & EXPAND"}
-          </span>
-        </div>
-
         {/* 3D Canvas Stage */}
         <div className="hero-3d-canvas-wrap">
           {mounted ? (

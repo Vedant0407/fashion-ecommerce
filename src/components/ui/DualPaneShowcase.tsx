@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Check, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { ShoppingBag, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export interface ShowcaseProduct {
@@ -260,17 +260,6 @@ export default function DualPaneShowcase() {
         <div className="dual-pane-backdrop-vignette" />
       </div>
 
-      {/* Top Header Bar */}
-      <div className="dual-pane-top-bar">
-        <div className="dual-pane-kicker">
-          <span className="dual-pane-kicker-dot" />
-          <span>02 // RUNWAY SHOWCASE • COLLECTION 03</span>
-        </div>
-        <div className="dual-pane-counter-badge">
-          <span>PIECE {String(activeIndex + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</span>
-        </div>
-      </div>
-
       {/* Main Dual-Pane Layout Container */}
       <div className="dual-pane-container">
         {/* LEFT SIDE AREA: Model Photo (Scrolling on this side scrolls the website down!) */}
@@ -292,11 +281,6 @@ export default function DualPaneShowcase() {
 
               {/* Floating Editorial Badges */}
               <div className="dual-pane-model-overlay">
-                <div className="dual-pane-model-tag-top">
-                  <Sparkles size={11} strokeWidth={2} />
-                  <span>LOOK {String(activeIndex + 1).padStart(2, "0")} // ON MODEL</span>
-                </div>
-
                 <div className="dual-pane-model-tag-bottom">
                   <span className="dual-pane-model-title">{activeProduct.name}</span>
                   <span className="dual-pane-model-color">{activeProduct.color}</span>
