@@ -110,14 +110,6 @@ export const SHOWCASE_PRODUCTS: ShowcaseProduct[] = [
 
 export default function DualPaneShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({
-    "tailored-poplin-shirt": "M",
-    "oversized-black-tee": "M",
-    "charcoal-oxford-overshirt": "M",
-    "minimalist-chalk-tee": "M",
-    "architectural-wool-coat": "M",
-    "pleated-relaxed-trouser": "M",
-  });
   const [addedItem, setAddedItem] = useState<string | null>(null);
 
   const rightBoxRef = useRef<HTMLDivElement>(null);
@@ -207,12 +199,8 @@ export default function DualPaneShowcase() {
     setActiveIndex(targetIdx);
   };
 
-  const handleSelectSize = (productId: string, size: string) => {
-    setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
-  };
-
   const handleAddToCart = (product: ShowcaseProduct) => {
-    const size = selectedSizes[product.id] || "M";
+    const size = product.sizes?.[0] || "M";
     addToCart({
       id: product.id,
       name: product.name,
@@ -266,11 +254,21 @@ export default function DualPaneShowcase() {
                 className="dual-pane-model-image"
               />
 
-              {/* Floating Editorial Badges */}
+              {/* Floating Editorial Badges with Moved Details Button */}
               <div className="dual-pane-model-overlay">
-                <div className="dual-pane-model-tag-bottom">
-                  <span className="dual-pane-model-title">{activeProduct.name}</span>
-                  <span className="dual-pane-model-color">{activeProduct.color}</span>
+                <div className="dual-pane-model-bottom-bar">
+                  <div className="dual-pane-model-tag-bottom">
+                    <span className="dual-pane-model-title">{activeProduct.name}</span>
+                    <span className="dual-pane-model-color">{activeProduct.color}</span>
+                  </div>
+
+                  <Link
+                    href={activeProduct.link}
+                    className="dual-pane-model-detail-btn"
+                  >
+                    <span>DETAILS</span>
+                    <span className="dual-pane-model-detail-arrow">→</span>
+                  </Link>
                 </div>
               </div>
             </motion.div>
@@ -294,7 +292,6 @@ export default function DualPaneShowcase() {
                 className="dual-pane-reel-track"
               >
                 {SHOWCASE_PRODUCTS.map((product) => {
-                  const currentSize = selectedSizes[product.id] || "M";
                   const isItemAdded = addedItem === product.id;
 
                   return (
@@ -308,67 +305,24 @@ export default function DualPaneShowcase() {
                         />
                       </div>
 
-                      {/* Product Details & Price */}
-                      <div className="dual-pane-box-details">
-                        <div className="dual-pane-title-row">
-                          <h3 className="dual-pane-product-title">{product.name}</h3>
-                          <div className="dual-pane-price-group">
-                            <span className="dual-pane-price">₹{product.price.toLocaleString("en-IN")}</span>
-                            {product.originalPrice > product.price && (
-                              <span className="dual-pane-original-price">
-                                ₹{product.originalPrice.toLocaleString("en-IN")}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <p className="dual-pane-silhouette-desc">{product.silhouette}</p>
-
-                        {/* Size Selector */}
-                        <div className="dual-pane-size-row">
-                          <span className="dual-pane-size-label">SIZE:</span>
-                          <div className="dual-pane-sizes-list">
-                            {product.sizes.map((size) => (
-                              <button
-                                key={size}
-                                type="button"
-                                onClick={() => handleSelectSize(product.id, size)}
-                                className={`dual-pane-size-btn ${currentSize === size ? "active" : ""}`}
-                              >
-                                {size}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Add to Cart Action */}
-                        <div className="dual-pane-action-row">
-                          <button
-                            type="button"
-                            onClick={() => handleAddToCart(product)}
-                            className={`dual-pane-add-btn ${isItemAdded ? "added" : ""}`}
-                          >
-                            {isItemAdded ? (
-                              <>
-                                <Check size={16} strokeWidth={2.2} />
-                                <span>ADDED TO BAG</span>
-                              </>
-                            ) : (
-                              <>
-                                <ShoppingBag size={16} strokeWidth={2} />
-                                <span>ADD TO BAG • ₹{product.price.toLocaleString("en-IN")}</span>
-                              </>
-                            )}
-                          </button>
-
-                          <Link
-                            href={product.link}
-                            className="dual-pane-detail-link"
-                          >
-                            DETAILS →
-                          </Link>
-                        </div>
-                      </div>
+                      {/* Add to Cart Action */}
+                      <button
+                        type="button"
+                        onClick={() => handleAddToCart(product)}
+                        className={`dual-pane-add-btn ${isItemAdded ? "added" : ""}`}
+                      >
+                        {isItemAdded ? (
+                          <>
+                            <Check size={16} strokeWidth={2.2} />
+                            <span>ADDED TO CART</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingBag size={16} strokeWidth={2} />
+                            <span>ADD TO CART • ₹{product.price.toLocaleString("en-IN")}</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   );
                 })}
