@@ -17,32 +17,111 @@ function TshirtModel({ progress }: { progress: number }) {
   const { scene } = useGLTF("/greeno.tshirt.glb");
   const groupRef = useRef<THREE.Group>(null);
 
-  // Clone scene so it is isolated and cleanly mounted
-  const clonedScene = useMemo(() => scene.clone(true), [scene]);
+  // Track turn choreography state
+  const isTurnActiveRef = useRef(false);
+  const startTurnAngleRef = useRef(0);
+  const targetBackAngleRef = useRef(Math.PI);
+
+  // Clone scene with enhanced high-fashion fabric material
+  const clonedScene = useMemo(() => {
+    const cloned = scene.clone(true);
+    cloned.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        if (mesh.material) {
+          const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
+          mat.roughness = 0.85;
+          mat.metalness = 0.06;
+          mat.needsUpdate = true;
+          mesh.material = mat;
+        }
+      }
+    });
+    return cloned;
+  }, [scene]);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
 
-    // Smoothly scale and move upward as user scrolls
-    // At progress 0: scale = 1.05, y = -0.2 (centered floating look)
-    // At progress 1: scale = 2.65, y = 1.75 (collar reaches and touches the navbar)
-    const targetScale = 1.05 + progress * 1.6;
-    const targetY = -0.2 + progress * 1.95;
+    // 1. CINEMATIC SLOW-INCREASING SCALE & POSITION
+    // Decreased initial size (0.70 vs old 1.05) with generous luxury negative space
+    // Mathematical power curve (progress^1.45) starts slow and builds cinematic momentum
+    const slowEase = Math.pow(progress, 1.45);
+    const targetScale = 0.70 + slowEase * 1.68; // reaches ~2.38 at progress 1.0
+    const targetY = -0.12 + Math.pow(progress, 1.25) * 1.82; // collar touches navbar at 1.0
 
-    // Smooth interpolation for jitter-free physics
+    // Heavy, weighted Steadicam lerp interpolation (delta-corrected)
+    const lerpRate = 1 - Math.exp(-7 * delta);
     groupRef.current.scale.lerp(
       new THREE.Vector3(targetScale, targetScale, targetScale),
-      0.14
+      lerpRate
     );
     groupRef.current.position.y = THREE.MathUtils.lerp(
       groupRef.current.position.y,
       targetY,
-      0.14
+      lerpRate
     );
 
-    // Auto-rotate around Y-axis when at top, slowing down as user zooms in
-    if (progress < 0.8) {
-      groupRef.current.rotation.y += delta * 0.75 * (1 - progress * 0.85);
+    // 2. REVOLUTION SPEED & BACK DESIGN TURN CHOREOGRAPHY
+    if (progress < 0.01) {
+      // Idle at top: slow, calm, majestic luxury revolution (decreased to 0.15 rad/sec)
+      isTurnActiveRef.current = false;
+      groupRef.current.rotation.y += delta * 0.15;
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(
+        groupRef.current.rotation.x,
+        0,
+        lerpRate
+      );
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(
+        groupRef.current.rotation.z,
+        0,
+        lerpRate
+      );
+    } else {
+      // User is scrolling: choreograph turn to finish on BACK DESIGN (odd multiple of Math.PI)
+      if (!isTurnActiveRef.current) {
+        isTurnActiveRef.current = true;
+        const currentRot = groupRef.current.rotation.y;
+        startTurnAngleRef.current = currentRot;
+
+        // Find next odd multiple of PI ahead in the rotation direction
+        const k = Math.floor(currentRot / (2 * Math.PI));
+        let targetBack = (2 * k + 1) * Math.PI;
+        // Ensure at least a deliberate, majestic sweep (minimum 100° forward turn)
+        if (targetBack - currentRot < Math.PI * 0.55) {
+          targetBack += 2 * Math.PI;
+        }
+        targetBackAngleRef.current = targetBack;
+      }
+
+      // Smooth turn progress curve
+      const turnT = Math.pow(progress, 1.22);
+      const targetRotY =
+        startTurnAngleRef.current +
+        (targetBackAngleRef.current - startTurnAngleRef.current) * turnT;
+
+      // Subtle dynamic camera tilt/roll arc during mid-turn for high-production depth
+      const tiltArc = Math.sin(progress * Math.PI);
+      const targetRotX = tiltArc * 0.06;
+      const targetRotZ = tiltArc * -0.035;
+
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(
+        groupRef.current.rotation.y,
+        targetRotY,
+        lerpRate
+      );
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(
+        groupRef.current.rotation.x,
+        targetRotX,
+        lerpRate
+      );
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(
+        groupRef.current.rotation.z,
+        targetRotZ,
+        lerpRate
+      );
     }
   });
 
@@ -74,7 +153,7 @@ export default function ThreeDHero() {
     setMounted(true);
   }, []);
 
-  // Track native scroll through the 200vh track
+  // Track native scroll through the extended cinematic track
   const { scrollYProgress } = useScroll({
     target: trackRef,
     offset: ["start start", "end end"],
@@ -115,8 +194,8 @@ export default function ThreeDHero() {
           <div className="hero-3d-guide-line" />
           <span className="hero-3d-guide-label">
             {scrollProgress > 0.88
-              ? "APEX TOUCHED • TRANSITIONING TO RUNWAY"
-              : "3D SILHOUETTE // SCROLL TO EXPAND"}
+              ? "BACK DESIGN // APEX TOUCHED • ENTERING RUNWAY"
+              : "GREENO 3D SILHOUETTE // SCROLL TO ROTATE & EXPAND"}
           </span>
         </div>
 
@@ -139,15 +218,24 @@ export default function ThreeDHero() {
                 background: "transparent",
               }}
             >
-              {/* Studio Environment Lighting */}
-              <ambientLight intensity={0.9} />
-              <directionalLight position={[5, 8, 5]} intensity={1.6} />
+              {/* Studio Environment & Cinematic Illumination */}
+              <ambientLight intensity={0.85} />
+              {/* Key Front-Right Light */}
+              <directionalLight position={[4, 6, 5]} intensity={1.5} />
+              {/* Left Fill Light */}
               <directionalLight
-                position={[-5, 4, -4]}
-                intensity={1.2}
-                color="#f5f0e8"
+                position={[-5, 3, 3]}
+                intensity={0.9}
+                color="#f8f4ee"
               />
-              <directionalLight position={[0, -2, 4]} intensity={0.5} />
+              {/* Dramatic Back Rim Light (Highlights fabric folds & silhouette during back turn) */}
+              <directionalLight
+                position={[0, 4, -7]}
+                intensity={2.3}
+                color="#fff8ec"
+              />
+              {/* Subtle Low Upward Fill */}
+              <directionalLight position={[0, -3, 3]} intensity={0.45} />
               <Environment preset="studio" />
 
               <Suspense fallback={null}>
@@ -166,21 +254,21 @@ export default function ThreeDHero() {
           )}
         </div>
 
-        {/* Minimal Scroll Prompt at Bottom (fades out as user zooms) */}
+        {/* Minimal Scroll Prompt at Bottom (fades out as user scrolls past 0.35) */}
         <motion.div
           className="hero-3d-bottom-prompt"
           style={{
-            opacity: Math.max(0, 1 - scrollProgress * 2.2),
-            pointerEvents: scrollProgress > 0.4 ? "none" : "auto",
+            opacity: Math.max(0, 1 - scrollProgress * 2.8),
+            pointerEvents: scrollProgress > 0.35 ? "none" : "auto",
           }}
         >
           <a
             href="#runway-hero"
             onClick={scrollToRunway}
             className="hero-3d-scroll-btn"
-            aria-label="Scroll down to runway showcase"
+            aria-label="Scroll down to rotate and expand t-shirt"
           >
-            <span className="hero-3d-scroll-label">SCROLL TO ZOOM</span>
+            <span className="hero-3d-scroll-label">SCROLL TO ROTATE & ZOOM</span>
             <ArrowDown
               size={13}
               strokeWidth={2}
@@ -190,7 +278,7 @@ export default function ThreeDHero() {
         </motion.div>
 
         {/* Touchpoint Status Pill (appears when reaching near apex) */}
-        {scrollProgress > 0.7 && (
+        {scrollProgress > 0.65 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -199,8 +287,8 @@ export default function ThreeDHero() {
             <Sparkles size={11} strokeWidth={2} />
             <span>
               {scrollProgress > 0.92
-                ? "APEX REACHED // ENTERING RUNWAY SHOWCASE"
-                : "EXPANDING TO NAVBAR APEX..."}
+                ? "BACK DESIGN IN FOCUS // TRANSITIONING TO RUNWAY"
+                : "TURNING TO BACK DESIGN..."}
             </span>
           </motion.div>
         )}
