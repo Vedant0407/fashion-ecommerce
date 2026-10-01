@@ -12361,8 +12361,10 @@ select {
   max-width: 60%;
   min-width: 0;
   position: relative;
-  height: 100%;
-  min-height: 0;
+  height: calc(100% - 64px);
+  margin-top: 48px;
+  margin-bottom: 16px;
+  align-self: flex-start;
   border-radius: 0;
   overflow: hidden;
   background: #141318;
@@ -12392,7 +12394,7 @@ select {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: clamp(28px, 4vw, 56px);
+  padding: clamp(20px, 3vw, 40px);
   pointer-events: none;
   background: linear-gradient(
     to bottom,
@@ -12442,8 +12444,8 @@ select {
 /* RIGHT BOX: DEDICATED VERTICAL SCROLL CARD WITH VISIBLE SCROLLBAR */
 .dual-pane-right-box {
   width: 100%;
-  max-width: 560px;
-  min-width: 320px;
+  max-width: 460px;
+  min-width: 300px;
   height: 100%;
   min-height: 0;
   border-radius: 28px;
@@ -12846,8 +12848,10 @@ select {
 
   .dual-pane-left-area {
     width: 100%;
-    height: 50vh;
-    min-height: 340px;
+    height: 44vh;
+    min-height: 290px;
+    margin-top: 0;
+    margin-bottom: 0;
     flex: none;
     border-radius: 0;
     border: none;
@@ -12864,7 +12868,7 @@ select {
   }
 
   .dual-pane-right-box {
-    max-width: 600px;
+    max-width: 460px;
     min-width: 0;
     width: 100%;
     flex: none;
