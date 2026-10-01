@@ -12289,8 +12289,8 @@ select {
 .dual-pane-section {
   position: relative;
   width: 100%;
-  height: clamp(620px, 86vh, 850px);
-  min-height: clamp(620px, 86vh, 850px);
+  height: clamp(650px, 90vh, 900px);
+  min-height: clamp(650px, 90vh, 900px);
   max-height: none;
   overflow: hidden;
   background: #0d0c10;
@@ -12589,7 +12589,7 @@ select {
 .dual-pane-product-window {
   position: relative;
   width: 100%;
-  height: clamp(220px, 32vh, 310px);
+  height: clamp(235px, 34vh, 330px);
   border-radius: 18px;
   overflow: hidden;
   background: #09090c;
