@@ -1,4 +1,4 @@
-import AssemblyHero from "@/components/ui/AssemblyHero";
+import ThreeDHero from "@/components/ui/ThreeDHero";
 import EditorialHero from "@/components/ui/EditorialHero";
 import EditorialNewIn from "@/components/ui/EditorialNewIn";
 import OrganicCategorySection from "@/components/ui/OrganicCategorySection";
@@ -9,8 +9,8 @@ import EditorialFooter from "@/components/ui/EditorialFooter";
 export default function HomePage() {
   return (
     <main className="editorial-home-page">
-      {/* 1. Corner Assembly Hero (Parts fly in from corners to form one photo) */}
-      <AssemblyHero />
+      {/* 1. 3D T-Shirt Hero (Scroll-driven zoom until touching navbar) */}
+      <ThreeDHero />
 
       {/* 2. Runway Carousel Hero (Continuous physical track with ghosted side looks) */}
       <EditorialHero />

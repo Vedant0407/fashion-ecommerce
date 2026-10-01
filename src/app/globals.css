@@ -12066,6 +12066,219 @@ select {
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
 }
 
+/* ==========================================================================
+   3D T-SHIRT HERO WITH SCROLL-DRIVEN ZOOM TO NAVBAR APEX
+   ========================================================================== */
+
+.hero-3d-scroll-track {
+  position: relative;
+  width: 100%;
+  height: 210vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.hero-3d-sticky-viewport {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #080808;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  z-index: 10;
+}
+
+.hero-3d-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero-3d-glow {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(85vw, 900px);
+  height: min(85vw, 900px);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.055) 0%,
+    rgba(255, 255, 255, 0.015) 50%,
+    transparent 72%
+  );
+  filter: blur(80px);
+}
+
+.hero-3d-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.6) 85%,
+    rgba(0, 0, 0, 0.95) 100%
+  );
+}
+
+/* Top Navbar Touchpoint Guide */
+.hero-3d-navbar-guide {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(24px, 5vw, 72px);
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.35s ease, color 0.35s ease;
+}
+
+.hero-3d-navbar-guide.touching {
+  opacity: 1;
+}
+
+.hero-3d-guide-line {
+  height: 1px;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.14);
+  margin-right: 20px;
+}
+
+.hero-3d-guide-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.hero-3d-navbar-guide.touching .hero-3d-guide-label {
+  color: #ffffff;
+}
+
+/* 3D Canvas Stage */
+.hero-3d-canvas-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  cursor: grab;
+}
+
+.hero-3d-canvas-wrap:active {
+  cursor: grabbing;
+}
+
+/* 3D Loading Fallback */
+.hero-3d-loading-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: rgba(255, 255, 255, 0.65);
+  z-index: 5;
+}
+
+.hero-3d-spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #ffffff;
+  animation: spinner3D 0.9s linear infinite;
+}
+
+@keyframes spinner3D {
+  to { transform: rotate(360deg); }
+}
+
+.hero-3d-loading-text {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Bottom Scroll Prompt */
+.hero-3d-bottom-prompt {
+  position: absolute;
+  bottom: clamp(20px, 3.5vh, 36px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.3s ease;
+}
+
+.hero-3d-scroll-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 8px 20px;
+  border-radius: 9999px;
+  transition: all 0.25s ease;
+}
+
+.hero-3d-scroll-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.hero-3d-scroll-arrow {
+  animation: bounceDown 2s infinite ease-in-out;
+}
+
+/* Touchpoint Apex Pill */
+.hero-3d-touch-pill {
+  position: absolute;
+  bottom: clamp(20px, 3.5vh, 36px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 26;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  color: #ffffff;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+
 
 
 
