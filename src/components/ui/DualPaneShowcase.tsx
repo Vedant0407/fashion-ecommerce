@@ -277,9 +277,9 @@ export default function DualPaneShowcase() {
           </AnimatePresence>
         </div>
 
-        {/* RIGHT COLUMN: Holds right box centered with navbar clearance */}
+        {/* RIGHT COLUMN: Holds right showcase content seamlessly fitted on the page */}
         <div className="dual-pane-right-column">
-          {/* RIGHT BOX: PRESERVED EXACTLY AS IT IS WITH VISIBLE PILL SCROLLBAR */}
+          {/* RIGHT REEL: Seamless unboxed layout fitting directly on page with visible pill scrollbar */}
           <div
             ref={rightBoxRef}
             onTouchStart={handleTouchStart}
