@@ -12283,24 +12283,14 @@ select {
 }
 
 /* ==========================================================================
-   DUAL-PANE SHOWCASE (STICKY PINNED SCROLL TRACK)
+   DUAL-PANE SHOWCASE (STANDALONE SECTION WITH ISOLATED RIGHT BOX SCROLL)
    ========================================================================== */
 
-.dual-pane-scroll-track {
+.dual-pane-section {
   position: relative;
   width: 100%;
-  height: 320vh;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.dual-pane-sticky-viewport {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   background: #0d0c10;
   display: flex;
@@ -12870,38 +12860,34 @@ select {
 
 /* Mobile & Tablet Responsiveness */
 @media (max-width: 1024px) {
-  .dual-pane-scroll-track {
-    height: 320vh;
-  }
-
-  .dual-pane-sticky-viewport {
+  .dual-pane-section {
     padding: 64px 14px 20px;
-    height: 100vh;
-    height: 100dvh;
+    height: auto;
+    min-height: 100vh;
   }
 
   .dual-pane-container {
     flex-direction: column;
-    gap: 12px;
-    height: calc(100% - 36px);
+    gap: 16px;
+    height: auto;
   }
 
   .dual-pane-left-area {
-    height: 38vh;
-    min-height: 220px;
+    height: 44vh;
+    min-height: 300px;
     flex: none;
   }
 
   .dual-pane-right-box {
     max-width: 100%;
     min-width: 0;
-    flex: 1;
-    min-height: 0;
-    padding: 14px;
+    flex: none;
+    height: clamp(520px, 68vh, 620px);
+    padding: 16px;
   }
 
   .dual-pane-product-window {
-    height: 130px;
+    height: 150px;
   }
 }
 
