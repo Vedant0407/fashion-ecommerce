@@ -42,15 +42,19 @@ function TshirtModel({ progress }: { progress: number }) {
     return cloned;
   }, [scene]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // 1. CINEMATIC SLOW-INCREASING SCALE & POSITION
-    // Decreased initial size (0.70 vs old 1.05) with generous luxury negative space
-    // Mathematical power curve (progress^1.45) starts slow and builds cinematic momentum
+    // 1. CINEMATIC SLOW-INCREASING SCALE IN THE EXACT CENTER OF THE PAGE
+    // Zooms outward symmetrically in the middle of the screen (no upward drift)
     const slowEase = Math.pow(progress, 1.45);
-    const targetScale = 0.70 + slowEase * 1.68; // reaches ~2.38 at progress 1.0
-    const targetY = -0.12 + Math.pow(progress, 1.25) * 1.82; // collar touches navbar at 1.0
+    const targetScale = 0.70 + slowEase * 1.55; // reaches ~2.25 at progress 1.0
+
+    // Strictly centered vertically at Y = 0 (subtle organic breathing float only when idle at top)
+    const targetY =
+      progress < 0.01
+        ? Math.sin(state.clock.elapsedTime * 1.2) * 0.03
+        : 0;
 
     // Heavy, weighted Steadicam lerp interpolation (delta-corrected)
     const lerpRate = 1 - Math.exp(-7 * delta);
@@ -63,10 +67,15 @@ function TshirtModel({ progress }: { progress: number }) {
       targetY,
       lerpRate
     );
+    groupRef.current.position.x = THREE.MathUtils.lerp(
+      groupRef.current.position.x,
+      0,
+      lerpRate
+    );
 
     // 2. REVOLUTION SPEED & BACK DESIGN TURN CHOREOGRAPHY
     if (progress < 0.01) {
-      // Idle at top: slow, calm, majestic luxury revolution (decreased to 0.15 rad/sec)
+      // Idle at top: slow, calm, majestic luxury revolution (0.15 rad/sec)
       isTurnActiveRef.current = false;
       groupRef.current.rotation.y += delta * 0.15;
       groupRef.current.rotation.x = THREE.MathUtils.lerp(
@@ -104,8 +113,8 @@ function TshirtModel({ progress }: { progress: number }) {
 
       // Subtle dynamic camera tilt/roll arc during mid-turn for high-production depth
       const tiltArc = Math.sin(progress * Math.PI);
-      const targetRotX = tiltArc * 0.06;
-      const targetRotZ = tiltArc * -0.035;
+      const targetRotX = tiltArc * 0.05;
+      const targetRotZ = tiltArc * -0.025;
 
       groupRef.current.rotation.y = THREE.MathUtils.lerp(
         groupRef.current.rotation.y,
@@ -194,7 +203,7 @@ export default function ThreeDHero() {
           <div className="hero-3d-guide-line" />
           <span className="hero-3d-guide-label">
             {scrollProgress > 0.88
-              ? "BACK DESIGN // APEX TOUCHED • ENTERING RUNWAY"
+              ? "BACK DESIGN // 3D FOCUS • ENTERING RUNWAY"
               : "GREENO 3D SILHOUETTE // SCROLL TO ROTATE & EXPAND"}
           </span>
         </div>
