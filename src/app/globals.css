@@ -99,14 +99,14 @@ select {
 
 .announcement-bar {
   width: 100%;
-  height: 32px;
+  height: 28px;
   background: #121212;
   color: #f7f6f2;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 16px;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -119,8 +119,8 @@ select {
 
 .navbar {
   width: 100%;
-  height: 58px;
-  padding: 0 clamp(20px, 4vw, 56px);
+  height: 48px;
+  padding: 0 clamp(16px, 3.5vw, 44px);
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -138,7 +138,7 @@ select {
 }
 
 .site-header.scrolled .navbar {
-  height: 58px;
+  height: 48px;
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -171,10 +171,10 @@ select {
   display: block;
   margin: 0;
   color: inherit;
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.26em;
+  letter-spacing: 0.24em;
   text-decoration: none;
   text-transform: uppercase;
   transition: opacity 0.2s ease, color 0.4s ease;
@@ -196,7 +196,7 @@ select {
   justify-self: end;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   line-height: 1;
 }
 
@@ -1499,8 +1499,8 @@ select {
 
 @media (max-width: 900px) {
   .navbar {
-    padding: 0 24px;
-    height: 72px;
+    padding: 0 20px;
+    height: 48px;
   }
   .nav-links-left {
     display: flex;
@@ -1534,11 +1534,11 @@ select {
   .announcement-bar {
     font-size: 8.5px;
     letter-spacing: 0.12em;
-    height: 28px;
+    height: 26px;
   }
   .navbar {
     padding: 0 16px;
-    height: 68px;
+    height: 46px;
   }
   .nav-link {
     font-size: 9px;
@@ -9892,8 +9892,8 @@ select {
 
 .story-launcher-btn {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   padding: 0;
   display: inline-flex;
@@ -9978,8 +9978,8 @@ select {
 }
 
 .story-launcher-icon {
-  width: 19px;
-  height: 19px;
+  width: 15px;
+  height: 15px;
   color: #ffffff;
   stroke-width: 2.2;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
@@ -12356,7 +12356,10 @@ select {
 
 /* LEFT SIDE: Full-Bleed Model Photo (Scrolling on this side scrolls the website down!) */
 .dual-pane-left-area {
-  flex: 1.15;
+  flex: 1 1 45%;
+  width: 45%;
+  max-width: 48%;
+  min-width: 0;
   position: relative;
   height: 100%;
   min-height: 0;
@@ -12424,20 +12427,22 @@ select {
 
 /* RIGHT COLUMN: Keeps right card centered and cleared below navbar */
 .dual-pane-right-column {
-  flex: 0.95;
+  flex: 1 1 55%;
+  width: 55%;
+  min-width: 0;
   height: 100%;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: calc(90px + clamp(14px, 2vh, 24px)) clamp(24px, 4vw, 64px) clamp(16px, 2.2vh, 28px);
+  padding: calc(76px + clamp(12px, 1.8vh, 22px)) clamp(16px, 2.5vw, 48px) clamp(16px, 2vh, 24px);
   box-sizing: border-box;
 }
 
 /* RIGHT BOX: DEDICATED VERTICAL SCROLL CARD WITH VISIBLE SCROLLBAR */
 .dual-pane-right-box {
   width: 100%;
-  max-width: 480px;
+  max-width: 600px;
   min-width: 320px;
   height: 100%;
   min-height: 0;
@@ -12859,7 +12864,7 @@ select {
   }
 
   .dual-pane-right-box {
-    max-width: 520px;
+    max-width: 600px;
     min-width: 0;
     width: 100%;
     flex: none;

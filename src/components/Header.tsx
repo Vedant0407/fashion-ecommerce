@@ -248,7 +248,7 @@ export default function Header() {
               title="Search"
               onClick={() => setSearchOpen(true)}
             >
-              <Search size={19} strokeWidth={1.6} />
+              <Search size={17} strokeWidth={1.7} />
             </button>
 
             <Link
@@ -257,7 +257,7 @@ export default function Header() {
               aria-label="Wishlist"
               title="Saved pieces"
             >
-              <Heart size={19} strokeWidth={1.6} />
+              <Heart size={17} strokeWidth={1.7} />
               {wishlistCount > 0 && (
                 <span className="header-icon-badge">{wishlistCount}</span>
               )}
@@ -272,7 +272,7 @@ export default function Header() {
                 title="Client account"
                 aria-expanded={accountOpen}
               >
-                <User size={19} strokeWidth={1.6} />
+                <User size={17} strokeWidth={1.7} />
               </button>
 
               {accountOpen && (
@@ -316,7 +316,7 @@ export default function Header() {
               aria-label="Shopping bag"
               title="Shopping bag"
             >
-              <ShoppingBag size={19} strokeWidth={1.6} />
+              <ShoppingBag size={17} strokeWidth={1.7} />
               {cartCount > 0 && (
                 <span className="header-icon-badge">{cartCount}</span>
               )}
