@@ -466,7 +466,7 @@ export default function EditorialHero() {
             <span>
               {currentIndex < total - 1
                 ? `SCROLL TO EXPLORE ALL PIECES (0${currentIndex + 1}/0${total}) ↓`
-                : "CONTINUE SCROLLING TO ENTER ARCHIVE ↓"}
+                : "CONTINUE SCROLLING ↓"}
             </span>
           </div>
         </div>

@@ -37,7 +37,7 @@ export default function EditorialStorySection() {
             transition={{ duration: 1.0, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className="editorial-story-text-column"
           >
-            <span className="editorial-section-num">04 / THE PHILOSOPHY</span>
+            <span className="editorial-section-num">03 / THE PHILOSOPHY</span>
 
             <h2 className="editorial-story-heading font-serif">
               CRAFTED FOR
