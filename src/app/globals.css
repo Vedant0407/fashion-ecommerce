@@ -12300,8 +12300,9 @@ select {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: clamp(56px, 7.5vh, 72px) clamp(16px, 3.5vw, 48px) clamp(12px, 1.8vh, 20px);
+  padding: calc(90px + clamp(16px, 2.2vh, 28px)) clamp(16px, 3.5vw, 48px) clamp(16px, 2.2vh, 28px);
   box-sizing: border-box;
+  scroll-margin-top: 0;
   z-index: 20;
 }
 
@@ -12852,7 +12853,7 @@ select {
 /* Mobile & Tablet Responsiveness */
 @media (max-width: 1024px) {
   .dual-pane-section {
-    padding: 64px 14px 20px;
+    padding: calc(90px + 14px) 14px 20px;
     height: auto;
     min-height: 100vh;
   }
