@@ -227,24 +227,39 @@ export default function ThreeDHero() {
                 background: "transparent",
               }}
             >
-              {/* Studio Environment & Cinematic Illumination */}
-              <ambientLight intensity={0.85} />
-              {/* Key Front-Right Light */}
-              <directionalLight position={[4, 6, 5]} intensity={1.5} />
-              {/* Left Fill Light */}
+              {/* Studio Environment & Dual-Tone Atmospheric Illumination (matching reference) */}
+              <ambientLight intensity={0.7} color="#2b2d38" />
+
+              {/* Soft Cool Studio Key Light from Front-Left */}
               <directionalLight
-                position={[-5, 3, 3]}
-                intensity={0.9}
-                color="#f8f4ee"
+                position={[-5, 5, 5]}
+                intensity={1.4}
+                color="#e8ecf6"
               />
-              {/* Dramatic Back Rim Light (Highlights fabric folds & silhouette during back turn) */}
+
+              {/* Iconic Crimson Studio Rim Light from Right/Rear (matching reference image) */}
+              <directionalLight
+                position={[6, 3, -3]}
+                intensity={3.6}
+                color="#ff3b30"
+              />
+
+              {/* Crimson Accent Fill from Mid-Right */}
+              <directionalLight
+                position={[4, -1, 2]}
+                intensity={1.6}
+                color="#e63946"
+              />
+
+              {/* Rear Subtle Atmospheric Backlight */}
               <directionalLight
                 position={[0, 4, -7]}
-                intensity={2.3}
-                color="#fff8ec"
+                intensity={1.4}
+                color="#f2dde2"
               />
-              {/* Subtle Low Upward Fill */}
-              <directionalLight position={[0, -3, 3]} intensity={0.45} />
+
+              {/* Low Soft Upward Fill */}
+              <directionalLight position={[0, -3, 3]} intensity={0.4} />
               <Environment preset="studio" />
 
               <Suspense fallback={null}>

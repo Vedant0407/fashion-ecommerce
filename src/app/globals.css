@@ -12086,7 +12086,7 @@ select {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  background: #080808;
+  background: #141318;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -12100,33 +12100,37 @@ select {
   inset: 0;
   pointer-events: none;
   z-index: 1;
+  background-color: #141318;
+  background-image: url("/hero-studio-bg.jpg");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
 }
 
 .hero-3d-glow {
   position: absolute;
-  top: 48%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(85vw, 900px);
-  height: min(85vw, 900px);
+  inset: 0;
   background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.055) 0%,
-    rgba(255, 255, 255, 0.015) 50%,
-    transparent 72%
+    ellipse at 62% 48%,
+    rgba(220, 52, 65, 0.24) 0%,
+    rgba(165, 36, 48, 0.12) 36%,
+    transparent 64%
   );
-  filter: blur(80px);
+  filter: blur(50px);
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .hero-3d-vignette {
   position: absolute;
   inset: 0;
   background: radial-gradient(
-    circle at 50% 50%,
-    transparent 40%,
-    rgba(0, 0, 0, 0.6) 85%,
-    rgba(0, 0, 0, 0.95) 100%
+    ellipse at 50% 46%,
+    transparent 45%,
+    rgba(16, 13, 18, 0.45) 75%,
+    rgba(8, 6, 10, 0.88) 100%
   );
+  pointer-events: none;
 }
 
 /* Top Navbar Touchpoint Guide */
