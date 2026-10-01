@@ -288,7 +288,7 @@ export default function ThreeDHero() {
         </motion.div>
 
         {/* Touchpoint Status Pill (appears when reaching near apex) */}
-        {scrollProgress > 0.65 && (
+        {scrollProgress > 0.65 && scrollProgress < 0.96 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

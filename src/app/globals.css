@@ -12361,10 +12361,8 @@ select {
   max-width: 60%;
   min-width: 0;
   position: relative;
-  height: calc(100% - clamp(90px, 12vh, 114px));
-  margin-top: calc(48px + clamp(16px, 2.2vh, 26px));
-  margin-bottom: clamp(20px, 2.8vh, 32px);
-  align-self: flex-start;
+  height: 100%;
+  margin: 0;
   border-radius: 0;
   overflow: hidden;
   background: #141318;
@@ -12437,7 +12435,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: calc(76px + clamp(12px, 1.8vh, 22px)) clamp(14px, 2vw, 36px) clamp(16px, 2vh, 24px);
+  padding: calc(48px + clamp(8px, 1.2vh, 16px)) clamp(14px, 2vw, 36px) clamp(14px, 1.8vh, 20px);
   box-sizing: border-box;
 }
 
