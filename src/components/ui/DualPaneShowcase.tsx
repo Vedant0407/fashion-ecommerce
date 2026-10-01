@@ -296,7 +296,7 @@ export default function DualPaneShowcase() {
 
                   return (
                     <div key={product.id} className="dual-pane-product-card-snap">
-                      {/* Product Photo Window */}
+                      {/* Product Photo Window filling 100% of card */}
                       <div className="dual-pane-product-window">
                         <img
                           src={product.productImage}
@@ -305,24 +305,26 @@ export default function DualPaneShowcase() {
                         />
                       </div>
 
-                      {/* Add to Cart Action */}
-                      <button
-                        type="button"
-                        onClick={() => handleAddToCart(product)}
-                        className={`dual-pane-add-btn ${isItemAdded ? "added" : ""}`}
-                      >
-                        {isItemAdded ? (
-                          <>
-                            <Check size={16} strokeWidth={2.2} />
-                            <span>ADDED TO CART</span>
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingBag size={16} strokeWidth={2} />
-                            <span>ADD TO CART • ₹{product.price.toLocaleString("en-IN")}</span>
-                          </>
-                        )}
-                      </button>
+                      {/* Floating Bottom Action Overlay */}
+                      <div className="dual-pane-product-action-overlay">
+                        <button
+                          type="button"
+                          onClick={() => handleAddToCart(product)}
+                          className={`dual-pane-add-btn ${isItemAdded ? "added" : ""}`}
+                        >
+                          {isItemAdded ? (
+                            <>
+                              <Check size={16} strokeWidth={2.2} />
+                              <span>ADDED TO CART</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingBag size={16} strokeWidth={2} />
+                              <span>ADD TO CART • ₹{product.price.toLocaleString("en-IN")}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
