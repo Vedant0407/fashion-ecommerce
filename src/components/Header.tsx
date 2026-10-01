@@ -217,10 +217,6 @@ export default function Header() {
 
         <nav className="navbar atelier-navbar editorial-nav">
           <div className="header-side nav-links-left">
-            <Link href="/shop" className="editorial-nav-text-link">
-              COLLECTION
-            </Link>
-
             <div className="story-launcher-wrapper">
               <button
                 type="button"

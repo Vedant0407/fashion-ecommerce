@@ -386,24 +386,6 @@ export default function DualPaneShowcase() {
               />
             </div>
           </div>
-
-          {/* Footer Bar with Jump Dots and Scroll Hint */}
-          <div className="dual-pane-slider-footer">
-            <div className="dual-pane-slider-dots">
-              {SHOWCASE_PRODUCTS.map((prod, idx) => (
-                <button
-                  key={prod.id}
-                  type="button"
-                  onClick={() => setActiveIndex(idx)}
-                  className={`dual-pane-slider-dot ${idx === activeIndex ? "active" : ""}`}
-                  aria-label={`Jump to piece ${idx + 1}`}
-                />
-              ))}
-            </div>
-            <span className="dual-pane-slider-hint">
-              SCROLL BOX TO BROWSE PIECES ↓
-            </span>
-          </div>
         </div>
       </div>
     </section>
