@@ -12298,9 +12298,8 @@ select {
   overflow: hidden;
   background: #0d0c10;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: calc(90px + clamp(16px, 2.2vh, 28px)) clamp(16px, 3.5vw, 48px) clamp(16px, 2.2vh, 28px);
+  padding: 0;
+  margin: 0;
   box-sizing: border-box;
   scroll-margin-top: 0;
   z-index: 20;
@@ -12340,70 +12339,33 @@ select {
   );
 }
 
-/* Top Bar */
-.dual-pane-top-bar {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 6px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.dual-pane-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.dual-pane-kicker-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
-}
-
-.dual-pane-counter-badge {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.5);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Main Container: Split Two Columns */
+/* Main Container: Full-Bleed Split Two Columns */
 .dual-pane-container {
   position: relative;
   z-index: 10;
   flex: 1;
   display: flex;
-  gap: clamp(16px, 2.5vw, 40px);
+  gap: 0;
   align-items: stretch;
-  max-width: 1480px;
+  max-width: none;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
   min-height: 0;
-  height: auto;
+  height: 100%;
 }
 
-/* LEFT SIDE: Large Model Photo Area */
+/* LEFT SIDE: Full-Bleed Model Photo (Scrolling on this side scrolls the website down!) */
 .dual-pane-left-area {
-  flex: 1.25;
+  flex: 1.15;
   position: relative;
   height: 100%;
   min-height: 0;
-  border-radius: 24px;
+  border-radius: 0;
   overflow: hidden;
   background: #141318;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
 }
 
 .dual-pane-model-card {
@@ -12427,14 +12389,14 @@ select {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: clamp(16px, 2.5vw, 28px);
+  padding: clamp(28px, 4vw, 56px);
   pointer-events: none;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    transparent 50%,
-    rgba(0, 0, 0, 0.45) 75%,
-    rgba(0, 0, 0, 0.82) 100%
+    transparent 55%,
+    rgba(0, 0, 0, 0.45) 80%,
+    rgba(0, 0, 0, 0.85) 100%
   );
 }
 
@@ -12460,11 +12422,23 @@ select {
   color: rgba(255, 255, 255, 0.7);
 }
 
+/* RIGHT COLUMN: Keeps right card centered and cleared below navbar */
+.dual-pane-right-column {
+  flex: 0.95;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(90px + clamp(14px, 2vh, 24px)) clamp(24px, 4vw, 64px) clamp(16px, 2.2vh, 28px);
+  box-sizing: border-box;
+}
+
 /* RIGHT BOX: DEDICATED VERTICAL SCROLL CARD WITH VISIBLE SCROLLBAR */
 .dual-pane-right-box {
-  flex: 0.95;
+  width: 100%;
   max-width: 480px;
-  min-width: 340px;
+  min-width: 320px;
   height: 100%;
   min-height: 0;
   border-radius: 28px;
@@ -12853,26 +12827,41 @@ select {
 /* Mobile & Tablet Responsiveness */
 @media (max-width: 1024px) {
   .dual-pane-section {
-    padding: calc(90px + 14px) 14px 20px;
+    padding: 0;
     height: auto;
     min-height: 100vh;
+    max-height: none;
   }
 
   .dual-pane-container {
     flex-direction: column;
-    gap: 16px;
+    gap: 0;
     height: auto;
   }
 
   .dual-pane-left-area {
-    height: 44vh;
-    min-height: 300px;
+    width: 100%;
+    height: 50vh;
+    min-height: 340px;
     flex: none;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dual-pane-right-column {
+    width: 100%;
+    flex: none;
+    height: auto;
+    padding: 24px 14px 32px;
+    display: flex;
+    justify-content: center;
   }
 
   .dual-pane-right-box {
-    max-width: 100%;
+    max-width: 520px;
     min-width: 0;
+    width: 100%;
     flex: none;
     height: clamp(520px, 68vh, 620px);
     padding: 16px;

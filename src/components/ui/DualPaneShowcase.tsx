@@ -277,113 +277,116 @@ export default function DualPaneShowcase() {
           </AnimatePresence>
         </div>
 
-        {/* RIGHT BOX: PRESERVED EXACTLY AS IT IS WITH VISIBLE PILL SCROLLBAR */}
-        <div
-          ref={rightBoxRef}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          className="dual-pane-right-box"
-        >
-          {/* Continuous Vertical Reel Viewport */}
-          <div className="dual-pane-reel-viewport">
-            <motion.div
-              animate={{ y: currentReelY }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              className="dual-pane-reel-track"
-            >
-              {SHOWCASE_PRODUCTS.map((product) => {
-                const currentSize = selectedSizes[product.id] || "M";
-                const isItemAdded = addedItem === product.id;
-
-                return (
-                  <div key={product.id} className="dual-pane-product-card-snap">
-                    {/* Product Photo Window */}
-                    <div className="dual-pane-product-window">
-                      <img
-                        src={product.productImage}
-                        alt={product.name}
-                        className="dual-pane-product-image"
-                      />
-                    </div>
-
-                    {/* Product Details & Price */}
-                    <div className="dual-pane-box-details">
-                      <div className="dual-pane-title-row">
-                        <h3 className="dual-pane-product-title">{product.name}</h3>
-                        <div className="dual-pane-price-group">
-                          <span className="dual-pane-price">₹{product.price.toLocaleString("en-IN")}</span>
-                          {product.originalPrice > product.price && (
-                            <span className="dual-pane-original-price">
-                              ₹{product.originalPrice.toLocaleString("en-IN")}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <p className="dual-pane-silhouette-desc">{product.silhouette}</p>
-
-                      {/* Size Selector */}
-                      <div className="dual-pane-size-row">
-                        <span className="dual-pane-size-label">SIZE:</span>
-                        <div className="dual-pane-sizes-list">
-                          {product.sizes.map((size) => (
-                            <button
-                              key={size}
-                              type="button"
-                              onClick={() => handleSelectSize(product.id, size)}
-                              className={`dual-pane-size-btn ${currentSize === size ? "active" : ""}`}
-                            >
-                              {size}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Add to Cart Action */}
-                      <div className="dual-pane-action-row">
-                        <button
-                          type="button"
-                          onClick={() => handleAddToCart(product)}
-                          className={`dual-pane-add-btn ${isItemAdded ? "added" : ""}`}
-                        >
-                          {isItemAdded ? (
-                            <>
-                              <Check size={16} strokeWidth={2.2} />
-                              <span>ADDED TO BAG</span>
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingBag size={16} strokeWidth={2} />
-                              <span>ADD TO BAG • ₹{product.price.toLocaleString("en-IN")}</span>
-                            </>
-                          )}
-                        </button>
-
-                        <Link
-                          href={product.link}
-                          className="dual-pane-detail-link"
-                        >
-                          DETAILS →
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </motion.div>
-
-            {/* VISIBLE PILL SCROLLBAR (Matching User Screenshot media_1790870571556.png) */}
-            <div
-              ref={scrollbarTrackRef}
-              onClick={handleScrollbarClick}
-              className="dual-pane-scrollbar-track"
-              title="Click to jump to piece"
-            >
+        {/* RIGHT COLUMN: Holds right box centered with navbar clearance */}
+        <div className="dual-pane-right-column">
+          {/* RIGHT BOX: PRESERVED EXACTLY AS IT IS WITH VISIBLE PILL SCROLLBAR */}
+          <div
+            ref={rightBoxRef}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            className="dual-pane-right-box"
+          >
+            {/* Continuous Vertical Reel Viewport */}
+            <div className="dual-pane-reel-viewport">
               <motion.div
-                animate={{ top: currentThumbTop }}
+                animate={{ y: currentReelY }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="dual-pane-scrollbar-thumb"
-              />
+                className="dual-pane-reel-track"
+              >
+                {SHOWCASE_PRODUCTS.map((product) => {
+                  const currentSize = selectedSizes[product.id] || "M";
+                  const isItemAdded = addedItem === product.id;
+
+                  return (
+                    <div key={product.id} className="dual-pane-product-card-snap">
+                      {/* Product Photo Window */}
+                      <div className="dual-pane-product-window">
+                        <img
+                          src={product.productImage}
+                          alt={product.name}
+                          className="dual-pane-product-image"
+                        />
+                      </div>
+
+                      {/* Product Details & Price */}
+                      <div className="dual-pane-box-details">
+                        <div className="dual-pane-title-row">
+                          <h3 className="dual-pane-product-title">{product.name}</h3>
+                          <div className="dual-pane-price-group">
+                            <span className="dual-pane-price">₹{product.price.toLocaleString("en-IN")}</span>
+                            {product.originalPrice > product.price && (
+                              <span className="dual-pane-original-price">
+                                ₹{product.originalPrice.toLocaleString("en-IN")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <p className="dual-pane-silhouette-desc">{product.silhouette}</p>
+
+                        {/* Size Selector */}
+                        <div className="dual-pane-size-row">
+                          <span className="dual-pane-size-label">SIZE:</span>
+                          <div className="dual-pane-sizes-list">
+                            {product.sizes.map((size) => (
+                              <button
+                                key={size}
+                                type="button"
+                                onClick={() => handleSelectSize(product.id, size)}
+                                className={`dual-pane-size-btn ${currentSize === size ? "active" : ""}`}
+                              >
+                                {size}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Add to Cart Action */}
+                        <div className="dual-pane-action-row">
+                          <button
+                            type="button"
+                            onClick={() => handleAddToCart(product)}
+                            className={`dual-pane-add-btn ${isItemAdded ? "added" : ""}`}
+                          >
+                            {isItemAdded ? (
+                              <>
+                                <Check size={16} strokeWidth={2.2} />
+                                <span>ADDED TO BAG</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag size={16} strokeWidth={2} />
+                                <span>ADD TO BAG • ₹{product.price.toLocaleString("en-IN")}</span>
+                              </>
+                            )}
+                          </button>
+
+                          <Link
+                            href={product.link}
+                            className="dual-pane-detail-link"
+                          >
+                            DETAILS →
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
+
+              {/* VISIBLE PILL SCROLLBAR (Matching User Screenshot media_1790870571556.png) */}
+              <div
+                ref={scrollbarTrackRef}
+                onClick={handleScrollbarClick}
+                className="dual-pane-scrollbar-track"
+                title="Click to jump to piece"
+              >
+                <motion.div
+                  animate={{ top: currentThumbTop }}
+                  transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  className="dual-pane-scrollbar-thumb"
+                />
+              </div>
             </div>
           </div>
         </div>
