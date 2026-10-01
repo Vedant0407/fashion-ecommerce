@@ -12289,14 +12289,18 @@ select {
 .dual-pane-section {
   position: relative;
   width: 100%;
+  height: 100vh;
+  height: 100dvh;
   min-height: 100vh;
   min-height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   overflow: hidden;
   background: #0d0c10;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 72px clamp(16px, 3.5vw, 48px) 24px;
+  padding: clamp(56px, 7.5vh, 72px) clamp(16px, 3.5vw, 48px) clamp(12px, 1.8vh, 20px);
   box-sizing: border-box;
   z-index: 20;
 }
@@ -12379,13 +12383,13 @@ select {
   z-index: 10;
   flex: 1;
   display: flex;
-  gap: clamp(20px, 3vw, 44px);
+  gap: clamp(16px, 2.5vw, 40px);
   align-items: stretch;
   max-width: 1480px;
   width: 100%;
-  margin: 12px auto 0;
+  margin: clamp(6px, 1vh, 12px) auto 0;
   min-height: 0;
-  height: clamp(580px, 80vh, 740px);
+  height: auto;
 }
 
 /* LEFT SIDE: Large Model Photo Area */
@@ -12476,7 +12480,7 @@ select {
 .dual-pane-right-box {
   flex: 0.95;
   max-width: 480px;
-  min-width: 360px;
+  min-width: 340px;
   height: 100%;
   min-height: 0;
   border-radius: 28px;
@@ -12486,9 +12490,11 @@ select {
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
   display: flex;
   flex-direction: column;
-  padding: clamp(18px, 2.2vw, 24px);
+  padding: clamp(14px, 1.8vw, 22px);
   box-sizing: border-box;
   overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 /* Slider Header Bar */
@@ -12558,8 +12564,9 @@ select {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  margin: 10px 0;
+  margin: 8px 0;
   padding-right: 18px; /* Room for custom scrollbar */
+  overscroll-behavior: contain;
 }
 
 /* Continuous Vertical Reel Track (Hardware Accelerated) */
@@ -12622,11 +12629,12 @@ select {
 .dual-pane-product-window {
   position: relative;
   width: 100%;
-  height: clamp(165px, 24vh, 220px);
+  height: clamp(140px, 20vh, 205px);
   border-radius: 18px;
   overflow: hidden;
   background: #09090c;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .dual-pane-product-image {

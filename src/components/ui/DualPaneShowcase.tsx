@@ -130,19 +130,22 @@ export default function DualPaneShowcase() {
   const activeProduct = SHOWCASE_PRODUCTS[activeIndex];
 
   // Dedicated wheel listener on the right box:
-  // When cursor is inside the right box, scrolling wheels through pieces.
-  // When cursor is on the left side (or outside), the browser naturally scrolls the website!
+  // When cursor is inside the right box, scrolling wheels through pieces while keeping the box firmly at rest in one position.
+  // When cursor is on the left side (or outside), the browser naturally scrolls the website down!
   useEffect(() => {
     const box = rightBoxRef.current;
     if (!box) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) < 14) return;
-
-      // Prevent page scroll only when user is scrolling specifically over the right box
+      // 1. Immediately and unconditionally prevent any page scrolling when cursor is in the right box.
+      // This guarantees the box stays completely at rest on one position and never shifts or jerks the page!
       e.preventDefault();
       e.stopPropagation();
 
+      // 2. Ignore micro-movements
+      if (Math.abs(e.deltaY) < 10) return;
+
+      // 3. Debounce rapid wheel/trackpad ticks so each flick steps one piece cleanly
       if (isWheelingRef.current) return;
 
       if (e.deltaY > 0) {
@@ -152,19 +155,19 @@ export default function DualPaneShowcase() {
             isWheelingRef.current = true;
             setTimeout(() => {
               isWheelingRef.current = false;
-            }, 300);
+            }, 320);
             return prev + 1;
           }
           return prev;
         });
-      } else {
+      } else if (e.deltaY < 0) {
         // Scroll up in right box -> go to prev piece
         setActiveIndex((prev) => {
           if (prev > 0) {
             isWheelingRef.current = true;
             setTimeout(() => {
               isWheelingRef.current = false;
-            }, 300);
+            }, 320);
             return prev - 1;
           }
           return prev;
