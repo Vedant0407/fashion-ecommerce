@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, ArrowLeft, ArrowRight, Check, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingBag, Check, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export interface ShowcaseProduct {
@@ -110,125 +110,98 @@ export const SHOWCASE_PRODUCTS: ShowcaseProduct[] = [
 
 export default function DualPaneShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
-  const [selectedSize, setSelectedSize] = useState<string>("M");
-  const [isAdded, setIsAdded] = useState(false);
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({
+    "tailored-poplin-shirt": "M",
+    "oversized-black-tee": "M",
+    "charcoal-oxford-overshirt": "M",
+    "minimalist-chalk-tee": "M",
+    "architectural-wool-coat": "M",
+    "pleated-relaxed-trouser": "M",
+  });
+  const [addedItem, setAddedItem] = useState<string | null>(null);
 
-  const lastWheelTimeRef = useRef(0);
-  const touchStartXRef = useRef(0);
-  const touchStartYRef = useRef(0);
-
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { addToCart, openCart } = useCart();
   const total = SHOWCASE_PRODUCTS.length;
   const activeProduct = SHOWCASE_PRODUCTS[activeIndex];
 
-  const goToSlide = (targetIndex: number) => {
-    if (targetIndex < 0 || targetIndex >= total || targetIndex === activeIndex) return;
-    setDirection(targetIndex > activeIndex ? 1 : -1);
-    setActiveIndex(targetIndex);
-  };
+  // Track vertical scroll position inside the right box to change left model image
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
-  const nextSlide = () => {
-    if (activeIndex < total - 1) {
-      goToSlide(activeIndex + 1);
-    } else {
-      goToSlide(0); // loop
-    }
-  };
+    const cards = container.querySelectorAll<HTMLElement>(".dual-pane-product-card-snap");
+    if (!cards || cards.length === 0) return;
 
-  const prevSlide = () => {
-    if (activeIndex > 0) {
-      goToSlide(activeIndex - 1);
-    } else {
-      goToSlide(total - 1); // loop
-    }
-  };
+    const containerTop = container.scrollTop;
+    const containerHeight = container.clientHeight;
+    const centerPoint = containerTop + containerHeight / 2;
 
-  // Dedicated wheel listener on the right box ONLY
-  const handleBoxWheel = (e: React.WheelEvent) => {
-    const isVertical = Math.abs(e.deltaY) > Math.abs(e.deltaX);
-    const delta = isVertical ? e.deltaY : e.deltaX;
+    let closestIndex = 0;
+    let minDistance = Infinity;
 
-    if (Math.abs(delta) < 18) return;
-
-    const now = Date.now();
-    if (now - lastWheelTimeRef.current < 400) return;
-
-    if (delta > 0) {
-      // scroll down/right -> next product
-      if (activeIndex < total - 1) {
-        e.stopPropagation();
-        lastWheelTimeRef.current = now;
-        goToSlide(activeIndex + 1);
+    cards.forEach((cardEl, index) => {
+      const cardCenter = cardEl.offsetTop + cardEl.offsetHeight / 2;
+      const distance = Math.abs(centerPoint - cardCenter);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = index;
       }
-    } else if (delta < 0) {
-      // scroll up/left -> prev product
-      if (activeIndex > 0) {
-        e.stopPropagation();
-        lastWheelTimeRef.current = now;
-        goToSlide(activeIndex - 1);
-      }
-    }
-  };
-
-  // Touch swipe support on right box
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX;
-    touchStartYRef.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const deltaX = touchStartXRef.current - e.changedTouches[0].clientX;
-    const deltaY = touchStartYRef.current - e.changedTouches[0].clientY;
-
-    // Detect horizontal swipe or vertical swipe inside right box
-    if (Math.abs(deltaX) > 35 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (deltaX > 0) {
-        nextSlide();
-      } else {
-        prevSlide();
-      }
-    } else if (Math.abs(deltaY) > 40 && Math.abs(deltaY) > Math.abs(deltaX)) {
-      if (deltaY > 0 && activeIndex < total - 1) {
-        nextSlide();
-      } else if (deltaY < 0 && activeIndex > 0) {
-        prevSlide();
-      }
-    }
-  };
-
-  // Handle Add to Cart action
-  const handleAddToCart = () => {
-    addToCart({
-      id: activeProduct.id,
-      name: activeProduct.name,
-      price: activeProduct.price,
-      image: activeProduct.productImage || activeProduct.modelImage,
-      size: selectedSize,
-      color: activeProduct.color,
     });
 
-    setIsAdded(true);
-    setTimeout(() => {
-      setIsAdded(false);
-      openCart();
-    }, 850);
+    if (closestIndex !== activeIndex) {
+      setActiveIndex(closestIndex);
+    }
   };
 
-  // Slide transition variants for Framer Motion inside the right box
-  const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? 40 : -40,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (dir: number) => ({
-      x: dir > 0 ? -40 : 40,
-      opacity: 0,
-    }),
+  // Scroll to a specific card smoothly
+  const scrollToCard = (index: number) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const cards = container.querySelectorAll<HTMLElement>(".dual-pane-product-card-snap");
+    const targetCard = cards[index];
+    if (targetCard) {
+      container.scrollTo({
+        top: targetCard.offsetTop,
+        behavior: "smooth",
+      });
+      setActiveIndex(index);
+    }
+  };
+
+  const handleNext = () => {
+    if (activeIndex < total - 1) {
+      scrollToCard(activeIndex + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (activeIndex > 0) {
+      scrollToCard(activeIndex - 1);
+    }
+  };
+
+  const handleSelectSize = (productId: string, size: string) => {
+    setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
+  };
+
+  const handleAddToCart = (product: ShowcaseProduct) => {
+    const size = selectedSizes[product.id] || "M";
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.productImage || product.modelImage,
+      size,
+      color: product.color,
+    });
+
+    setAddedItem(product.id);
+    setTimeout(() => {
+      setAddedItem(null);
+      openCart();
+    }, 850);
   };
 
   return (
@@ -247,7 +220,7 @@ export default function DualPaneShowcase() {
       <div className="dual-pane-top-bar">
         <div className="dual-pane-kicker">
           <span className="dual-pane-kicker-dot" />
-          <span>02 // RUNWAY SHOWCASE • ATELIER ATELIER</span>
+          <span>02 // RUNWAY SHOWCASE • VERTICAL SCROLL</span>
         </div>
         <div className="dual-pane-counter-badge">
           <span>PIECE {String(activeIndex + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</span>
@@ -289,158 +262,144 @@ export default function DualPaneShowcase() {
           </AnimatePresence>
         </div>
 
-        {/* RIGHT BOX: DEDICATED SLIDER BOX (Product photo, details, price & Add to Cart) */}
-        <div
-          className="dual-pane-right-box"
-          onWheel={handleBoxWheel}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          {/* Slider Header Bar */}
+        {/* RIGHT BOX: VERTICALLY SCROLLABLE PRODUCT CONTAINER WITH VISIBLE SCROLLBAR */}
+        <div className="dual-pane-right-box">
+          {/* Header Bar with Counter & Up/Down Steppers */}
           <div className="dual-pane-box-header">
             <span className="dual-pane-box-collection">{activeProduct.collection}</span>
 
-            {/* Slider Navigation Arrows */}
             <div className="dual-pane-box-nav">
               <button
                 type="button"
-                onClick={prevSlide}
+                onClick={handlePrev}
+                disabled={activeIndex === 0}
                 className="dual-pane-nav-arrow"
-                aria-label="Previous piece"
-                title="Previous piece"
+                aria-label="Previous product"
+                title="Previous product"
               >
-                <ChevronLeft size={16} strokeWidth={2.2} />
+                <ChevronUp size={16} strokeWidth={2.2} />
               </button>
               <span className="dual-pane-slide-num">
                 {String(activeIndex + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
               </span>
               <button
                 type="button"
-                onClick={nextSlide}
+                onClick={handleNext}
+                disabled={activeIndex === total - 1}
                 className="dual-pane-nav-arrow"
-                aria-label="Next piece"
-                title="Next piece"
+                aria-label="Next product"
+                title="Next product"
               >
-                <ChevronRight size={16} strokeWidth={2.2} />
+                <ChevronDown size={16} strokeWidth={2.2} />
               </button>
             </div>
           </div>
 
-          {/* SLIDER BODY (Animated slide on change) */}
-          <div className="dual-pane-slider-content-wrap">
-            <AnimatePresence mode="wait" custom={direction} initial={false}>
-              <motion.div
-                key={activeProduct.id}
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.2}
-                onDragEnd={(_, info) => {
-                  if (info.offset.x < -40) {
-                    nextSlide();
-                  } else if (info.offset.x > 40) {
-                    prevSlide();
-                  }
-                }}
-                className="dual-pane-slide-panel"
-              >
-                {/* Product Photo Window */}
-                <div className="dual-pane-product-window">
-                  <img
-                    src={activeProduct.productImage}
-                    alt={activeProduct.name}
-                    className="dual-pane-product-image"
-                  />
-                  <div className="dual-pane-product-badge">
-                    <span>DETAIL // STILL LIFE</span>
-                  </div>
-                </div>
+          {/* VERTICAL SCROLL REEL (with custom scrollbar matching screenshot) */}
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="dual-pane-vertical-reel"
+          >
+            {SHOWCASE_PRODUCTS.map((product) => {
+              const currentSize = selectedSizes[product.id] || "M";
+              const isItemAdded = addedItem === product.id;
 
-                {/* Product Meta & Pricing */}
-                <div className="dual-pane-box-details">
-                  <div className="dual-pane-title-row">
-                    <h3 className="dual-pane-product-title">{activeProduct.name}</h3>
-                    <div className="dual-pane-price-group">
-                      <span className="dual-pane-price">₹{activeProduct.price.toLocaleString("en-IN")}</span>
-                      {activeProduct.originalPrice > activeProduct.price && (
-                        <span className="dual-pane-original-price">
-                          ₹{activeProduct.originalPrice.toLocaleString("en-IN")}
-                        </span>
-                      )}
+              return (
+                <div key={product.id} className="dual-pane-product-card-snap">
+                  {/* Product Photo Window */}
+                  <div className="dual-pane-product-window">
+                    <img
+                      src={product.productImage}
+                      alt={product.name}
+                      className="dual-pane-product-image"
+                    />
+                    <div className="dual-pane-product-badge">
+                      <span>STILL LIFE // DETAIL</span>
                     </div>
                   </div>
 
-                  <p className="dual-pane-silhouette-desc">{activeProduct.silhouette}</p>
+                  {/* Product Details & Price */}
+                  <div className="dual-pane-box-details">
+                    <div className="dual-pane-title-row">
+                      <h3 className="dual-pane-product-title">{product.name}</h3>
+                      <div className="dual-pane-price-group">
+                        <span className="dual-pane-price">₹{product.price.toLocaleString("en-IN")}</span>
+                        {product.originalPrice > product.price && (
+                          <span className="dual-pane-original-price">
+                            ₹{product.originalPrice.toLocaleString("en-IN")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                  {/* Size Selector */}
-                  <div className="dual-pane-size-row">
-                    <span className="dual-pane-size-label">SIZE:</span>
-                    <div className="dual-pane-sizes-list">
-                      {activeProduct.sizes.map((size) => (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => setSelectedSize(size)}
-                          className={`dual-pane-size-btn ${selectedSize === size ? "active" : ""}`}
-                        >
-                          {size}
-                        </button>
-                      ))}
+                    <p className="dual-pane-silhouette-desc">{product.silhouette}</p>
+
+                    {/* Size Selector */}
+                    <div className="dual-pane-size-row">
+                      <span className="dual-pane-size-label">SIZE:</span>
+                      <div className="dual-pane-sizes-list">
+                        {product.sizes.map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => handleSelectSize(product.id, size)}
+                            className={`dual-pane-size-btn ${currentSize === size ? "active" : ""}`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Add to Cart Action */}
+                    <div className="dual-pane-action-row">
+                      <button
+                        type="button"
+                        onClick={() => handleAddToCart(product)}
+                        className={`dual-pane-add-btn ${isItemAdded ? "added" : ""}`}
+                      >
+                        {isItemAdded ? (
+                          <>
+                            <Check size={16} strokeWidth={2.2} />
+                            <span>ADDED TO BAG</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingBag size={16} strokeWidth={2} />
+                            <span>ADD TO BAG • ₹{product.price.toLocaleString("en-IN")}</span>
+                          </>
+                        )}
+                      </button>
+
+                      <Link
+                        href={product.link}
+                        className="dual-pane-detail-link"
+                      >
+                        DETAILS →
+                      </Link>
                     </div>
                   </div>
-
-                  {/* Add to Cart Button */}
-                  <div className="dual-pane-action-row">
-                    <button
-                      type="button"
-                      onClick={handleAddToCart}
-                      className={`dual-pane-add-btn ${isAdded ? "added" : ""}`}
-                    >
-                      {isAdded ? (
-                        <>
-                          <Check size={16} strokeWidth={2.2} />
-                          <span>ADDED TO BAG</span>
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingBag size={16} strokeWidth={2} />
-                          <span>ADD TO BAG • ₹{activeProduct.price.toLocaleString("en-IN")}</span>
-                        </>
-                      )}
-                    </button>
-
-                    <Link
-                      href={activeProduct.link}
-                      className="dual-pane-detail-link"
-                    >
-                      DETAILS →
-                    </Link>
-                  </div>
                 </div>
-              </motion.div>
-            </AnimatePresence>
+              );
+            })}
           </div>
 
-          {/* Slider Footer: Progress Bar & Direct Jump Dots */}
+          {/* Footer Bar with Jump Dots and Scroll Hint */}
           <div className="dual-pane-slider-footer">
             <div className="dual-pane-slider-dots">
               {SHOWCASE_PRODUCTS.map((prod, idx) => (
                 <button
                   key={prod.id}
                   type="button"
-                  onClick={() => goToSlide(idx)}
+                  onClick={() => scrollToCard(idx)}
                   className={`dual-pane-slider-dot ${idx === activeIndex ? "active" : ""}`}
-                  aria-label={`Go to slide ${idx + 1}`}
+                  aria-label={`Scroll to piece ${idx + 1}`}
                 />
               ))}
             </div>
             <span className="dual-pane-slider-hint">
-              SWIPE / SCROLL INSIDE BOX TO SLIDE
+              SCROLL BOX TO BROWSE PIECES ↓
             </span>
           </div>
         </div>

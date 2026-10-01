@@ -12385,12 +12385,14 @@ select {
   width: 100%;
   margin: 12px auto 0;
   min-height: 0;
+  height: clamp(580px, 80vh, 740px);
 }
 
 /* LEFT SIDE: Large Model Photo Area */
 .dual-pane-left-area {
   flex: 1.25;
   position: relative;
+  height: 100%;
   min-height: 0;
   border-radius: 24px;
   overflow: hidden;
@@ -12470,11 +12472,13 @@ select {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* RIGHT BOX: DEDICATED SLIDER CARD */
+/* RIGHT BOX: DEDICATED VERTICAL SCROLL CARD WITH VISIBLE SCROLLBAR */
 .dual-pane-right-box {
   flex: 0.95;
   max-width: 480px;
   min-width: 360px;
+  height: 100%;
+  min-height: 0;
   border-radius: 28px;
   border: 1.5px solid rgba(255, 255, 255, 0.14);
   background: rgba(18, 16, 22, 0.92);
@@ -12482,20 +12486,14 @@ select {
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   padding: clamp(18px, 2.2vw, 24px);
   box-sizing: border-box;
   overflow: hidden;
-  user-select: none;
-  cursor: grab;
-}
-
-.dual-pane-right-box:active {
-  cursor: grabbing;
 }
 
 /* Slider Header Bar */
 .dual-pane-box-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -12548,21 +12546,54 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
-/* Slider Body Wrap */
-.dual-pane-slider-content-wrap {
+/* VERTICAL SCROLL REEL (with custom scrollbar matching screenshot) */
+.dual-pane-vertical-reel {
   position: relative;
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  overflow: hidden;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  margin: 10px 0;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.45) rgba(255, 255, 255, 0.04);
+}
+
+/* Custom Scrollbar for Webkit Browsers */
+.dual-pane-vertical-reel::-webkit-scrollbar {
+  width: 7px;
+}
+
+.dual-pane-vertical-reel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 9999px;
   margin: 6px 0;
 }
 
-.dual-pane-slide-panel {
+.dual-pane-vertical-reel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+.dual-pane-vertical-reel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+/* Product Card Inside Reel */
+.dual-pane-product-card-snap {
+  height: 100%;
+  min-height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0 10px;
+  box-sizing: border-box;
 }
 
 /* Product Photo Window */
@@ -12816,10 +12847,12 @@ select {
   .dual-pane-container {
     flex-direction: column;
     gap: 16px;
+    height: auto;
   }
 
   .dual-pane-left-area {
-    height: 42vh;
+    height: 44vh;
+    min-height: 320px;
     flex: none;
   }
 
@@ -12827,11 +12860,12 @@ select {
     max-width: 100%;
     min-width: 0;
     flex: none;
+    height: clamp(500px, 68vh, 600px);
     padding: 16px;
   }
 
   .dual-pane-product-window {
-    height: 145px;
+    height: 150px;
   }
 }
 
