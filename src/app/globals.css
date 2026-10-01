@@ -12613,7 +12613,7 @@ select {
 .dual-pane-product-window {
   position: relative;
   width: 100%;
-  height: clamp(160px, 24vh, 235px);
+  height: clamp(260px, 38vh, 370px);
   border-radius: 18px;
   overflow: hidden;
   background: #09090c;
@@ -12879,7 +12879,7 @@ select {
   }
 
   .dual-pane-product-window {
-    height: 150px;
+    height: clamp(210px, 32vh, 270px);
   }
 }
 
