@@ -10569,13 +10569,20 @@ select {
   opacity: 0.6;
 }
 
-/* 2. EDITORIAL RUNWAY HERO (PHYSICAL CONTINUOUS HORIZONTAL STAGE) */
-.editorial-runway-hero {
+/* 2. EDITORIAL RUNWAY HERO (STICKY SCROLL-DRIVEN PRODUCT SHOWCASE) */
+.editorial-runway-scroll-wrapper {
   position: relative;
+  width: 100%;
+  height: 460vh;
+}
+
+.editorial-runway-sticky-viewport {
+  position: sticky;
+  top: 0;
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  min-height: 680px;
+  min-height: 600px;
   overflow: hidden;
   background: #080808;
   display: flex;
@@ -10905,6 +10912,17 @@ select {
   height: 100%;
   background: #ffffff;
   border-radius: 999px;
+}
+
+.editorial-runway-scroll-hint {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 3px;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .editorial-runway-dots {

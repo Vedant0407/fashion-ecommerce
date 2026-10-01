@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  PanInfo,
+  useScroll,
+  useMotionValueEvent,
+} from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 
 interface HeroSlide {
@@ -89,39 +95,71 @@ const HERO_SLIDES: HeroSlide[] = [
 export default function EditorialHero() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
-  const isAnimatingRef = useRef(false);
-  const heroSectionRef = useRef<HTMLElement>(null);
+  const currentIndexRef = useRef(0);
+  const scrollTrackRef = useRef<HTMLElement>(null);
 
   const total = HERO_SLIDES.length;
 
+  // Track native scroll progress through this sticky section (0.0 to 1.0)
+  const { scrollYProgress } = useScroll({
+    target: scrollTrackRef,
+    offset: ["start start", "end end"],
+  });
+
+  // Map vertical scroll progress smoothly across all available products!
+  useMotionValueEvent(scrollYProgress, "change", (progress) => {
+    const segment = 1 / (total - 1);
+    const targetIdx = Math.min(
+      total - 1,
+      Math.max(0, Math.round(progress / segment))
+    );
+
+    if (targetIdx !== currentIndexRef.current) {
+      setDirection(targetIdx > currentIndexRef.current ? 1 : -1);
+      currentIndexRef.current = targetIdx;
+      setCurrentIndex(targetIdx);
+    }
+  });
+
+  // Programmatic scroll helper for buttons, dots, and ghosted cards
+  const scrollToSlide = useCallback(
+    (idx: number) => {
+      if (!scrollTrackRef.current) return;
+      const rect = scrollTrackRef.current.getBoundingClientRect();
+      const startY = window.scrollY + rect.top;
+      const trackHeight = scrollTrackRef.current.offsetHeight;
+      const viewportHeight = window.innerHeight;
+      const maxScroll = trackHeight - viewportHeight;
+      const targetY = startY + (idx / (total - 1)) * maxScroll;
+      window.scrollTo({ top: targetY, behavior: "smooth" });
+    },
+    [total]
+  );
+
   const nextSlide = useCallback(() => {
-    if (isAnimatingRef.current) return;
-    isAnimatingRef.current = true;
-    setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % total);
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-    }, 950);
-  }, [total]);
+    if (currentIndexRef.current < total - 1) {
+      scrollToSlide(currentIndexRef.current + 1);
+    } else {
+      // Advance to the next section below
+      if (scrollTrackRef.current) {
+        const rect = scrollTrackRef.current.getBoundingClientRect();
+        const endY = window.scrollY + rect.bottom;
+        window.scrollTo({ top: endY, behavior: "smooth" });
+      }
+    }
+  }, [total, scrollToSlide]);
 
   const prevSlide = useCallback(() => {
-    if (isAnimatingRef.current) return;
-    isAnimatingRef.current = true;
-    setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + total) % total);
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-    }, 950);
-  }, [total]);
+    if (currentIndexRef.current > 0) {
+      scrollToSlide(currentIndexRef.current - 1);
+    } else {
+      // Scroll back up to hero
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [scrollToSlide]);
 
   const goToSlide = (idx: number) => {
-    if (isAnimatingRef.current || idx === currentIndex) return;
-    isAnimatingRef.current = true;
-    setDirection(idx > currentIndex ? 1 : -1);
-    setCurrentIndex(idx);
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-    }, 950);
+    scrollToSlide(idx);
   };
 
   // Keyboard navigation (Left / Right Arrow keys)
@@ -132,38 +170,6 @@ export default function EditorialHero() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [nextSlide, prevSlide]);
-
-  // Mouse Wheel navigation with momentum lock
-  useEffect(() => {
-    const heroEl = heroSectionRef.current;
-    if (!heroEl) return;
-
-    let wheelCooldown = false;
-    const handleWheel = (e: WheelEvent) => {
-      // Only capture if vertical delta is noticeable
-      if (Math.abs(e.deltaY) < 30 && Math.abs(e.deltaX) < 30) return;
-      if (wheelCooldown || isAnimatingRef.current) return;
-
-      if (e.deltaY > 0 || e.deltaX > 0) {
-        // Scroll forward
-        nextSlide();
-        wheelCooldown = true;
-        setTimeout(() => {
-          wheelCooldown = false;
-        }, 1100);
-      } else if (e.deltaY < 0 || e.deltaX < 0) {
-        // Scroll backward
-        prevSlide();
-        wheelCooldown = true;
-        setTimeout(() => {
-          wheelCooldown = false;
-        }, 1100);
-      }
-    };
-
-    heroEl.addEventListener("wheel", handleWheel, { passive: true });
-    return () => heroEl.removeEventListener("wheel", handleWheel);
   }, [nextSlide, prevSlide]);
 
   // Touch Drag gestures
@@ -179,12 +185,18 @@ export default function EditorialHero() {
   const activeSlide = HERO_SLIDES[currentIndex];
 
   return (
-    <section id="runway-hero" ref={heroSectionRef} className="editorial-runway-hero">
-      {/* Editorial Section Header Kicker */}
-      <div className="editorial-runway-section-kicker">
-        <span className="editorial-runway-kicker-dot" />
-        <span>02 // RUNWAY SHOWCASE • CONTINUOUS ARCHIVE</span>
-      </div>
+    <section
+      id="runway-hero"
+      ref={scrollTrackRef}
+      className="editorial-runway-scroll-wrapper"
+    >
+      {/* STICKY VIEWPORT: Locks in view while scrolling through all products */}
+      <div className="editorial-runway-sticky-viewport">
+        {/* Editorial Section Header Kicker */}
+        <div className="editorial-runway-section-kicker">
+          <span className="editorial-runway-kicker-dot" />
+          <span>02 // RUNWAY SHOWCASE • CONTINUOUS ARCHIVE</span>
+        </div>
 
       {/* Ambient Atmospheric Backdrop of Active Piece */}
       <div className="editorial-runway-backdrop">
@@ -448,6 +460,15 @@ export default function EditorialHero() {
               }}
             />
           </div>
+
+          {/* Scroll progress status hint */}
+          <div className="editorial-runway-scroll-hint">
+            <span>
+              {currentIndex < total - 1
+                ? `SCROLL TO EXPLORE ALL PIECES (0${currentIndex + 1}/0${total}) ↓`
+                : "CONTINUE SCROLLING TO ENTER ARCHIVE ↓"}
+            </span>
+          </div>
         </div>
 
         {/* Minimal Jump Dots */}
@@ -464,6 +485,7 @@ export default function EditorialHero() {
             />
           ))}
         </div>
+      </div>
       </div>
     </section>
   );

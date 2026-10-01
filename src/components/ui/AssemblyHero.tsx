@@ -97,6 +97,25 @@ export default function AssemblyHero() {
     return () => clearTimeout(timer);
   }, [assemblyKey]);
 
+  useEffect(() => {
+    let wheelLocked = false;
+    const handleWheel = (e: WheelEvent) => {
+      if (wheelLocked) return;
+      if (window.scrollY < 40 && e.deltaY > 25) {
+        const runway = document.getElementById("runway-hero");
+        if (runway) {
+          wheelLocked = true;
+          runway.scrollIntoView({ behavior: "smooth", block: "start" });
+          setTimeout(() => {
+            wheelLocked = false;
+          }, 900);
+        }
+      }
+    };
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, []);
+
   const handleReplay = () => {
     setIsAssembled(false);
     setAssemblyKey((prev) => prev + 1);
