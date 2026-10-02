@@ -12509,6 +12509,98 @@ select {
   position: relative;
 }
 
+/* Upper Side Scroll Signal Badge on Right Photo */
+.dual-pane-scroll-signal {
+  position: absolute;
+  top: calc(48px + 14px);
+  left: 18px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px;
+  border-radius: 9999px;
+  background: rgba(12, 10, 16, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dual-pane-scroll-signal:hover {
+  background: rgba(26, 23, 33, 0.92);
+  border-color: rgba(255, 255, 255, 0.38);
+  transform: translateY(1px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.65);
+}
+
+.dual-pane-signal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff3b30;
+  box-shadow: 0 0 10px #ff3b30;
+  animation: signal-dot-pulse 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+.dual-pane-signal-text {
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.dual-pane-signal-count {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  padding-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dual-pane-signal-arrow {
+  color: #ffffff;
+  animation: signal-arrow-bounce 1.6s infinite ease-in-out;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.dual-pane-signal-arrow.reversed {
+  transform: rotate(180deg);
+  animation: none;
+}
+
+@keyframes signal-arrow-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+@keyframes signal-dot-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 10px #ff3b30;
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+    box-shadow: 0 0 4px #ff3b30;
+  }
+}
+
 /* Continuous Reel Viewport inside Right Box */
 .dual-pane-reel-viewport {
   position: relative;
@@ -12891,6 +12983,14 @@ select {
   .dual-pane-model-detail-btn {
     padding: 8px 14px;
     font-size: 9.5px;
+  }
+
+  .dual-pane-scroll-signal {
+    top: 14px;
+    left: 14px;
+    padding: 6px 12px;
+    font-size: 8.5px;
+    gap: 6px;
   }
 
   .dual-pane-right-column {

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Check } from "lucide-react";
+import { ShoppingBag, Check, ArrowDown } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export interface ShowcaseProduct {
@@ -115,6 +115,9 @@ export default function DualPaneShowcase() {
   const rightBoxRef = useRef<HTMLDivElement>(null);
   const scrollbarTrackRef = useRef<HTMLDivElement>(null);
   const isWheelingRef = useRef(false);
+  const wheelCooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const wheelAccumulatorRef = useRef(0);
+  const lastWheelTimestampRef = useRef(0);
   const touchStartYRef = useRef(0);
 
   const { addToCart, openCart } = useCart();
@@ -122,54 +125,72 @@ export default function DualPaneShowcase() {
   const activeProduct = SHOWCASE_PRODUCTS[activeIndex];
 
   // Dedicated wheel listener on the right box:
-  // When cursor is inside the right box, scrolling wheels through pieces while keeping the box firmly at rest in one position.
-  // When cursor is on the left side (or outside), the browser naturally scrolls the website down!
+  // Precision momentum-safe wheel lock prevents trackpad glide or rapid mouse wheel ticks from skipping 2-3 pieces.
   useEffect(() => {
     const box = rightBoxRef.current;
     if (!box) return;
 
     const onWheel = (e: WheelEvent) => {
-      // 1. Immediately and unconditionally prevent any page scrolling when cursor is in the right box.
-      // This guarantees the box stays completely at rest on one position and never shifts or jerks the page!
+      // 1. Immediately prevent page scrolling while over the right box
       e.preventDefault();
       e.stopPropagation();
 
-      // 2. Ignore micro-movements
-      if (Math.abs(e.deltaY) < 10) return;
+      const now = Date.now();
 
-      // 3. Debounce rapid wheel/trackpad ticks so each flick steps one piece cleanly
-      if (isWheelingRef.current) return;
-
-      if (e.deltaY > 0) {
-        // Scroll down in right box -> advance to next piece
-        setActiveIndex((prev) => {
-          if (prev < total - 1) {
-            isWheelingRef.current = true;
-            setTimeout(() => {
-              isWheelingRef.current = false;
-            }, 320);
-            return prev + 1;
-          }
-          return prev;
-        });
-      } else if (e.deltaY < 0) {
-        // Scroll up in right box -> go to prev piece
-        setActiveIndex((prev) => {
-          if (prev > 0) {
-            isWheelingRef.current = true;
-            setTimeout(() => {
-              isWheelingRef.current = false;
-            }, 320);
-            return prev - 1;
-          }
-          return prev;
-        });
+      // 2. If already locked, extend cooldown as long as wheel events keep firing.
+      // This absorbs trackpad inertia / momentum glide completely!
+      if (isWheelingRef.current) {
+        if (wheelCooldownTimerRef.current) {
+          clearTimeout(wheelCooldownTimerRef.current);
+        }
+        wheelCooldownTimerRef.current = setTimeout(() => {
+          isWheelingRef.current = false;
+          wheelAccumulatorRef.current = 0;
+        }, 450);
+        return;
       }
+
+      // 3. Minimum interval rate-limit between intentional flicks
+      if (now - lastWheelTimestampRef.current < 550) {
+        return;
+      }
+
+      // 4. Accumulate delta to verify genuine scroll intent (filters accidental micro-ticks)
+      wheelAccumulatorRef.current += e.deltaY;
+      if (Math.abs(wheelAccumulatorRef.current) < 25) {
+        return;
+      }
+
+      // 5. Synchronously lock IMMEDIATELY before triggering state update
+      isWheelingRef.current = true;
+      lastWheelTimestampRef.current = now;
+
+      const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
+      wheelAccumulatorRef.current = 0;
+
+      // 6. Advance or reverse by EXACTLY one piece (never skips)
+      if (direction > 0) {
+        setActiveIndex((prev) => Math.min(total - 1, prev + 1));
+      } else {
+        setActiveIndex((prev) => Math.max(0, prev - 1));
+      }
+
+      // 7. Keep lock engaged until wheel events stop + 500ms cooldown
+      if (wheelCooldownTimerRef.current) {
+        clearTimeout(wheelCooldownTimerRef.current);
+      }
+      wheelCooldownTimerRef.current = setTimeout(() => {
+        isWheelingRef.current = false;
+        wheelAccumulatorRef.current = 0;
+      }, 500);
     };
 
     box.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       box.removeEventListener("wheel", onWheel);
+      if (wheelCooldownTimerRef.current) {
+        clearTimeout(wheelCooldownTimerRef.current);
+      }
     };
   }, [total]);
 
@@ -180,7 +201,7 @@ export default function DualPaneShowcase() {
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
-    if (Math.abs(deltaY) > 35) {
+    if (Math.abs(deltaY) > 42) {
       if (deltaY < 0 && activeIndex < total - 1) {
         setActiveIndex((prev) => prev + 1);
       } else if (deltaY > 0 && activeIndex > 0) {
@@ -284,6 +305,40 @@ export default function DualPaneShowcase() {
             onTouchEnd={handleTouchEnd}
             className="dual-pane-right-box"
           >
+            {/* UPPER SIDE SCROLL SIGNAL: Prompts user to scroll down to explore more pieces */}
+            <div
+              className="dual-pane-scroll-signal"
+              onClick={() => {
+                if (activeIndex < total - 1) {
+                  setActiveIndex((prev) => prev + 1);
+                } else {
+                  setActiveIndex(0);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              title={
+                activeIndex < total - 1
+                  ? "Click or scroll down to explore next piece"
+                  : "Click to return to first piece"
+              }
+            >
+              <span className="dual-pane-signal-dot" />
+              <span className="dual-pane-signal-text">
+                {activeIndex < total - 1
+                  ? "SCROLL DOWN TO EXPLORE"
+                  : "ALL PIECES EXPLORED"}
+              </span>
+              <span className="dual-pane-signal-count">
+                {String(activeIndex + 1).padStart(2, "0")}/{String(total).padStart(2, "0")}
+              </span>
+              <ArrowDown
+                size={12}
+                strokeWidth={2.4}
+                className={`dual-pane-signal-arrow ${activeIndex === total - 1 ? "reversed" : ""}`}
+              />
+            </div>
+
             {/* Continuous Vertical Reel Viewport */}
             <div className="dual-pane-reel-viewport">
               <motion.div
