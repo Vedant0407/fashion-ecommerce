@@ -52,7 +52,7 @@ function TshirtModel({ progress }: { progress: number }) {
 
     // Strictly centered vertically at Y = 0 (subtle organic breathing float only when idle at top)
     const targetY =
-      progress < 0.01
+      progress < 0.005
         ? Math.sin(state.clock.elapsedTime * 1.2) * 0.03
         : 0;
 
@@ -74,7 +74,7 @@ function TshirtModel({ progress }: { progress: number }) {
     );
 
     // 2. REVOLUTION SPEED & BACK DESIGN TURN CHOREOGRAPHY
-    if (progress < 0.01) {
+    if (progress < 0.005) {
       // Idle at top: slow, calm, majestic luxury revolution (0.15 rad/sec)
       isTurnActiveRef.current = false;
       groupRef.current.rotation.y += delta * 0.15;
@@ -97,16 +97,23 @@ function TshirtModel({ progress }: { progress: number }) {
 
         // Find next odd multiple of PI ahead in the rotation direction
         const k = Math.floor(currentRot / (2 * Math.PI));
-        let targetBack = (2 * k + 1) * Math.PI;
-        // Ensure at least a deliberate, majestic sweep (minimum 100° forward turn)
-        if (targetBack - currentRot < Math.PI * 0.55) {
-          targetBack += 2 * Math.PI;
+        let nextBack = (2 * k + 1) * Math.PI;
+        if (nextBack <= currentRot) {
+          nextBack += 2 * Math.PI;
         }
-        targetBackAngleRef.current = targetBack;
+        // Ensure the initial sweep to the back is substantial (at least 90°)
+        if (nextBack - currentRot < Math.PI * 0.5) {
+          nextBack += 2 * Math.PI;
+        }
+
+        // ALWAYS add a full extra 360° revolution (2 * Math.PI)
+        // This guarantees EVERY scroll takes one complete round (360°) THEN turns to the back design
+        // ("one round then one more round"), delivering the ultra-smooth, consistent experience every time.
+        targetBackAngleRef.current = nextBack + 2 * Math.PI;
       }
 
       // Smooth turn progress curve
-      const turnT = Math.pow(progress, 1.22);
+      const turnT = Math.pow(progress, 1.18);
       const targetRotY =
         startTurnAngleRef.current +
         (targetBackAngleRef.current - startTurnAngleRef.current) * turnT;
