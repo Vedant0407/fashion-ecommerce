@@ -13267,154 +13267,124 @@ select {
   filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.14));
 }
 
-/* 3. STREETWEAR CAMPAIGN SECTION */
-.streetwear-campaign-section {
+/* 3. STREETWEAR SHIRTS PRODUCT GRID (Matching Reference Mockup) */
+.streetwear-grid-section {
   position: relative;
   width: 100%;
   background: #ffffff;
-  padding: 0 clamp(16px, 3.5vw, 56px) clamp(56px, 8vh, 96px);
-  max-width: 1600px;
+  padding: clamp(36px, 5vh, 64px) clamp(16px, 3.5vw, 48px) clamp(64px, 8vh, 100px);
+}
+
+.streetwear-grid-container {
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.streetwear-campaign-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: clamp(16px, 2vw, 28px);
+.streetwear-grid-header {
+  text-align: center;
+  margin-bottom: clamp(32px, 5vh, 60px);
 }
 
-.campaign-card {
-  position: relative;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #1a1a1a;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  min-height: clamp(480px, 65vh, 680px);
-}
-
-.campaign-image-wrap {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.campaign-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center center;
-  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.campaign-card:hover .campaign-img {
-  transform: scale(1.03);
-}
-
-.campaign-overlay-gradient {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.9) 0%,
-    rgba(0, 0, 0, 0.45) 45%,
-    rgba(0, 0, 0, 0.05) 80%,
-    transparent 100%
-  );
-  pointer-events: none;
-}
-
-.campaign-content-overlay {
-  position: relative;
-  z-index: 5;
-  padding: clamp(24px, 3.5vw, 44px);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  color: #ffffff;
-}
-
-.campaign-tag-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.campaign-category-tag {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  color: #ffffff;
-  text-transform: uppercase;
-}
-
-.campaign-edition-tag {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.55);
-  padding-left: 10px;
-  border-left: 1px solid rgba(255, 255, 255, 0.25);
-  text-transform: uppercase;
-}
-
-.campaign-headline {
-  font-size: clamp(22px, 2.6vw, 34px);
+.streetwear-grid-title {
+  font-family: inherit;
+  font-size: clamp(26px, 3.2vw, 40px);
   font-weight: 800;
   letter-spacing: -0.02em;
-  line-height: 1.15;
-  color: #ffffff;
-  margin: 0;
-  text-transform: uppercase;
-}
-
-.campaign-description {
-  font-size: clamp(12px, 1.05vw, 14px);
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.82);
-  max-width: 480px;
-  margin: 0;
-}
-
-.campaign-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  padding: 10px 20px;
-  border-radius: 9999px;
-  background: #ffffff;
   color: #111111;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
+  margin: 0;
+}
+
+.streetwear-product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(32px, 4.5vw, 64px) clamp(20px, 3vw, 44px);
+}
+
+.streetwear-product-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.streetwear-product-card-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
   text-decoration: none;
-  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  color: inherit;
 }
 
-.campaign-action-btn:hover {
-  background: #f0f0f0;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+.streetwear-product-img-box {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  margin-bottom: 18px;
 }
 
-/* RESPONSIVE BREAKPOINTS (Mobile & Tablet) */
-@media (max-width: 1024px) {
-  .streetwear-campaign-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
+.streetwear-product-cutout {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.06));
+}
+
+.streetwear-product-card:hover .streetwear-product-cutout {
+  transform: translateY(-5px) scale(1.03);
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.12));
+}
+
+.streetwear-product-caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.streetwear-product-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #111111;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.streetwear-product-price {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #666666;
+}
+
+@media (max-width: 860px) {
+  .streetwear-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(24px, 3.5vw, 36px) clamp(12px, 2.5vw, 24px);
   }
 
-  .campaign-card {
-    min-height: 520px;
+  .streetwear-product-img-box {
+    max-width: 220px;
+    margin-bottom: 12px;
   }
 
-  .campaign-card-companion {
-    display: none;
+  .streetwear-product-name {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .streetwear-product-price {
+    font-size: 10px;
   }
 }
 
@@ -13476,19 +13446,6 @@ select {
     animation-duration: 22s;
     gap: 14px;
     padding: 6px 12px 14px;
-  }
-
-  .campaign-card {
-    min-height: 480px;
-  }
-
-  .campaign-content-overlay {
-    padding: 24px 20px;
-    gap: 10px;
-  }
-
-  .campaign-headline {
-    font-size: 22px;
   }
 }
 

@@ -1,6 +1,6 @@
 import StreetwearHero from "@/components/ui/StreetwearHero";
 import ProductTrainSection from "@/components/ui/ProductTrainSection";
-import StreetwearCampaignSection from "@/components/ui/StreetwearCampaignSection";
+import StreetwearProductGrid from "@/components/ui/StreetwearProductGrid";
 import EditorialStorySection from "@/components/ui/EditorialStorySection";
 import EditorialFooter from "@/components/ui/EditorialFooter";
 
@@ -10,11 +10,11 @@ export default function HomePage() {
       {/* 1. Cinematic Streetwear Hero (Concrete Brutalist Architecture with Fade to White) */}
       <StreetwearHero />
 
-      {/* 2. "See Our Products:" Horizontal Continuous Product Train */}
+      {/* 2. Visual Lookbook Continuous Product Train */}
       <ProductTrainSection />
 
-      {/* 3. Brutalist Campaign Lookbook Section (Split Grid / Mobile Overlay) */}
-      <StreetwearCampaignSection />
+      {/* 3. Streetwear "SHIRTS" Product Catalog Grid (Desktop 3-col / Mobile 2-col) */}
+      <StreetwearProductGrid />
 
       {/* 4. Editorial / Brand Manifesto & Craft Specifications */}
       <EditorialStorySection />
