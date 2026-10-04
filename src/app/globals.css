@@ -13021,6 +13021,659 @@ select {
   }
 }
 
+/* ==========================================================================
+   BRUTALIST STREETWEAR REDESIGN (Hero, Product Train & Campaign Section)
+   ========================================================================== */
+
+.streetwear-home-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: #ffffff;
+  color: #111111;
+  overflow-x: hidden;
+}
+
+/* 1. STREETWEAR HERO SECTION */
+.streetwear-hero-section {
+  position: relative;
+  width: 100%;
+  height: clamp(560px, 86vh, 880px);
+  min-height: 520px;
+  background: #121212;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.streetwear-hero-bg-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.streetwear-hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  display: block;
+}
+
+/* Subtle top gradient so the transparent header stays easily readable */
+.hero-top-vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.1) 60%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Bottom fade from concrete background into pure white */
+.hero-bottom-fade-to-white {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: clamp(140px, 22vh, 260px);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 30%,
+    rgba(255, 255, 255, 0.75) 68%,
+    #ffffff 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.streetwear-hero-content {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 64px) clamp(24px, 4vh, 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.streetwear-hero-mobile-brand {
+  display: none;
+}
+
+.streetwear-hero-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  background: rgba(14, 14, 18, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.streetwear-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #30d158;
+  box-shadow: 0 0 10px #30d158;
+  animation: signal-dot-pulse 2s infinite ease-in-out;
+}
+
+.streetwear-badge-text {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.streetwear-scroll-prompt {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #111111;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+  padding: 10px 22px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.streetwear-scroll-prompt:hover {
+  background: #ffffff;
+  color: #111111;
+  transform: translateY(2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.streetwear-scroll-arrow {
+  animation: signal-arrow-bounce 1.6s infinite ease-in-out;
+}
+
+/* 2. PRODUCT TRAIN SECTION */
+.product-train-section {
+  position: relative;
+  width: 100%;
+  background: #ffffff;
+  padding: clamp(32px, 5vh, 60px) 0 clamp(48px, 6vh, 80px);
+  overflow: hidden;
+}
+
+.product-train-header-row {
+  max-width: 1540px;
+  margin: 0 auto clamp(24px, 3vh, 36px);
+  padding: 0 clamp(20px, 4vw, 64px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.product-train-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.product-train-heading {
+  font-family: inherit;
+  font-size: clamp(24px, 3vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #111111;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.product-train-subheading {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #666666;
+  text-transform: uppercase;
+}
+
+.product-train-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.train-nav-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  color: #111111;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.train-nav-btn:hover {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+}
+
+.product-train-viewport {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black clamp(16px, 3vw, 48px),
+    black calc(100% - clamp(16px, 3vw, 48px)),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black clamp(16px, 3vw, 48px),
+    black calc(100% - clamp(16px, 3vw, 48px)),
+    transparent 100%
+  );
+}
+
+.product-train-track {
+  display: flex;
+  align-items: stretch;
+  gap: clamp(20px, 2.2vw, 36px);
+  width: max-content;
+  cursor: grab;
+  user-select: none;
+  will-change: transform;
+  animation: train-infinite-glide 38s linear infinite;
+  padding: 10px clamp(16px, 3vw, 48px) 24px;
+}
+
+.product-train-track:active {
+  cursor: grabbing;
+}
+
+.product-train-track.train-paused {
+  animation-play-state: paused;
+}
+
+@keyframes train-infinite-glide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-100% / 3));
+  }
+}
+
+.product-train-card {
+  flex: 0 0 clamp(200px, 16vw, 260px);
+  width: clamp(200px, 16vw, 260px);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-train-card:hover {
+  transform: translateY(-4px);
+}
+
+.product-train-card-link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-train-image-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: #ffffff;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-train-model-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-train-card:hover .product-train-model-img {
+  transform: scale(1.03);
+}
+
+.product-train-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  border-radius: 2px;
+  color: #111111;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.product-train-hover-actions {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 3;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-train-card:hover .product-train-hover-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.product-train-quick-add {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 2px;
+  background: #111111;
+  color: #ffffff;
+  border: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.product-train-quick-add:hover {
+  background: #2a2a2a;
+}
+
+.product-train-info {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-train-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.product-train-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #111111;
+  letter-spacing: -0.01em;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-train-color {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #777777;
+  text-transform: uppercase;
+}
+
+.product-train-pricing {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.product-train-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111111;
+}
+
+.product-train-original-price {
+  font-size: 11px;
+  color: #999999;
+  text-decoration: line-through;
+}
+
+/* 3. STREETWEAR CAMPAIGN SECTION */
+.streetwear-campaign-section {
+  position: relative;
+  width: 100%;
+  background: #ffffff;
+  padding: 0 clamp(16px, 3.5vw, 56px) clamp(56px, 8vh, 96px);
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.streetwear-campaign-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(16px, 2vw, 28px);
+}
+
+.campaign-card {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: clamp(480px, 65vh, 680px);
+}
+
+.campaign-image-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.campaign-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.campaign-card:hover .campaign-img {
+  transform: scale(1.03);
+}
+
+.campaign-overlay-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.45) 45%,
+    rgba(0, 0, 0, 0.05) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.campaign-content-overlay {
+  position: relative;
+  z-index: 5;
+  padding: clamp(24px, 3.5vw, 44px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  color: #ffffff;
+}
+
+.campaign-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.campaign-category-tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.campaign-edition-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.55);
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+}
+
+.campaign-headline {
+  font-size: clamp(22px, 2.6vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #ffffff;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.campaign-description {
+  font-size: clamp(12px, 1.05vw, 14px);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 480px;
+  margin: 0;
+}
+
+.campaign-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.campaign-action-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* RESPONSIVE BREAKPOINTS (Mobile & Tablet) */
+@media (max-width: 1024px) {
+  .streetwear-campaign-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .campaign-card {
+    min-height: 520px;
+  }
+
+  .campaign-card-companion {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .streetwear-hero-section {
+    height: clamp(480px, 78vh, 640px);
+    justify-content: space-between;
+    padding-top: 56px;
+  }
+
+  .streetwear-hero-mobile-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+    text-align: center;
+    z-index: 5;
+  }
+
+  .streetwear-brand-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+  }
+
+  .streetwear-brand-title {
+    font-size: clamp(32px, 8vw, 44px);
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: 0.08em;
+    color: #ffffff;
+    margin: 4px 0 0;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  }
+
+  .streetwear-hero-info-badge {
+    display: none;
+  }
+
+  .streetwear-scroll-prompt {
+    font-size: 9.5px;
+    padding: 8px 16px;
+    margin: 0 auto;
+  }
+
+  .hero-bottom-fade-to-white {
+    height: 180px;
+  }
+
+  .product-train-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .product-train-nav-controls {
+    display: none;
+  }
+
+  .product-train-card {
+    flex: 0 0 170px;
+    width: 170px;
+  }
+
+  .product-train-track {
+    animation-duration: 26s;
+    gap: 16px;
+  }
+
+  .campaign-card {
+    min-height: 480px;
+  }
+
+  .campaign-content-overlay {
+    padding: 24px 20px;
+    gap: 10px;
+  }
+
+  .campaign-headline {
+    font-size: 22px;
+  }
+}
+
+
 
 
 
