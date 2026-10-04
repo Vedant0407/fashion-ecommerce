@@ -60,9 +60,9 @@ export default function StreetwearHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="streetwear-scroll-prompt"
-          aria-label="Scroll down to see products"
+          aria-label="Scroll down to explore lookbook"
         >
-          <span>SEE OUR PRODUCTS</span>
+          <span>EXPLORE LOOKBOOK</span>
           <ArrowDown size={14} className="streetwear-scroll-arrow" />
         </motion.button>
       </div>
