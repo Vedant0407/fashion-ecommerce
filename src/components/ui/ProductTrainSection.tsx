@@ -11,37 +11,37 @@ export interface TrainPhoto {
 export const TRAIN_PHOTOS: TrainPhoto[] = [
   {
     id: "photo-black-tee",
-    image: "/train-black-tee.jpg",
+    image: "/train-black-tee-cutout.png",
     alt: "Heavyweight Boxy Tee Look",
   },
   {
     id: "photo-blue-tee",
-    image: "/train-blue-tee.jpg",
+    image: "/train-blue-tee-cutout.png",
     alt: "Vintage Slate Blue Tee Look",
   },
   {
     id: "photo-olive-tee",
-    image: "/train-olive-tee.jpg",
+    image: "/train-olive-tee-cutout.png",
     alt: "Earthy Olive Washed Tee Look",
   },
   {
     id: "photo-poplin-shirt",
-    image: "/atelier-shirt.jpg",
+    image: "/train-poplin-shirt-cutout.png",
     alt: "Tailored Poplin Shirt Look",
   },
   {
     id: "photo-oxford-shirt",
-    image: "/atelier-oxford-shirt.jpg",
+    image: "/train-oxford-shirt-cutout.png",
     alt: "Charcoal Oxford Overshirt Look",
   },
   {
     id: "photo-white-tee",
-    image: "/atelier-white-tee.jpg",
+    image: "/train-white-tee-cutout.png",
     alt: "Minimalist Chalk Tee Look",
   },
   {
     id: "photo-boxy-tee",
-    image: "/atelier-tshirt.jpg",
+    image: "/train-tshirt-cutout.png",
     alt: "Heavyweight Boxy Silhouette",
   },
 ];
