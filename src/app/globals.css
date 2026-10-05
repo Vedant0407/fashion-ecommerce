@@ -13560,3 +13560,131 @@ select {
 
 
 
+
+/* ===== Streetwear Editorial Photo & Quote Banner Section ===== */
+
+.streetwear-quote-section {
+  position: relative;
+  width: 100%;
+  background: #ffffff;
+  padding: clamp(32px, 5vh, 64px) clamp(16px, 3.5vw, 48px) clamp(64px, 8vh, 96px);
+}
+
+.streetwear-quote-container {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.streetwear-quote-frame {
+  position: relative;
+  width: 100%;
+  height: clamp(480px, 60vh, 640px);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+.streetwear-quote-image-box {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.streetwear-quote-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.streetwear-quote-frame:hover .streetwear-quote-img {
+  transform: scale(1.03);
+}
+
+.streetwear-quote-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.55) 50%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+  backdrop-filter: blur(1px);
+}
+
+.streetwear-quote-overlay-content {
+  position: relative;
+  z-index: 2;
+  max-width: 860px;
+  padding: clamp(24px, 4vw, 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(14px, 2vh, 22px);
+}
+
+.streetwear-quote-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 6px 16px;
+  border-radius: 9999px;
+}
+
+.streetwear-quote-text {
+  font-family: inherit;
+  font-size: clamp(26px, 3.6vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.22;
+  color: #ffffff;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.streetwear-quote-author {
+  font-style: normal;
+  font-size: clamp(11px, 1.2vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+@media (max-width: 768px) {
+  .streetwear-quote-frame {
+    height: clamp(380px, 50vh, 460px);
+    border-radius: 2px;
+  }
+
+  .streetwear-quote-text {
+    font-size: clamp(20px, 5.5vw, 28px);
+    line-height: 1.28;
+  }
+
+  .streetwear-quote-tag {
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    padding: 5px 12px;
+  }
+
+  .streetwear-quote-author {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+  }
+}

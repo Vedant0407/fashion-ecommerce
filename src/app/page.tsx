@@ -1,7 +1,7 @@
 import StreetwearHero from "@/components/ui/StreetwearHero";
 import ProductTrainSection from "@/components/ui/ProductTrainSection";
 import StreetwearProductGrid from "@/components/ui/StreetwearProductGrid";
-import EditorialStorySection from "@/components/ui/EditorialStorySection";
+import StreetwearQuoteSection from "@/components/ui/StreetwearQuoteSection";
 import EditorialFooter from "@/components/ui/EditorialFooter";
 
 export default function HomePage() {
@@ -13,11 +13,11 @@ export default function HomePage() {
       {/* 2. Visual Lookbook Continuous Product Train */}
       <ProductTrainSection />
 
-      {/* 3. Streetwear "SHIRTS" Product Catalog Grid (Desktop 3-col / Mobile 2-col) */}
+      {/* 3. Streetwear "SEE OUR PRODUCTS" Product Catalog Grid (Desktop 3-col / Mobile 2-col) */}
       <StreetwearProductGrid />
 
-      {/* 4. Editorial / Brand Manifesto & Craft Specifications */}
-      <EditorialStorySection />
+      {/* 4. Atmospheric Editorial Photo & Brand Manifesto Quote */}
+      <StreetwearQuoteSection />
 
       {/* 5. Storefront Footer */}
       <EditorialFooter />
