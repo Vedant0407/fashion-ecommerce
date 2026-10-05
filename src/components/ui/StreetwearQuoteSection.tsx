@@ -17,58 +17,48 @@ export default function StreetwearQuoteSection({
 }: StreetwearQuoteSectionProps) {
   return (
     <section className="streetwear-quote-section">
-      <div className="streetwear-quote-container">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
+      {/* Full Screen Background Photograph (Edge-to-Edge 100vw / 100vh) */}
+      <div className="streetwear-quote-image-box">
+        <img
+          src={image}
+          alt="Editorial Brand Atmosphere"
+          className="streetwear-quote-img"
+          loading="lazy"
+        />
+        <div className="streetwear-quote-scrim" />
+      </div>
+
+      {/* Centered Overlay Quote */}
+      <div className="streetwear-quote-overlay-content">
+        <motion.span
+          initial={{ opacity: 0, y: 14 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="streetwear-quote-frame"
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="streetwear-quote-tag"
         >
-          {/* Background Photograph */}
-          <div className="streetwear-quote-image-box">
-            <img
-              src={image}
-              alt="Editorial Brand Atmosphere"
-              className="streetwear-quote-img"
-              loading="lazy"
-            />
-            <div className="streetwear-quote-scrim" />
-          </div>
+          {tag}
+        </motion.span>
 
-          {/* Quote & Typography Overlay */}
-          <div className="streetwear-quote-overlay-content">
-            <motion.span
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="streetwear-quote-tag"
-            >
-              {tag}
-            </motion.span>
+        <motion.blockquote
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.85, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="streetwear-quote-text"
+        >
+          {quote}
+        </motion.blockquote>
 
-            <motion.blockquote
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="streetwear-quote-text"
-            >
-              {quote}
-            </motion.blockquote>
-
-            <motion.cite
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.4 }}
-              className="streetwear-quote-author"
-            >
-              — {author}
-            </motion.cite>
-          </div>
-        </motion.div>
+        <motion.cite
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.45 }}
+          className="streetwear-quote-author"
+        >
+          — {author}
+        </motion.cite>
       </div>
     </section>
   );
