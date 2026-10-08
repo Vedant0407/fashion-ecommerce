@@ -231,15 +231,6 @@ export default function Header() {
               {menuOpen && (
                 <div className="nav-menu">
                   <div className="nav-menu-section">
-                    <span className="nav-menu-heading">SHOP</span>
-                    <Link href="/shop" onClick={() => setMenuOpen(false)}>SHOP ALL</Link>
-                    <Link href="/shop?section=newin" onClick={() => setMenuOpen(false)}>NEW ARRIVALS</Link>
-                    <Link href="/category/t-shirts" onClick={() => setMenuOpen(false)}>T-SHIRTS</Link>
-                    <Link href="/category/shirts" onClick={() => setMenuOpen(false)}>SHIRTS</Link>
-                    <Link href="/wishlist" onClick={() => setMenuOpen(false)}>WISHLIST</Link>
-                  </div>
-                  <div className="nav-menu-divider" />
-                  <div className="nav-menu-section">
                     <span className="nav-menu-heading">ACCOUNT</span>
                     {isLoggedIn ? (
                       <>
