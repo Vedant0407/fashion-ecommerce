@@ -137,6 +137,8 @@ export default function Header() {
   // Close navigation menu when clicking outside or pressing Escape
   useEffect(() => {
     if (!menuOpen) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     function handleClickOutside(e: MouseEvent | TouchEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -155,6 +157,7 @@ export default function Header() {
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      document.body.style.overflow = previousBodyOverflow;
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
@@ -217,7 +220,7 @@ export default function Header() {
 
         <nav className="navbar atelier-navbar editorial-nav">
           <div className="header-side nav-links-left">
-            <div className="nav-menu-wrapper" ref={menuRef}>
+            <div className="nav-menu-wrapper">
               <button
                 type="button"
                 className="header-icon-action nav-menu-toggle"
@@ -225,29 +228,11 @@ export default function Header() {
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
                 title="Menu"
                 aria-expanded={menuOpen}
+                aria-haspopup="dialog"
+                aria-controls="site-navigation-dashboard"
               >
                 {menuOpen ? <X size={20} strokeWidth={1.7} /> : <Menu size={20} strokeWidth={1.7} />}
               </button>
-              {menuOpen && (
-                <div className="nav-menu">
-                  <div className="nav-menu-section">
-                    <span className="nav-menu-heading">ACCOUNT</span>
-                    {isLoggedIn ? (
-                      <>
-                        <Link href="/account" onClick={() => setMenuOpen(false)}>ACCOUNT DETAILS</Link>
-                        <Link href="/account?tab=orders" onClick={() => setMenuOpen(false)}>MY ORDERS</Link>
-                        <button type="button" onClick={handleLogout}>LOG OUT</button>
-                      </>
-                    ) : (
-                      <>
-                        <Link href="/login" onClick={() => setMenuOpen(false)}>LOG IN</Link>
-                        <Link href="/signup" onClick={() => setMenuOpen(false)}>CREATE ACCOUNT</Link>
-                      </>
-                    )}
-                    <Link href="/admin" onClick={() => setMenuOpen(false)}>ADMIN CONSOLE →</Link>
-                  </div>
-                </div>
-              )}
             </div>
             <div className="story-launcher-wrapper">
               <button
@@ -309,6 +294,54 @@ export default function Header() {
           </div>
         </nav>
       </header>
+      {menuOpen && (
+        <button
+          type="button"
+          className="nav-menu-backdrop"
+          aria-label="Close dashboard"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+      <aside
+        ref={menuRef}
+        id="site-navigation-dashboard"
+        className={`nav-menu ${menuOpen ? "is-open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Account dashboard"
+        aria-hidden={!menuOpen}
+      >
+        <div className="nav-menu-header">
+          <div>
+            <span className="nav-menu-kicker">GREENO ATELIER</span>
+            <h2>DASHBOARD</h2>
+          </div>
+          <button
+            type="button"
+            className="nav-menu-close"
+            aria-label="Close dashboard"
+            onClick={() => setMenuOpen(false)}
+          >
+            <X size={20} strokeWidth={1.7} />
+          </button>
+        </div>
+        <div className="nav-menu-section">
+          <span className="nav-menu-heading">ACCOUNT</span>
+          {isLoggedIn ? (
+            <>
+              <Link href="/account" onClick={() => setMenuOpen(false)}>ACCOUNT DETAILS</Link>
+              <Link href="/account?tab=orders" onClick={() => setMenuOpen(false)}>MY ORDERS</Link>
+              <button type="button" onClick={handleLogout}>LOG OUT</button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" onClick={() => setMenuOpen(false)}>LOG IN</Link>
+              <Link href="/signup" onClick={() => setMenuOpen(false)}>CREATE ACCOUNT</Link>
+            </>
+          )}
+          <Link href="/admin" onClick={() => setMenuOpen(false)}>ADMIN CONSOLE →</Link>
+        </div>
+      </aside>
 
       {/* =========================================
           MOBILE CURVY RECTANGLE DOCK (PHONE ONLY)
