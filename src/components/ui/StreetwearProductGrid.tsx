@@ -51,7 +51,7 @@ export const SHIRTS_PRODUCTS: GridProduct[] = [
   },
   {
     id: "charcoal-oxford-overshirt",
-    name: "CHARCOAL OXFORD OVERSHIRT",
+    name: "CHARCOAL OXFORD",
     price: 3899,
     image: "/train-oxford-shirt-cutout.png",
     link: "/products/charcoal-oxford-overshirt",
