@@ -14379,7 +14379,8 @@ select {
 
 .streetwear-pdp-size-tiles {
   display: flex;
-  gap: 4px;
+  justify-content: center;
+  gap: 2px;
   flex-wrap: wrap;
 }
 
