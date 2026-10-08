@@ -14343,7 +14343,7 @@ select {
   justify-content: center;
   align-self: center;
   position: relative;
-  top: 12px;
+  top: 20px;
 }
 
 .streetwear-pdp-section-block {
@@ -14351,7 +14351,7 @@ select {
 }
 
 .streetwear-pdp-right-col > .streetwear-pdp-section-block:first-child {
-  margin-bottom: 0;
+  margin-bottom: 4px;
 }
 
 .streetwear-pdp-right-col > .streetwear-pdp-section-block:first-child .streetwear-pdp-section-header {
@@ -14464,7 +14464,7 @@ select {
 
 /* Actions: Cart + Wishlist + Buy Now */
 .streetwear-pdp-right-col > .streetwear-pdp-section-block:nth-child(2) {
-  margin-bottom: 0;
+  margin-bottom: 4px;
 }
 
 .streetwear-pdp-cta-block {
