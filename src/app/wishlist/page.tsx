@@ -3,14 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Check, ShoppingBag, Plus } from "lucide-react";
+import { Heart, Check, ShoppingBag } from "lucide-react";
 
 import { useWishlist, WishlistItem } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
-
-function getWishlistImages(item: WishlistItem): string[] {
-  return [item.image || "/black-tee.jfif"];
-}
 
 function WishlistItemCard({
   item,
@@ -20,33 +16,17 @@ function WishlistItemCard({
   onRemove: (id: string) => void;
 }) {
   const { addToCart, openCart } = useCart();
-  const [photoIndex, setPhotoIndex] = useState(0);
   const [isAdded, setIsAdded] = useState(false);
 
-  const images = getWishlistImages(item);
-  const currentImage = images[photoIndex] || images[0] || item.image || "/atelier-trousers.jpg";
-
-  const handlePrevPhoto = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setPhotoIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  };
-
-  const handleNextPhoto = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setPhotoIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAddToCart = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     addToCart(
       {
         id: item.id,
         name: item.name,
         price: Number(item.price),
-        image: currentImage,
+        image: item.image || "/black-tee.jfif",
         size: "M",
         color: "BLACK",
       },
@@ -54,169 +34,65 @@ function WishlistItemCard({
     );
     setIsAdded(true);
     openCart();
-    setTimeout(() => {
-      setIsAdded(false);
-    }, 1800);
+    setTimeout(() => setIsAdded(false), 1800);
   };
 
   return (
-    <article className="atelier-card" style={{ position: "relative" }}>
-      {/* Remove from Wishlist Button */}
-      <button
-        type="button"
-        className="atelier-wishlist-btn"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onRemove(item.id);
-        }}
-        aria-label="Remove from wishlist"
-        title="Remove piece from wishlist"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="#121212"
-          stroke="#121212"
-          strokeWidth="1.5"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-          />
-        </svg>
-      </button>
-
-      {/* 3:4 Editorial Image Container */}
-      <div className="atelier-image-box">
-        <Link
-          href={`/products/${item.id}?from=wishlist`}
-          style={{ display: "block", width: "100%", height: "100%" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+    <article className="streetwear-product-card">
+      <div className="streetwear-product-img-box">
+        <Link href={`/products/${item.id}?from=wishlist`} className="streetwear-product-img-link">
           <img
-            src={currentImage}
+            src={item.image || "/black-tee.jfif"}
             alt={item.name}
-            className="atelier-product-img"
+            className="streetwear-product-cutout"
+            loading="lazy"
           />
         </Link>
-
-        {/* Multi-angle slide controls if available */}
-        {images.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={handlePrevPhoto}
-              style={{
-                position: "absolute",
-                left: "10px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "rgba(255, 255, 255, 0.85)",
-                backdropFilter: "blur(6px)",
-                border: "none",
-                width: "28px",
-                height: "28px",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                zIndex: 4,
-                color: "#121212",
-              }}
-              aria-label="Previous image"
-            >
-              <ChevronLeft size={16} strokeWidth={2} />
-            </button>
-
-            <button
-              type="button"
-              onClick={handleNextPhoto}
-              style={{
-                position: "absolute",
-                right: "10px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "rgba(255, 255, 255, 0.85)",
-                backdropFilter: "blur(6px)",
-                border: "none",
-                width: "28px",
-                height: "28px",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                zIndex: 4,
-                color: "#121212",
-              }}
-              aria-label="Next image"
-            >
-              <ChevronRight size={16} strokeWidth={2} />
-            </button>
-          </>
-        )}
-
-        {/* Permanent Desktop Bar / Mobile Squircle Add to Cart */}
-        <div className="atelier-quick-add">
-          <button
-            type="button"
-            className={`atelier-quick-btn ${isAdded ? "added" : ""}`}
-            onClick={handleAddToCart}
-            aria-label="Add to cart"
-            title="Add to cart"
-          >
-            {isAdded ? (
-              <>
-                <Check size={16} strokeWidth={2.6} className="atelier-quick-icon check-icon" />
-                <span className="atelier-quick-text">ADDED TO CART</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag size={15} strokeWidth={2} className="atelier-quick-icon desktop-icon" />
-                <Plus size={19} strokeWidth={2.4} className="atelier-quick-icon mobile-icon" />
-                <span className="atelier-quick-text">ADD TO CART</span>
-              </>
-            )}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="streetwear-product-heart-btn active"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onRemove(item.id);
+          }}
+          aria-label="Remove from wishlist"
+          title="Remove from wishlist"
+        >
+          <Heart size={18} strokeWidth={2} fill="#121212" color="#121212" />
+        </button>
       </div>
 
-      {/* Piece Information */}
-      <div className="atelier-details">
-        <span
-          style={{
-            fontSize: "9.5px",
-            letterSpacing: "0.2em",
-            color: "#777777",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            display: "block",
-            marginBottom: "2px",
-          }}
-        >
-          {item.category || "ATELIER EDITION"}
-        </span>
-
-        <div className="atelier-title-row">
-          <Link
-            href={`/products/${item.id}?from=wishlist`}
-            style={{ textDecoration: "none", color: "inherit", flex: 1 }}
-          >
-            <h3 className="atelier-product-name">{item.name}</h3>
-          </Link>
-          <span className="atelier-product-price">
+      <Link href={`/products/${item.id}?from=wishlist`} className="streetwear-product-caption-link">
+        <div className="streetwear-product-caption">
+          <h3 className="streetwear-product-name">{item.name}</h3>
+          <span className="streetwear-product-price">
             ₹{Number(item.price).toLocaleString("en-IN")}
           </span>
         </div>
-      </div>
+      </Link>
+
+      <button
+        type="button"
+        className={`streetwear-product-cart-btn ${isAdded ? "added" : ""}`}
+        onClick={handleAddToCart}
+        aria-label={`Add ${item.name} to cart`}
+      >
+        {isAdded ? (
+          <>
+            <Check size={15} strokeWidth={2.4} />
+            <span>ADDED TO CART</span>
+          </>
+        ) : (
+          <>
+            <ShoppingBag size={14} strokeWidth={2} />
+            <span>ADD TO CART</span>
+          </>
+        )}
+      </button>
     </article>
   );
 }
-
 export default function WishlistPage() {
   const router = useRouter();
   const { wishlist, removeFromWishlist } = useWishlist();
@@ -398,13 +274,7 @@ export default function WishlistPage() {
             </Link>
           </div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-              gap: "48px 24px",
-            }}
-          >
+          <div className="streetwear-product-grid">
             {wishlist.map((item) => (
               <WishlistItemCard
                 key={item.id}
