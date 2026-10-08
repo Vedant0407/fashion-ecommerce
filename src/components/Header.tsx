@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
 import StoryViewerModal from "@/components/ui/StoryViewerModal";
-import { Search, Heart, User, ShoppingBag, Sparkles } from "lucide-react";
+import { Search, Heart, ShoppingBag, Sparkles, Menu, X } from "lucide-react";
 import { type StoreStory } from "@/lib/story-constants";
 
 export default function Header() {
@@ -20,7 +20,7 @@ export default function Header() {
   const { wishlistCount } = useWishlist();
   const isHomePage = pathname === "/";
   const [isScrolled, setIsScrolled] = useState(() => !isHomePage);
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [storyOpen, setStoryOpen] = useState(false);
   const [stories, setStories] = useState<StoreStory[]>([]);
@@ -28,7 +28,7 @@ export default function Header() {
   const [announcementText, setAnnouncementText] = useState(
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"
   );
-  const accountRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadSettings() {
@@ -129,24 +129,24 @@ export default function Header() {
     };
   }, []);
 
-  // Close account menu on route change
+  // Close navigation menu on route change
   useEffect(() => {
-    setAccountOpen(false);
+    setMenuOpen(false);
   }, [pathname]);
 
-  // Close account menu when clicking outside or pressing Escape
+  // Close navigation menu when clicking outside or pressing Escape
   useEffect(() => {
-    if (!accountOpen) return;
+    if (!menuOpen) return;
 
     function handleClickOutside(e: MouseEvent | TouchEvent) {
-      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
-        setAccountOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
       }
     }
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setAccountOpen(false);
+        setMenuOpen(false);
       }
     }
 
@@ -159,7 +159,7 @@ export default function Header() {
       document.removeEventListener("touchstart", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [accountOpen]);
+  }, [menuOpen]);
 
   async function handleLogout() {
     try {
@@ -180,7 +180,7 @@ export default function Header() {
       window.dispatchEvent(new CustomEvent("greeno_auth_change"));
     }
     setIsLoggedIn(false);
-    setAccountOpen(false);
+    setMenuOpen(false);
     router.push("/login");
     router.refresh();
   }
@@ -217,6 +217,47 @@ export default function Header() {
 
         <nav className="navbar atelier-navbar editorial-nav">
           <div className="header-side nav-links-left">
+            <div className="nav-menu-wrapper" ref={menuRef}>
+              <button
+                type="button"
+                className="header-icon-action nav-menu-toggle"
+                onClick={() => setMenuOpen((open) => !open)}
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                title="Menu"
+                aria-expanded={menuOpen}
+              >
+                {menuOpen ? <X size={20} strokeWidth={1.7} /> : <Menu size={20} strokeWidth={1.7} />}
+              </button>
+              {menuOpen && (
+                <div className="nav-menu">
+                  <div className="nav-menu-section">
+                    <span className="nav-menu-heading">SHOP</span>
+                    <Link href="/shop" onClick={() => setMenuOpen(false)}>SHOP ALL</Link>
+                    <Link href="/shop?section=newin" onClick={() => setMenuOpen(false)}>NEW ARRIVALS</Link>
+                    <Link href="/category/t-shirts" onClick={() => setMenuOpen(false)}>T-SHIRTS</Link>
+                    <Link href="/category/shirts" onClick={() => setMenuOpen(false)}>SHIRTS</Link>
+                    <Link href="/wishlist" onClick={() => setMenuOpen(false)}>WISHLIST</Link>
+                  </div>
+                  <div className="nav-menu-divider" />
+                  <div className="nav-menu-section">
+                    <span className="nav-menu-heading">ACCOUNT</span>
+                    {isLoggedIn ? (
+                      <>
+                        <Link href="/account" onClick={() => setMenuOpen(false)}>ACCOUNT DETAILS</Link>
+                        <Link href="/account?tab=orders" onClick={() => setMenuOpen(false)}>MY ORDERS</Link>
+                        <button type="button" onClick={handleLogout}>LOG OUT</button>
+                      </>
+                    ) : (
+                      <>
+                        <Link href="/login" onClick={() => setMenuOpen(false)}>LOG IN</Link>
+                        <Link href="/signup" onClick={() => setMenuOpen(false)}>CREATE ACCOUNT</Link>
+                      </>
+                    )}
+                    <Link href="/admin" onClick={() => setMenuOpen(false)}>ADMIN CONSOLE →</Link>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="story-launcher-wrapper">
               <button
                 type="button"
@@ -235,7 +276,6 @@ export default function Header() {
               <span className="story-launcher-tooltip">ATELIER STORIES</span>
             </div>
           </div>
-
           <Link href="/" className="logo atelier-logo font-serif">
             GREENO
           </Link>
@@ -262,52 +302,6 @@ export default function Header() {
                 <span className="header-icon-badge">{wishlistCount}</span>
               )}
             </Link>
-
-            <div className="account-wrapper" ref={accountRef}>
-              <button
-                type="button"
-                className="header-icon-action"
-                onClick={() => setAccountOpen((open) => !open)}
-                aria-label="Account"
-                title="Client account"
-                aria-expanded={accountOpen}
-              >
-                <User size={17} strokeWidth={1.7} />
-              </button>
-
-              {accountOpen && (
-                <div className="account-menu">
-                  {isLoggedIn ? (
-                    <>
-                      <Link href="/account" onClick={() => setAccountOpen(false)}>
-                        ACCOUNT DETAILS
-                      </Link>
-                      <Link href="/account?tab=orders" onClick={() => setAccountOpen(false)}>
-                        MY ORDERS
-                      </Link>
-                      <button onClick={handleLogout}>LOG OUT</button>
-                    </>
-                  ) : (
-                    <>
-                      <Link href="/login" onClick={() => setAccountOpen(false)}>
-                        LOG IN
-                      </Link>
-                      <Link href="/signup" onClick={() => setAccountOpen(false)}>
-                        CREATE ACCOUNT
-                      </Link>
-                    </>
-                  )}
-                  <div style={{ height: "1px", background: "rgba(0, 0, 0, 0.08)", margin: "6px 0" }} />
-                  <Link
-                    href="/admin"
-                    onClick={() => setAccountOpen(false)}
-                    style={{ color: "#000000", fontWeight: 700, letterSpacing: "0.08em" }}
-                  >
-                    ADMIN CONSOLE &#8594;
-                  </Link>
-                </div>
-              )}
-            </div>
 
             <button
               type="button"
