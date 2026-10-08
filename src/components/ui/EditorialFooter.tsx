@@ -46,7 +46,9 @@ export default function EditorialFooter() {
 
           {/* Col 3: Brand */}
           <div className="editorial-footer-col">
-            <h4 className="editorial-footer-col-title">THE ATELIER</h4>
+            <h4 className="editorial-footer-col-title">
+              ABOUT <span className="greeno-gold-text">GREENO</span>
+            </h4>
             <ul className="editorial-footer-nav">
               <li><span className="editorial-footer-static-link">Design Philosophy</span></li>
               <li><span className="editorial-footer-static-link">300gsm Heavyweight Craft</span></li>
@@ -94,15 +96,15 @@ export default function EditorialFooter() {
           </div>
         </div>
 
-        {/* Faint Giant Watermark */}
+        {/* Faint Giant Watermark in Golden */}
         <div className="editorial-footer-watermark">
-          <span className="editorial-watermark-text font-serif">GREENO</span>
+          <span className="editorial-watermark-text font-serif greeno-gold-watermark">GREENO</span>
         </div>
 
         {/* Bottom Bar */}
         <div className="editorial-footer-bottom">
           <p className="editorial-footer-copy">
-            © 2026 GREENO ATELIER. ALL RIGHTS RESERVED.
+            © 2026 <span className="greeno-gold-text">GREENO</span> ATELIER. ALL RIGHTS RESERVED.
           </p>
 
           <div className="editorial-footer-legal">

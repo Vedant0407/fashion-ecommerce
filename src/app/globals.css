@@ -13908,3 +13908,60 @@ select {
     gap: 6px;
   }
 }
+
+/* ===== Testimonials Section: Cream Grey Background ===== */
+.streetwear-testimonials-section {
+  background: #EFECE6 !important;
+  border-top: 1px solid #DFDBD3 !important;
+  border-bottom: 1px solid #DFDBD3 !important;
+}
+
+.streetwear-testimonials-tag {
+  color: #4A463F !important;
+  background: #E4E0D7 !important;
+  border: 1px solid #D8D3C8 !important;
+}
+
+.streetwear-testimonials-rating-text {
+  color: #55524B !important;
+}
+
+.streetwear-testimonial-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E2DED5 !important;
+  box-shadow: 0 4px 22px rgba(60, 52, 40, 0.04) !important;
+}
+
+.streetwear-testimonial-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 14px 36px rgba(60, 52, 40, 0.09) !important;
+  border-color: #D0CBC0 !important;
+}
+
+.streetwear-testimonial-product {
+  background: #F5F3ED !important;
+  border: 1px solid #EAE6DE !important;
+}
+
+/* ===== About & Footer Section: Golden GREENO Branding ===== */
+.greeno-gold-watermark,
+.editorial-watermark-text,
+.about-watermark h2 {
+  color: #D4AF37 !important;
+  background: linear-gradient(135deg, #F5D77F 0%, #D4AF37 40%, #AA7C1E 75%, #F7E096 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  opacity: 0.92 !important;
+  text-shadow: 0 0 35px rgba(212, 175, 55, 0.25) !important;
+  user-select: none !important;
+}
+
+.greeno-gold-text,
+.gold-text {
+  color: #D4AF37 !important;
+  background: linear-gradient(135deg, #F5D77F 0%, #D4AF37 50%, #C5A059 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  font-weight: inherit !important;
+  display: inline-block !important;
+}

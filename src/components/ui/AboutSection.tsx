@@ -35,7 +35,7 @@ export default function AboutSection() {
         </div>
 
         <div className="about-column">
-          <h3>ABOUT GREENO</h3>
+          <h3>ABOUT <span className="greeno-gold-text">GREENO</span></h3>
           <p>The Brand Philosophy</p>
           <p>Heavyweight Craft</p>
           <p>Flagship Experiences</p>
@@ -74,12 +74,12 @@ export default function AboutSection() {
       </div>
 
       <div className="about-watermark">
-        <h2>GREENO</h2>
+        <h2 className="greeno-gold-watermark">GREENO</h2>
       </div>
 
       <div className="about-bottom">
         <div className="about-copyright">
-          © 2026 GREENO LUXURY STREETWEAR. ALL RIGHTS RESERVED.
+          © 2026 <span className="greeno-gold-text">GREENO</span> LUXURY STREETWEAR. ALL RIGHTS RESERVED.
         </div>
         <div className="about-legal-links">
           <span>PRIVACY POLICY</span>
