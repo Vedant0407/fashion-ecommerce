@@ -220,7 +220,11 @@ export default function ProductPage() {
   const isSizeLowStock = currentSizeQty > 0 && currentSizeQty <= 5;
 
   const primaryImage = product?.image || "/train-black-tee-cutout.png";
-  const productImages = useMemo(() => [primaryImage], [primaryImage]);
+  const productImages = useMemo(() => {
+    if (!product) return [primaryImage];
+    const additionalImages = Array.isArray(product.images) ? product.images : [];
+    return [primaryImage, ...additionalImages.filter((image) => image !== primaryImage)];
+  }, [product, primaryImage]);
 
   useEffect(() => {
     const imageContainer = productImageRef.current;
