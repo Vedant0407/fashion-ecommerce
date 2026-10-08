@@ -13851,6 +13851,10 @@ select {
   gap: clamp(20px, 2.5vw, 32px);
 }
 
+.streetwear-testimonials-pagination {
+  display: none;
+}
+
 .streetwear-testimonial-card {
   background: #ffffff;
   border: 1px solid #ebebeb;
@@ -13993,12 +13997,41 @@ select {
 
 @media (max-width: 680px) {
   .streetwear-testimonials-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    display: block;
+    touch-action: pan-y;
   }
 
   .streetwear-testimonial-card {
+    display: none;
     padding: 20px;
+  }
+
+  .streetwear-testimonial-card.is-active {
+    display: flex;
+  }
+
+  .streetwear-testimonials-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 9px;
+    margin-top: 18px;
+  }
+
+  .streetwear-testimonials-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: #c9c6bf;
+    cursor: pointer;
+    transition: width 0.2s ease, background-color 0.2s ease;
+  }
+
+  .streetwear-testimonials-dot.active {
+    width: 22px;
+    background: #111111;
   }
 
   .streetwear-testimonials-rating-bar {

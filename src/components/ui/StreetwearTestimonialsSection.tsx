@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef, useState } from "react";
+import type { TouchEvent as ReactTouchEvent } from "react";
 import { motion } from "framer-motion";
 import { Star, CheckCircle, Quote } from "lucide-react";
 
@@ -55,6 +57,31 @@ export const TESTIMONIALS: TestimonialItem[] = [
 ];
 
 export default function StreetwearTestimonialsSection() {
+  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (touch) touchStart.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (event: ReactTouchEvent<HTMLDivElement>) => {
+    const start = touchStart.current;
+    const touch = event.changedTouches[0];
+    touchStart.current = null;
+    if (!start || !touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 40 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+    // A right swipe advances to the next testimonial; a left swipe goes back.
+    const direction = deltaX > 0 ? 1 : -1;
+    setActiveTestimonialIndex((current) =>
+      (current + direction + TESTIMONIALS.length) % TESTIMONIALS.length
+    );
+  };
+
   return (
     <section className="streetwear-testimonials-section">
       <div className="streetwear-testimonials-container">
@@ -83,7 +110,12 @@ export default function StreetwearTestimonialsSection() {
         </div>
 
         {/* Testimonials Grid: 3 cards on desktop, responsive stack/slider on mobile */}
-        <div className="streetwear-testimonials-grid">
+        <div
+          className="streetwear-testimonials-grid"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          aria-live="polite"
+        >
           {TESTIMONIALS.map((item, idx) => (
             <motion.div
               key={item.id}
@@ -91,7 +123,7 @@ export default function StreetwearTestimonialsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{ duration: 0.6, delay: idx * 0.12, ease: [0.16, 1, 0.3, 1] }}
-              className="streetwear-testimonial-card"
+              className={`streetwear-testimonial-card ${activeTestimonialIndex === idx ? "is-active" : ""}`}
             >
               {/* Card Top: Stars + Verified Badge */}
               <div className="streetwear-testimonial-top">
@@ -138,6 +170,19 @@ export default function StreetwearTestimonialsSection() {
                 <Quote size={20} className="streetwear-quote-watermark" />
               </div>
             </motion.div>
+          ))}
+        </div>
+
+        <div className="streetwear-testimonials-pagination" role="group" aria-label="Choose a testimonial">
+          {TESTIMONIALS.map((item, idx) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`streetwear-testimonials-dot ${activeTestimonialIndex === idx ? "active" : ""}`}
+              onClick={() => setActiveTestimonialIndex(idx)}
+              aria-label={`Show testimonial ${idx + 1}`}
+              aria-current={activeTestimonialIndex === idx ? "true" : undefined}
+            />
           ))}
         </div>
       </div>
