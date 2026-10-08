@@ -14164,6 +14164,8 @@ select {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  top: 16px;
 }
 
 .streetwear-pdp-image-container {
