@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
+import type { TouchEvent as ReactTouchEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
   Heart,
   ShoppingBag,
+  ChevronLeft,
+  ChevronRight,
   Star,
   CheckCircle2,
   X,
@@ -100,6 +103,8 @@ export default function ProductPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const productImageRef = useRef<HTMLDivElement>(null);
   const lastImageWheelAt = useRef(0);
+  const imageTouchStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressImageClick = useRef(false);
 
   const rawSlug = params?.slug;
   const slug = useMemo(() => {
@@ -121,6 +126,7 @@ export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string>("BLACK");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   // Scroll down animation for center photo
@@ -130,6 +136,14 @@ export default function ProductPage() {
   });
   const photoY = useTransform(scrollYProgress, [0, 1], [0, 90]);
   const photoScale = useTransform(scrollYProgress, [0, 1], [1, 0.96]);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia("(max-width: 640px)");
+    const updateMobileLayout = () => setIsMobileLayout(mobileQuery.matches);
+    updateMobileLayout();
+    mobileQuery.addEventListener("change", updateMobileLayout);
+    return () => mobileQuery.removeEventListener("change", updateMobileLayout);
+  }, []);
 
   // Review submission state
   const [reviewsList, setReviewsList] = useState<ReviewItem[]>(DEFAULT_REVIEWS);
@@ -229,6 +243,7 @@ export default function ProductPage() {
   useEffect(() => {
     const imageContainer = productImageRef.current;
     if (!imageContainer || productImages.length < 2) return;
+    if (window.matchMedia("(max-width: 640px)").matches) return;
 
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
@@ -248,6 +263,37 @@ export default function ProductPage() {
     imageContainer.addEventListener("wheel", handleWheel, { passive: false });
     return () => imageContainer.removeEventListener("wheel", handleWheel);
   }, [productImages.length]);
+
+  const changeActiveImage = (direction: -1 | 1) => {
+    const imageCount = productImages.length;
+    if (imageCount < 2) return;
+    setActiveImageIndex((current) => (current + direction + imageCount) % imageCount);
+  };
+
+  const handleImageTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    imageTouchStart.current = { x: touch.clientX, y: touch.clientY };
+    suppressImageClick.current = false;
+  };
+
+  const handleImageTouchEnd = (event: ReactTouchEvent<HTMLDivElement>) => {
+    const start = imageTouchStart.current;
+    const touch = event.changedTouches[0];
+    imageTouchStart.current = null;
+    if (!start || !touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+    suppressImageClick.current = true;
+    changeActiveImage(deltaX < 0 ? 1 : -1);
+    window.setTimeout(() => {
+      suppressImageClick.current = false;
+    }, 400);
+  };
+
   const currentDisplayImage = productImages[activeImageIndex] || productImages[0] || primaryImage;
 
   const handleAddToCart = () => {
@@ -398,9 +444,11 @@ export default function ProductPage() {
             {/* COLUMN 2 (CENTER): Large Product Cutout/Photography with Scrolling Down Animation */}
             <div className="streetwear-pdp-center-col">
               <motion.div
-                style={{ y: photoY, scale: photoScale }}
+                style={isMobileLayout ? undefined : { y: photoY, scale: photoScale }}
                 className="streetwear-pdp-image-container"
                 ref={productImageRef}
+                onTouchStart={handleImageTouchStart}
+                onTouchEnd={handleImageTouchEnd}
               >
                 <AnimatePresence mode="wait">
                   <motion.img
@@ -408,7 +456,13 @@ export default function ProductPage() {
                     src={currentDisplayImage}
                     alt={product.name}
                     className="streetwear-pdp-main-img"
-                    onClick={() => setLightboxOpen(true)}
+                    onClick={() => {
+                      if (suppressImageClick.current) {
+                        suppressImageClick.current = false;
+                        return;
+                      }
+                      setLightboxOpen(true);
+                    }}
                     initial={{ opacity: 0, y: -16 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 16 }}
@@ -416,6 +470,33 @@ export default function ProductPage() {
                     title="Click to view full screen"
                   />
                 </AnimatePresence>
+
+                {productImages.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="streetwear-pdp-arrow left"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        changeActiveImage(-1);
+                      }}
+                      aria-label="Previous product image"
+                    >
+                      <ChevronLeft size={20} strokeWidth={2} />
+                    </button>
+                    <button
+                      type="button"
+                      className="streetwear-pdp-arrow right"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        changeActiveImage(1);
+                      }}
+                      aria-label="Next product image"
+                    >
+                      <ChevronRight size={20} strokeWidth={2} />
+                    </button>
+                  </>
+                )}
 
                 {/* Wishlist Button Overlaid on Image */}
                 <button
