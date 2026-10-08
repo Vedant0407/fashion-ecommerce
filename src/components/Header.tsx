@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -15,7 +15,6 @@ import { type StoreStory } from "@/lib/story-constants";
 
 export default function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const { cartCount, openCart } = useCart();
   const { wishlistCount } = useWishlist();
   const isHomePage = pathname === "/";
@@ -24,7 +23,6 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [storyOpen, setStoryOpen] = useState(false);
   const [stories, setStories] = useState<StoreStory[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [announcementText, setAnnouncementText] = useState(
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"
   );
@@ -96,8 +94,6 @@ export default function Header() {
           localStorage.setItem("greeno_user_name", name);
         }
       }
-      const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
-      setIsLoggedIn(!!sessionUser || !!storedEmail);
     }
 
     async function loadSession() {
@@ -163,30 +159,6 @@ export default function Header() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [menuOpen]);
-
-  async function handleLogout() {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch {
-      // Ignore
-    }
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("greeno_user_name");
-      localStorage.removeItem("greeno_user_email");
-      localStorage.removeItem("greeno_customer_orders");
-      localStorage.removeItem("greeno_last_order");
-      localStorage.removeItem("greeno_all_orders");
-      document.cookie = "greeno_session=; path=/; max-age=0";
-      window.dispatchEvent(new Event("storage"));
-      window.dispatchEvent(new CustomEvent("greeno_auth_change"));
-    }
-    setIsLoggedIn(false);
-    setMenuOpen(false);
-    router.push("/login");
-    router.refresh();
-  }
 
   // Do not render the storefront GreenO navbar on the admin dashboard
   if (pathname?.startsWith("/admin")) {
@@ -308,39 +280,10 @@ export default function Header() {
         className={`nav-menu ${menuOpen ? "is-open" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label="Account dashboard"
+        aria-label="GreenO panel"
         aria-hidden={!menuOpen}
       >
-        <div className="nav-menu-header">
-          <div>
-            <span className="nav-menu-kicker">GREENO ATELIER</span>
-            <h2>DASHBOARD</h2>
-          </div>
-          <button
-            type="button"
-            className="nav-menu-close"
-            aria-label="Close dashboard"
-            onClick={() => setMenuOpen(false)}
-          >
-            <X size={20} strokeWidth={1.7} />
-          </button>
-        </div>
-        <div className="nav-menu-section">
-          <span className="nav-menu-heading">ACCOUNT</span>
-          {isLoggedIn ? (
-            <>
-              <Link href="/account" onClick={() => setMenuOpen(false)}>ACCOUNT DETAILS</Link>
-              <Link href="/account?tab=orders" onClick={() => setMenuOpen(false)}>MY ORDERS</Link>
-              <button type="button" onClick={handleLogout}>LOG OUT</button>
-            </>
-          ) : (
-            <>
-              <Link href="/login" onClick={() => setMenuOpen(false)}>LOG IN</Link>
-              <Link href="/signup" onClick={() => setMenuOpen(false)}>CREATE ACCOUNT</Link>
-            </>
-          )}
-          <Link href="/admin" onClick={() => setMenuOpen(false)}>ADMIN CONSOLE →</Link>
-        </div>
+        <div className="nav-menu-brand font-serif">GREENO</div>
       </aside>
 
       {/* =========================================

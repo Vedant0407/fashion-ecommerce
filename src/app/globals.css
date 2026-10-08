@@ -3323,85 +3323,14 @@ select {
   transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
 }
 
-.nav-menu-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding-bottom: 24px;
-  margin-bottom: 28px;
-  border-bottom: 1px solid #e9e9e9;
-}
-
-.nav-menu-kicker {
-  display: block;
-  color: #888888;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-}
-
-.nav-menu-header h2 {
-  margin: 9px 0 0;
+.nav-menu-brand {
   color: #121212;
   font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
 }
-
-.nav-menu-close {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 1px solid #e6e6e6;
-  border-radius: 50%;
-  background: #ffffff;
-  color: #121212;
-  cursor: pointer;
-}
-
-.nav-menu-section {
-  display: flex;
-  flex-direction: column;
-}
-
-.nav-menu-heading {
-  padding: 0 0 10px;
-  color: #888888;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-}
-
-.nav-menu-section a,
-.nav-menu-section button {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 16px 0;
-  border: 0;
-  border-bottom: 1px solid #eeeeee;
-  background: transparent;
-  color: #121212;
-  text-align: left;
-  text-decoration: none;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  transition: background 0.2s ease, padding-left 0.2s ease;
-}
-
-.nav-menu-section a:hover,
-.nav-menu-section button:hover {
-  padding-left: 6px;
-  background: #f7f7f7;
-}
-
 @media (max-width: 768px) {
   .nav-menu-wrapper {
     margin-left: -8px;
