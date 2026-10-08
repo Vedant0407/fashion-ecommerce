@@ -7,8 +7,6 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import {
   Heart,
   ShoppingBag,
-  ChevronLeft,
-  ChevronRight,
   Star,
   CheckCircle2,
   X,
@@ -100,6 +98,7 @@ export default function ProductPage() {
   const params = useParams();
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastImageWheelAt = useRef(0);
 
   const rawSlug = params?.slug;
   const slug = useMemo(() => {
@@ -227,6 +226,18 @@ export default function ProductPage() {
     }
     return [primaryImage];
   }, [product, primaryImage]);
+
+  const handleProductImageWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (productImages.length < 2 || Math.abs(event.deltaY) < 20) return;
+    const now = Date.now();
+    if (now - lastImageWheelAt.current < 500) return;
+    lastImageWheelAt.current = now;
+    setActiveImageIndex((prev) =>
+      event.deltaY > 0
+        ? (prev + 1) % productImages.length
+        : (prev - 1 + productImages.length) % productImages.length
+    );
+  };
 
   const currentDisplayImage = productImages[activeImageIndex] || productImages[0] || primaryImage;
 
@@ -380,6 +391,7 @@ export default function ProductPage() {
               <motion.div
                 style={{ y: photoY, scale: photoScale }}
                 className="streetwear-pdp-image-container"
+                onWheel={handleProductImageWheel}
               >
                 <AnimatePresence mode="wait">
                   <motion.img
@@ -411,36 +423,6 @@ export default function ProductPage() {
                     color={isWishlisted ? "#e11d48" : "#111111"}
                   />
                 </button>
-
-                {/* Left / Right Carousel Arrows (if multiple photos) */}
-                {productImages.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      className="streetwear-pdp-arrow left"
-                      onClick={() =>
-                        setActiveImageIndex((prev) =>
-                          prev === 0 ? productImages.length - 1 : prev - 1
-                        )
-                      }
-                      aria-label="Previous photo"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <button
-                      type="button"
-                      className="streetwear-pdp-arrow right"
-                      onClick={() =>
-                        setActiveImageIndex((prev) =>
-                          prev === productImages.length - 1 ? 0 : prev + 1
-                        )
-                      }
-                      aria-label="Next photo"
-                    >
-                      <ChevronRight size={20} />
-                    </button>
-                  </>
-                )}
               </motion.div>
 
             </div>
