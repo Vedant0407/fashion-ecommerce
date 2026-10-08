@@ -14429,11 +14429,11 @@ select {
   align-items: center;
   border: 1px solid #d4d4d4;
   border-radius: 2px;
-  height: 44px;
+  height: 34px;
 }
 
 .streetwear-pdp-qty-stepper button {
-  width: 40px;
+  width: 34px;
   height: 100%;
   border: none;
   background: none;
@@ -14453,7 +14453,7 @@ select {
 }
 
 .streetwear-pdp-qty-num {
-  min-width: 36px;
+  min-width: 24px;
   text-align: center;
   font-size: 13px;
   font-weight: 700;
@@ -14468,13 +14468,13 @@ select {
 .streetwear-pdp-cta-block {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   margin-top: 0;
 }
 
 .streetwear-pdp-cart-row {
   display: flex;
-  gap: 10px;
+  gap: 6px;
 }
 
 .streetwear-pdp-add-btn {
@@ -14565,7 +14565,7 @@ select {
 
 /* Small Review Section Below Buy Now Button */
 .streetwear-pdp-review-card {
-  margin-top: 26px;
+  margin-top: 12px;
   padding: 18px 20px;
   background: #fafafa;
   border: 1px solid #eeeeee;
