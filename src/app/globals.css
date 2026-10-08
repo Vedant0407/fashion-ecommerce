@@ -14352,6 +14352,10 @@ select {
   margin-bottom: 0;
 }
 
+.streetwear-pdp-right-col > .streetwear-pdp-section-block:first-child .streetwear-pdp-section-header {
+  margin-bottom: 0;
+}
+
 .streetwear-pdp-section-header {
   display: flex;
   align-items: center;
