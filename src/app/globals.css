@@ -6085,8 +6085,19 @@ select {
 }
 
 @media (max-width: 768px) {
-  /* Hide top navbar icons on mobile phone */
+  /* Keep only wishlist and bag actions in the mobile top navbar. */
   .site-header .header-actions {
+    display: flex !important;
+    align-items: center !important;
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    transform: translateY(-50%) !important;
+    gap: 2px !important;
+    z-index: 10 !important;
+  }
+
+  .site-header .header-actions > button:not(.bag-action) {
     display: none !important;
   }
 
@@ -6114,7 +6125,7 @@ select {
 
   /* Mobile Floating Dock: Curvy Rectangle Box shifted to bottom-left */
   .mobile-bottom-dock {
-    display: flex !important;
+    display: none !important;
     position: fixed !important;
     bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     left: 16px !important;
@@ -7994,7 +8005,13 @@ select {
   }
 
   .atelier-header-actions {
-    display: none !important;
+    display: flex !important;
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    transform: translateY(-50%) !important;
+    gap: 2px !important;
+    z-index: 10 !important;
   }
 }
 
