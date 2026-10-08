@@ -14128,8 +14128,8 @@ select {
 }
 
 .streetwear-pdp-description {
-  font-size: 13.5px;
-  line-height: 1.65;
+  font-size: 12.5px;
+  line-height: 1.55;
   color: #444444;
   margin: 0 0 24px;
 }
@@ -14343,7 +14343,7 @@ select {
   justify-content: center;
   align-self: center;
   position: relative;
-  top: 20px;
+  top: 52px;
 }
 
 .streetwear-pdp-section-block {
