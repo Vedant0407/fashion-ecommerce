@@ -14089,6 +14089,8 @@ select {
   flex-direction: column;
   justify-content: center;
   align-self: center;
+  position: relative;
+  top: 64px;
 }
 
 .streetwear-pdp-header-block {
@@ -14963,6 +14965,8 @@ select {
 
   .streetwear-pdp-left-col {
     order: 1;
+    position: static;
+    top: auto;
   }
 
   .streetwear-pdp-center-col {
