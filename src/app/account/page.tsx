@@ -392,17 +392,6 @@ function AccountPageContent() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
-        <p className={styles.breadcrumb}>GREENO / MY ACCOUNT</p>
-        <h1 className={styles.title}>
-          {activeTab === "orders"
-            ? "ORDER HISTORY"
-            : activeTab === "address"
-            ? "SHIPPING ADDRESS"
-            : activeTab === "wallet"
-            ? "WALLET DETAILS"
-            : "ACCOUNT DETAILS"}
-        </h1>
-
         {/* Mobile Tab Navigation Strip (Horizontal luxury pill tabs for phone view) */}
         <div className={styles.mobileTabNav}>
           <button
