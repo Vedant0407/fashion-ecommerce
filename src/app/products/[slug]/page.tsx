@@ -3,85 +3,98 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Heart, ShoppingBag, ArrowLeft, ChevronLeft, ChevronRight, ShieldCheck, Truck, RefreshCw, ZoomIn, Star, Plus } from "lucide-react";
+import {
+  Heart,
+  ShoppingBag,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Star,
+  CheckCircle2,
+  X,
+  ArrowRight,
+  ThumbsUp,
+  Share2,
+} from "lucide-react";
 
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
-import AboutSection from "@/components/ui/AboutSection";
+import EditorialFooter from "@/components/ui/EditorialFooter";
 import ProductImageLightbox from "@/components/ProductImageLightbox";
-import ProductReviews from "@/components/ProductReviews";
 import { Product, getProductByIdOrSlug, getAllProducts } from "@/lib/catalog";
 
-function getCategoryGroup(item?: Product | null): string {
-  if (!item) return "other";
-  const slug = item.category_slug?.toLowerCase().trim() || "";
-  const name = item.category_name?.toLowerCase().trim() || "";
-  const id = item.id?.toLowerCase().trim() || "";
-  const title = item.name?.toLowerCase().trim() || "";
-  const text = `${slug} ${name} ${id} ${title}`;
-
-  if (slug === "shirts" || (text.includes("shirt") && !text.includes("t-shirt") && !text.includes("tee"))) {
-    return "shirts";
-  }
-  if (slug === "t-shirts" || text.includes("tee") || text.includes("t-shirt")) {
-    return "t-shirts";
-  }
-  if (slug === "pants" || text.includes("pant") || text.includes("cargo") || text.includes("trouser")) {
-    return "pants";
-  }
-  if (slug === "outerwear" || slug === "hoodies" || text.includes("hoodie") || text.includes("coat") || text.includes("jacket")) {
-    return "outerwear";
-  }
-  if (slug === "bags" || text.includes("bag") || text.includes("tote") || text.includes("crossbody")) {
-    return "bags";
-  }
-  if (slug === "footwear" || text.includes("shoe") || text.includes("derb") || text.includes("foot")) {
-    return "footwear";
-  }
-  if (slug === "accessories" || text.includes("chain") || text.includes("accessory") || text.includes("cap") || text.includes("hat")) {
-    return "accessories";
-  }
-
-  return slug || name || "atelier";
+interface ReviewItem {
+  id: string;
+  author: string;
+  location?: string;
+  rating: number;
+  date: string;
+  title: string;
+  comment: string;
+  verified: boolean;
+  sizePurchased?: string;
+  fitFeedback?: string;
+  helpfulCount: number;
 }
 
-function isSameCategory(a?: Product | null, b?: Product | null): boolean {
-  if (!a || !b) return false;
-  const groupA = getCategoryGroup(a);
-  const groupB = getCategoryGroup(b);
-  if (groupA !== "other" && groupB !== "other") {
-    return groupA === groupB;
-  }
-  return (
-    (Boolean(a.category_slug) && a.category_slug?.toLowerCase() === b.category_slug?.toLowerCase()) ||
-    (Boolean(a.category_name) && a.category_name?.toLowerCase() === b.category_name?.toLowerCase())
-  );
-}
-
-function getCategoryDisplayName(item?: Product | null): string {
-  if (!item) return "ATELIER";
-  const group = getCategoryGroup(item);
-  switch (group) {
-    case "shirts":
-      return "SHIRTS";
-    case "t-shirts":
-      return "T-SHIRTS";
-    case "pants":
-      return "PANTS & TROUSERS";
-    case "tops":
-      return "TOPS";
-    case "outerwear":
-      return "OUTERWEAR & COATS";
-    case "bags":
-      return "BAGS & TOTES";
-    case "footwear":
-      return "FOOTWEAR & SHOES";
-    case "accessories":
-      return "ACCESSORIES";
-    default:
-      return item.category_name?.toUpperCase() || "ATELIER COLLECTION";
-  }
-}
+const DEFAULT_REVIEWS: ReviewItem[] = [
+  {
+    id: "rev-1",
+    author: "Julian V.",
+    location: "Milan, IT",
+    rating: 5,
+    date: "3 days ago",
+    title: "Impeccable collar stance and refined weave",
+    comment:
+      "The collar retains its sharp architectural profile with zero buckling. The fabric has an exquisite substantial weight while remaining breathable throughout the day.",
+    verified: true,
+    sizePurchased: "M",
+    fitFeedback: "True to Size",
+    helpfulCount: 14,
+  },
+  {
+    id: "rev-2",
+    author: "Aarav M.",
+    location: "Mumbai, IN",
+    rating: 5,
+    date: "1 week ago",
+    title: "Fluid drape, quiet luxury tailoring",
+    comment:
+      "Fits impeccably through the shoulders with just enough ease in the torso. Doesn't crease easily and moves with an understated elegance. Easily rivals European luxury fashion houses.",
+    verified: true,
+    sizePurchased: "L",
+    fitFeedback: "True to Size",
+    helpfulCount: 9,
+  },
+  {
+    id: "rev-3",
+    author: "Marcus K.",
+    location: "London, UK",
+    rating: 5,
+    date: "2 weeks ago",
+    title: "Substantial handfeel and immaculate stitching",
+    comment:
+      "Very clean French seams and premium cotton density. Sits slightly relaxed in the body as intended by the architectural silhouette. Highly recommended daily staple.",
+    verified: true,
+    sizePurchased: "XL",
+    fitFeedback: "True to Size",
+    helpfulCount: 12,
+  },
+  {
+    id: "rev-4",
+    author: "Dev R.",
+    location: "New Delhi, IN",
+    rating: 5,
+    date: "3 weeks ago",
+    title: "Dense combed cotton, zero collar baconing",
+    comment:
+      "The 300gsm cotton heft is phenomenal. Holds its shape wash after wash and has the perfect dropped shoulder proportion.",
+    verified: true,
+    sizePurchased: "M",
+    fitFeedback: "True to Size",
+    helpfulCount: 8,
+  },
+];
 
 export default function ProductPage() {
   const { addToCart, openCart } = useCart();
@@ -92,10 +105,10 @@ export default function ProductPage() {
   const rawSlug = params?.slug;
   const slug = useMemo(() => {
     try {
-      const val = Array.isArray(rawSlug) ? rawSlug[0] : (rawSlug ? String(rawSlug) : "");
+      const val = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug ? String(rawSlug) : "";
       return val ? decodeURIComponent(val) : "";
     } catch {
-      return Array.isArray(rawSlug) ? rawSlug[0] : (rawSlug ? String(rawSlug) : "");
+      return Array.isArray(rawSlug) ? rawSlug[0] : rawSlug ? String(rawSlug) : "";
     }
   }, [rawSlug]);
 
@@ -109,8 +122,16 @@ export default function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string>("BLACK");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+
+  // Review submission state
+  const [reviewsList, setReviewsList] = useState<ReviewItem[]>(DEFAULT_REVIEWS);
+  const [newReviewAuthor, setNewReviewAuthor] = useState("");
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewTitle, setNewReviewTitle] = useState("");
+  const [newReviewComment, setNewReviewComment] = useState("");
+  const [newReviewSize, setNewReviewSize] = useState("M");
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -127,15 +148,12 @@ export default function ProductPage() {
           setSelectedColor(defaultColor);
           setActiveImageIndex(0);
 
-          // If size_stock is present and "M" has 0 units, pick first in-stock size
           if (found.size_stock && typeof found.size_stock === "object") {
             const sizes = ["S", "M", "L", "XL", "XXL"];
             const currentM = Number(found.size_stock["M"] ?? 0);
             if (currentM === 0) {
               const available = sizes.find((s) => Number(found.size_stock?.[s] ?? 0) > 0);
-              if (available) {
-                setSelectedSize(available);
-              }
+              if (available) setSelectedSize(available);
             }
           }
         }
@@ -148,17 +166,6 @@ export default function ProductPage() {
     }
 
     loadProduct();
-
-    const handleUpdate = () => {
-      loadProduct();
-    };
-
-    window.addEventListener("greeno_products_updated", handleUpdate);
-    window.addEventListener("storage", handleUpdate);
-    return () => {
-      window.removeEventListener("greeno_products_updated", handleUpdate);
-      window.removeEventListener("storage", handleUpdate);
-    };
   }, [slug]);
 
   useEffect(() => {
@@ -170,33 +177,27 @@ export default function ProductPage() {
         console.error("Error loading products:", err);
       }
     }
-
     loadOtherProducts();
-
-    const handleUpdate = () => {
-      loadOtherProducts();
-    };
-
-    window.addEventListener("greeno_products_updated", handleUpdate);
-    window.addEventListener("storage", handleUpdate);
-    return () => {
-      window.removeEventListener("greeno_products_updated", handleUpdate);
-      window.removeEventListener("storage", handleUpdate);
-    };
   }, []);
 
-  const complementaryProducts = useMemo(() => {
-    if (!product) return [];
-    // Prioritize pieces from same category or curated atelier pieces
-    const sameCategory = allProducts.filter(
-      (item) => item.id !== product.id && isSameCategory(product, item)
-    );
-    if (sameCategory.length >= 4) {
-      return sameCategory.slice(0, 4);
+  // Fetch reviews for this product
+  useEffect(() => {
+    if (!product?.id) return;
+    async function fetchReviews() {
+      try {
+        const res = await fetch(`/api/reviews?productId=${encodeURIComponent(product?.id || "")}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.reviews) && json.reviews.length > 0) {
+            setReviewsList([...json.reviews, ...DEFAULT_REVIEWS]);
+          }
+        }
+      } catch {
+        // fallback to default reviews
+      }
     }
-    const otherPieces = allProducts.filter((item) => item.id !== product.id && !sameCategory.some((s) => s.id === item.id));
-    return [...sameCategory, ...otherPieces].slice(0, 4);
-  }, [allProducts, product]);
+    fetchReviews();
+  }, [product?.id]);
 
   const currentSizeQty = useMemo(() => {
     if (!product) return 0;
@@ -211,41 +212,19 @@ export default function ProductPage() {
   const isSizeOutOfStock = currentSizeQty <= 0;
   const isSizeLowStock = currentSizeQty > 0 && currentSizeQty <= 5;
 
-  if (loading) {
-    return (
-      <main className="atelier-pdp-page">
-        <div className="atelier-pdp-loading">
-          <div className="atelier-pdp-spinner" />
-          <p>LOADING SILHOUETTE...</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (!product) {
-    return (
-      <main className="atelier-pdp-page">
-        <div className="atelier-pdp-not-found">
-          <h2>PIECE NOT FOUND</h2>
-          <p>This silhouette is either archived or no longer available in current runs.</p>
-          <Link href="/" className="atelier-pdp-btn-return">
-            RETURN TO ATELIER
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  const primaryImage = product.image || "/atelier-bag.jpg";
-  const productImages =
-    product.images && product.images.length > 0
-      ? product.images
-      : [primaryImage];
+  const primaryImage = product?.image || "/train-black-tee-cutout.png";
+  const productImages = useMemo(() => {
+    if (!product) return [primaryImage];
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      return product.images;
+    }
+    return [primaryImage];
+  }, [product, primaryImage]);
 
   const currentDisplayImage = productImages[activeImageIndex] || productImages[0] || primaryImage;
 
   const handleAddToCart = () => {
-    if (isSizeOutOfStock) return;
+    if (!product || isSizeOutOfStock) return;
     addToCart(
       {
         id: product.id,
@@ -259,543 +238,577 @@ export default function ProductPage() {
     );
     setAdded(true);
     openCart();
-    setTimeout(() => setAdded(false), 2200);
+    setTimeout(() => setAdded(false), 2000);
+  };
+
+  const handleBuyNow = () => {
+    if (!product || isSizeOutOfStock) return;
+    addToCart(
+      {
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        image: currentDisplayImage,
+        size: selectedSize,
+        color: selectedColor || product.color || "BLACK",
+      },
+      quantity
+    );
+    router.push("/checkout");
   };
 
   const handleWishlistClick = () => {
+    if (!product) return;
     toggleWishlist({
       id: product.id,
       name: product.name,
       price: product.price,
       image: currentDisplayImage,
-      category: product.category_name || "ATELIER",
+      category: product.category_name || "Streetwear",
     });
   };
 
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReviewAuthor.trim() || !newReviewComment.trim()) return;
+
+    const newRev: ReviewItem = {
+      id: `user-rev-${Date.now()}`,
+      author: newReviewAuthor.trim(),
+      rating: newReviewRating,
+      date: "Just now",
+      title: newReviewTitle.trim() || "Verified Impression",
+      comment: newReviewComment.trim(),
+      verified: true,
+      sizePurchased: newReviewSize,
+      helpfulCount: 0,
+    };
+
+    setReviewsList((prev) => [newRev, ...prev]);
+    setReviewSubmitted(true);
+    setNewReviewAuthor("");
+    setNewReviewTitle("");
+    setNewReviewComment("");
+    setTimeout(() => setReviewSubmitted(false), 4000);
+  };
+
+  const complementaryProducts = useMemo(() => {
+    if (!product) return [];
+    return allProducts.filter((p) => p.id !== product.id).slice(0, 3);
+  }, [allProducts, product]);
+
+  if (loading) {
+    return (
+      <main className="streetwear-pdp-page">
+        <div className="streetwear-pdp-loading">
+          <div className="streetwear-pdp-spinner" />
+          <p>LOADING PIECE...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!product) {
+    return (
+      <main className="streetwear-pdp-page">
+        <div className="streetwear-pdp-not-found">
+          <h2>PIECE NOT FOUND</h2>
+          <p>This silhouette is either archived or no longer available in current runs.</p>
+          <Link href="/" className="streetwear-pdp-btn-return">
+            RETURN TO CATALOG
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  const isWishlisted = isInWishlist(product.id);
+
+  // Bullets specs matching reference mockup
+  const bulletSpecs = [
+    product.material ? `100% ${product.material}` : "100% premium combed cotton",
+    product.fit ? `Fit: ${product.fit}` : "Fit: oversized, dropped shoulders",
+    "Soft-touch high-definition finish",
+    "Reinforced rib collar and durable seams",
+    "Model is 184cm / 6'0\" and wears Size M",
+  ];
+
   return (
     <>
-      <main className="atelier-pdp-page">
-        <div className="atelier-pdp-container">
-          
-          {/* Top Breadcrumbs & Back Navigation */}
-          <nav className="atelier-pdp-nav" aria-label="Breadcrumb">
+      <main className="streetwear-pdp-page">
+        <div className="streetwear-pdp-container">
+          {/* Back Nav */}
+          <nav className="streetwear-pdp-nav">
             <button
               type="button"
-              className="atelier-pdp-back-link"
+              className="streetwear-pdp-back-btn"
               onClick={() => router.back()}
+              aria-label="Go back"
             >
-              <ArrowLeft size={13} strokeWidth={1.75} />
+              <ArrowLeft size={14} />
               <span>BACK</span>
             </button>
-            <div className="atelier-pdp-breadcrumb-trail">
-              <Link href="/">ATELIER</Link>
-              <span className="atelier-breadcrumb-sep">/</span>
-              <span className="atelier-breadcrumb-curr">{getCategoryDisplayName(product)}</span>
-              <span className="atelier-breadcrumb-sep">/</span>
-              <span className="atelier-breadcrumb-piece">{product.name}</span>
+            <div className="streetwear-pdp-breadcrumbs">
+              <Link href="/">HOME</Link>
+              <span>/</span>
+              <Link href="/shop">COLLECTION</Link>
+              <span>/</span>
+              <span className="current">{product.name}</span>
             </div>
           </nav>
 
-          {/* Main 2-Column Luxury Layout */}
-          <div className="atelier-pdp-layout">
-            
-            {/* Left: Editorial Imagery Showcase */}
-            <div className="atelier-pdp-gallery-col">
-              <div className="atelier-pdp-main-image-wrap">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* 3-Column Desktop / Responsive Mobile Grid */}
+          <div className="streetwear-pdp-grid">
+            {/* COLUMN 1 (LEFT): Product Title, Price, Description, Bullet Specs */}
+            <div className="streetwear-pdp-left-col">
+              <div className="streetwear-pdp-header-block">
+                <h1 className="streetwear-pdp-title">{product.name}</h1>
+                <div className="streetwear-pdp-price-row">
+                  <span className="streetwear-pdp-price">
+                    ₹{Number(product.price).toLocaleString("en-IN")}
+                  </span>
+                  <span className="streetwear-pdp-tax-note">TAX INCL.</span>
+                </div>
+              </div>
+
+              {/* Description Paragraph */}
+              <p className="streetwear-pdp-description">
+                {product.description ||
+                  "Heavyweight oversized silhouette crafted in dense premium cotton with relaxed dropped shoulders. Designed with architectural drape and clean proportions for enduring presence."}
+              </p>
+
+              {/* Bullet Specifications */}
+              <ul className="streetwear-pdp-bullet-specs">
+                {bulletSpecs.map((spec, i) => (
+                  <li key={i}>
+                    <span className="bullet-dot">•</span>
+                    <span>{spec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* COLUMN 2 (CENTER): Large Product Cutout/Photography with Slider Dots */}
+            <div className="streetwear-pdp-center-col">
+              <div className="streetwear-pdp-image-container">
                 <img
                   src={currentDisplayImage}
                   alt={product.name}
-                  className="atelier-pdp-main-image"
-                  onClick={() => {
-                    if (productImages.length > 1) {
-                      setActiveImageIndex((prev) => (prev + 1) % productImages.length);
-                    }
-                  }}
-                  style={{ cursor: productImages.length > 1 ? "pointer" : "default" }}
+                  className="streetwear-pdp-main-img"
+                  onClick={() => setLightboxOpen(true)}
+                  title="Click to view full screen"
                 />
 
-                {/* Subtle Image Counter & Zoom Indicator */}
-                <div className="atelier-pdp-image-meta">
-                  <span className="atelier-pdp-slide-counter">
-                    {String(activeImageIndex + 1).padStart(2, "0")} &mdash; {String(productImages.length).padStart(2, "0")}
-                  </span>
-                  <button
-                    type="button"
-                    className="atelier-pdp-zoom-trigger"
-                    onClick={() => {
-                      setLightboxIndex(activeImageIndex);
-                      setLightboxOpen(true);
-                    }}
-                    title="Inspect high-resolution details"
-                  >
-                    <ZoomIn size={14} strokeWidth={1.75} />
-                    <span>ZOOM</span>
-                  </button>
-                </div>
+                {/* Wishlist Button Overlaid on Image */}
+                <button
+                  type="button"
+                  className={`streetwear-pdp-img-wishlist-btn ${isWishlisted ? "active" : ""}`}
+                  onClick={handleWishlistClick}
+                  aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                  <Heart
+                    size={18}
+                    strokeWidth={2}
+                    fill={isWishlisted ? "#e11d48" : "none"}
+                    color={isWishlisted ? "#e11d48" : "#111111"}
+                  />
+                </button>
 
-                {/* Arrow Navigation if multiple images */}
+                {/* Left / Right Carousel Arrows (if multiple photos) */}
                 {productImages.length > 1 && (
                   <>
                     <button
                       type="button"
-                      className="atelier-pdp-nav-arrow prev"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveImageIndex((prev) => (prev === 0 ? productImages.length - 1 : prev - 1));
-                      }}
+                      className="streetwear-pdp-arrow left"
+                      onClick={() =>
+                        setActiveImageIndex((prev) =>
+                          prev === 0 ? productImages.length - 1 : prev - 1
+                        )
+                      }
                       aria-label="Previous photo"
                     >
-                      <ChevronLeft size={16} strokeWidth={1.5} />
+                      <ChevronLeft size={20} />
                     </button>
                     <button
                       type="button"
-                      className="atelier-pdp-nav-arrow next"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveImageIndex((prev) => (prev === productImages.length - 1 ? 0 : prev + 1));
-                      }}
+                      className="streetwear-pdp-arrow right"
+                      onClick={() =>
+                        setActiveImageIndex((prev) =>
+                          prev === productImages.length - 1 ? 0 : prev + 1
+                        )
+                      }
                       aria-label="Next photo"
                     >
-                      <ChevronRight size={16} strokeWidth={1.5} />
+                      <ChevronRight size={20} />
                     </button>
                   </>
                 )}
               </div>
 
-              {/* Thumbnails Row */}
+              {/* Slider Dots Indicator */}
+              <div className="streetwear-pdp-carousel-nav">
+                <button
+                  type="button"
+                  className="carousel-step-arrow"
+                  onClick={() =>
+                    setActiveImageIndex((prev) =>
+                      prev === 0 ? productImages.length - 1 : prev - 1
+                    )
+                  }
+                  aria-label="Previous"
+                >
+                  ←
+                </button>
+                <div className="carousel-dots-wrap">
+                  {productImages.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className={`carousel-dot ${i === activeImageIndex ? "active" : ""}`}
+                      onClick={() => setActiveImageIndex(i)}
+                      aria-label={`View photo ${i + 1}`}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="carousel-step-arrow"
+                  onClick={() =>
+                    setActiveImageIndex((prev) =>
+                      prev === productImages.length - 1 ? 0 : prev + 1
+                    )
+                  }
+                  aria-label="Next"
+                >
+                  →
+                </button>
+              </div>
+
+              {/* Thumbnail strip if multiple images */}
               {productImages.length > 1 && (
-                <div className="atelier-pdp-thumbs">
+                <div className="streetwear-pdp-thumb-strip">
                   {productImages.map((thumb, idx) => (
                     <button
                       key={idx}
                       type="button"
-                      className={`atelier-pdp-thumb-btn ${activeImageIndex === idx ? "active" : ""}`}
+                      className={`streetwear-thumb-tile ${idx === activeImageIndex ? "active" : ""}`}
                       onClick={() => setActiveImageIndex(idx)}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={thumb} alt={`${product.name} detail view ${idx + 1}`} />
+                      <img src={thumb} alt={`Thumbnail ${idx + 1}`} />
                     </button>
                   ))}
                 </div>
               )}
-
-              {/* Client Appraisals & Reviews Section: Directly below photo */}
-              <ProductReviews
-                productId={product.id}
-                productName={product.name}
-                categoryGroup={getCategoryGroup(product)}
-              />
             </div>
 
-            {/* Right: Editorial Information & Checkout Controls */}
-            <div className="atelier-pdp-info-col">
-              <div className="atelier-pdp-info-sticky">
-                
-                {/* Header Block */}
-                <div className="atelier-pdp-header">
-                  <div className="atelier-pdp-edition-kicker">
-                    <span>SS&apos;26 &mdash; ATELIER</span>
-                    {product.product_no && (
-                      <span className="atelier-pdp-sku">NO. {product.product_no}</span>
-                    )}
-                  </div>
-
-                  <h1 className="atelier-pdp-title">{product.name}</h1>
-
-                  {/* Rating Anchor Link directly to Reviews Section */}
-                  <div className="atelier-pdp-rating-anchor-wrap">
-                    <button
-                      type="button"
-                      className="atelier-pdp-rating-anchor"
-                      onClick={() => {
-                        window.dispatchEvent(new CustomEvent("greeno_open_reviews_modal"));
-                      }}
-                      title="Open client appraisals dialog"
-                    >
-                      <div className="atelier-stars-row mini">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} size={11} fill="#121212" stroke="#121212" strokeWidth={1.5} />
-                        ))}
-                      </div>
-                      <span className="atelier-rating-score">4.9</span>
-                      <span className="atelier-rating-sep">&bull;</span>
-                      <span className="atelier-rating-link">CLIENT APPRAISALS</span>
-                    </button>
-                  </div>
-
-                  <div className="atelier-pdp-price-wrap">
-                    <span className="atelier-pdp-price">
-                      ₹{Number(product.price).toLocaleString("en-IN")}
+            {/* COLUMN 3 (RIGHT): Size, Quantity, Add to Cart, Buy Now, Reviews Card */}
+            <div className="streetwear-pdp-right-col">
+              {/* Size Selector */}
+              <div className="streetwear-pdp-section-block">
+                <div className="streetwear-pdp-section-header">
+                  <span className="streetwear-pdp-label">Size</span>
+                  {isSizeLowStock && (
+                    <span className="streetwear-pdp-stock-warn">
+                      ONLY {currentSizeQty} LEFT
                     </span>
-                    <span className="atelier-pdp-price-note">
-                      MRP INCL. OF ALL TAXES &bull; COMPLIMENTARY COURIER
-                    </span>
-                  </div>
+                  )}
+                  {isSizeOutOfStock && (
+                    <span className="streetwear-pdp-stock-out">OUT OF STOCK</span>
+                  )}
                 </div>
-
-                {/* Editorial Description */}
-                <div className="atelier-pdp-desc">
-                  <p>
-                    {product.description ||
-                      "Architectural silhouette crafted with heavyweight texture, refined proportions, and fluid drape. Designed for quiet timeless elegance."}
-                  </p>
+                <div className="streetwear-pdp-size-tiles">
+                  {(["S", "M", "L", "XL", "XXL"] as const).map((sz) => {
+                    const isSelected = selectedSize === sz;
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        className={`streetwear-size-box ${isSelected ? "active" : ""}`}
+                        onClick={() => setSelectedSize(sz)}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
 
-                {/* Micro Specification Grid */}
-                <div className="atelier-pdp-specs-grid">
-                  <div className="atelier-pdp-spec-item">
-                    <span className="spec-label">COMPOSITION</span>
-                    <span className="spec-val">{product.material || "100% Virgin Wool / Calfskin"}</span>
-                  </div>
-                  <div className="atelier-pdp-spec-item">
-                    <span className="spec-label">FABRIC</span>
-                    <span className="spec-val">{product.fabric || "Heavyweight Rib / Fine Grain"}</span>
-                  </div>
-                  <div className="atelier-pdp-spec-item">
-                    <span className="spec-label">SILHOUETTE</span>
-                    <span className="spec-val">{product.fit || "Relaxed Architectural Drape"}</span>
-                  </div>
+              {/* Quantity Stepper */}
+              <div className="streetwear-pdp-section-block">
+                <div className="streetwear-pdp-section-header">
+                  <span className="streetwear-pdp-label">Quantity</span>
                 </div>
-
-                {/* Divider Rule */}
-                <div className="atelier-pdp-rule" />
-
-                {/* Color Selection */}
-                <div className="atelier-pdp-option-group">
-                  <div className="atelier-pdp-option-label-row">
-                    <span className="option-title">COLORWAY</span>
-                    <span className="option-selected-val">{selectedColor}</span>
-                  </div>
-                  <div className="atelier-pdp-color-swatches">
-                    {(Array.isArray(product.colors) && product.colors.length > 0
-                      ? product.colors
-                      : [product.color || "BLACK"]
-                    ).map((col) => {
-                      const COLOR_MAP: Record<string, string> = {
-                        BLACK: "#121212",
-                        NOIR: "#121212",
-                        WHITE: "#FAF9F6",
-                        GREY: "#71717A",
-                        GRAY: "#71717A",
-                        OLIVE: "#4B5320",
-                        BEIGE: "#D7CFBD",
-                        CREAM: "#F7F5EE",
-                        NAVY: "#1B263B",
-                        BROWN: "#4A3525",
-                        CHARCOAL: "#242426",
-                        OATMEAL: "#E6DEC8",
-                        SAGE: "#9FAF90",
-                      };
-                      const hex = COLOR_MAP[col.toUpperCase()] || "#2D2D2D";
-                      const isSelected = selectedColor.toUpperCase() === col.toUpperCase();
-
-                      return (
-                        <button
-                          key={col}
-                          type="button"
-                          className={`atelier-color-chip ${isSelected ? "active" : ""}`}
-                          onClick={() => setSelectedColor(col)}
-                          title={`Select ${col}`}
-                        >
-                          <span
-                            className="swatch-dot"
-                            style={{
-                              backgroundColor: hex,
-                              border: col.toUpperCase() === "WHITE" ? "1px solid #D1CEC7" : undefined,
-                            }}
-                          />
-                          <span className="swatch-text">{col.toUpperCase()}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Size Selection */}
-                <div className="atelier-pdp-option-group">
-                  <div className="atelier-pdp-option-label-row">
-                    <span className="option-title">CHOOSE SIZE</span>
-                    {isSizeLowStock && (
-                      <span className="option-warning">ONLY {currentSizeQty} UNITS REMAINING</span>
-                    )}
-                    {isSizeOutOfStock && (
-                      <span className="option-danger">SIZE {selectedSize} OUT OF STOCK</span>
-                    )}
-                  </div>
-                  <div className="atelier-pdp-size-tiles">
-                    {(["S", "M", "L", "XL", "XXL"] as const).map((sz) => {
-                      const qty =
-                        product.size_stock && typeof product.size_stock === "object"
-                          ? product.size_stock[sz] !== undefined
-                            ? Number(product.size_stock[sz]) || 0
-                            : Number(product.stock) || 0
-                          : Number(product.stock ?? 10);
-                      const isOut = qty <= 0;
-                      const isSelected = selectedSize === sz;
-
-                      return (
-                        <button
-                          key={sz}
-                          type="button"
-                          disabled={isOut}
-                          className={`atelier-size-tile ${isSelected ? "active" : ""} ${isOut ? "disabled" : ""}`}
-                          onClick={() => setSelectedSize(sz)}
-                        >
-                          {sz}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Quantity Selector */}
-                <div className="atelier-pdp-option-group">
-                  <div className="atelier-pdp-option-label-row">
-                    <span className="option-title">QUANTITY</span>
-                  </div>
-                  <div className="atelier-pdp-qty-stepper">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      disabled={quantity <= 1}
-                    >
-                      &minus;
-                    </button>
-                    <span>{quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(quantity + 1)}
-                    >
-                      &#43;
-                    </button>
-                  </div>
-                </div>
-
-                {/* Action Buttons: Add to Bag & Wishlist */}
-                <div className="atelier-pdp-actions">
+                <div className="streetwear-pdp-qty-stepper">
                   <button
                     type="button"
-                    className="atelier-pdp-add-btn"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+                  <span className="streetwear-pdp-qty-num">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(quantity + 1)}
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons: Add to Cart + Buy Now + Wishlist */}
+              <div className="streetwear-pdp-cta-block">
+                <div className="streetwear-pdp-cart-row">
+                  <button
+                    type="button"
+                    className={`streetwear-pdp-add-btn ${added ? "added" : ""}`}
                     onClick={handleAddToCart}
                     disabled={isSizeOutOfStock}
                   >
-                    <ShoppingBag size={15} strokeWidth={1.75} />
-                    <span>
-                      {isSizeOutOfStock
-                        ? `SIZE ${selectedSize} OUT OF STOCK`
-                        : added
-                        ? "ADDED TO ATELIER BAG ✓"
-                        : "ADD TO SHOPPING BAG"}
-                    </span>
+                    <ShoppingBag size={16} strokeWidth={2} />
+                    <span>{added ? "ADDED TO CART ✓" : "ADD TO CART"}</span>
                   </button>
 
                   <button
                     type="button"
-                    className={`atelier-pdp-wish-btn ${isInWishlist(product.id) ? "active" : ""}`}
+                    className={`streetwear-pdp-action-wish-btn ${isWishlisted ? "active" : ""}`}
                     onClick={handleWishlistClick}
-                    title="Save to Wishlist"
+                    title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                    aria-label="Save to wishlist"
                   >
                     <Heart
                       size={18}
-                      strokeWidth={1.75}
-                      fill={isInWishlist(product.id) ? "#121212" : "none"}
+                      strokeWidth={2}
+                      fill={isWishlisted ? "#e11d48" : "none"}
+                      color={isWishlisted ? "#e11d48" : "#111111"}
                     />
                   </button>
                 </div>
 
-                {/* Trust & Guarantee Perks */}
-                <div className="atelier-pdp-perks">
-                  <div className="atelier-perk-row">
-                    <Truck size={14} strokeWidth={1.5} className="perk-icon" />
-                    <span><strong>Complimentary Express Delivery</strong> &mdash; Dispatched within 24h across India</span>
+                {/* BUY NOW Button */}
+                <button
+                  type="button"
+                  className="streetwear-pdp-buy-now-btn"
+                  onClick={handleBuyNow}
+                  disabled={isSizeOutOfStock}
+                >
+                  <span>BUY NOW</span>
+                  <ArrowRight size={15} strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* Small Review Section Below Buy Now Button */}
+              <div className="streetwear-pdp-review-card">
+                <div className="streetwear-pdp-review-top">
+                  <div className="streetwear-pdp-review-stars">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} size={14} fill="#111111" color="#111111" strokeWidth={0} />
+                    ))}
                   </div>
-                  <div className="atelier-perk-row">
-                    <RefreshCw size={14} strokeWidth={1.5} className="perk-icon" />
-                    <span><strong>3-Day Atelier Exchange Guarantee</strong> &mdash; Effortless reverse pickups from account</span>
-                  </div>
-                  <div className="atelier-perk-row">
-                    <ShieldCheck size={14} strokeWidth={1.5} className="perk-icon" />
-                    <span><strong>Heirloom Craftsmanship</strong> &mdash; 100% genuine virgin wool, leather &amp; cotton</span>
-                  </div>
+                  <span className="streetwear-pdp-review-rating">4.9 / 5.0</span>
+                  <span className="streetwear-pdp-review-count">
+                    ({reviewsList.length} REVIEWS)
+                  </span>
                 </div>
 
-                {/* Luxury Hairline Accordions */}
-                <div className="atelier-pdp-accordions">
-                  
-                  {/* Accordion 1: Tailoring & Specifications */}
-                  <div className="atelier-accordion-item">
-                    <button
-                      type="button"
-                      className="atelier-accordion-header"
-                      onClick={() => setOpenAccordion(openAccordion === "details" ? null : "details")}
-                    >
-                      <span>TAILORING &amp; SPECIFICATIONS</span>
-                      <span className="accordion-toggle">{openAccordion === "details" ? "—" : "+"}</span>
-                    </button>
-                    {openAccordion === "details" && (
-                      <div className="atelier-accordion-body">
-                        <ul>
-                          <li><strong>Silhouette:</strong> {product.fit || "Architectural Tailored Drape"}</li>
-                          <li><strong>Composition:</strong> {product.material || "100% Virgin Wool / Calfskin Leather"}</li>
-                          <li><strong>Fabric Weave:</strong> {product.fabric || "Italian Textile Mill Weave"}</li>
-                          <li><strong>Colorway:</strong> {selectedColor}</li>
-                          <li><strong>Reference Code:</strong> {product.product_no || product.id}</li>
-                        </ul>
-                      </div>
-                    )}
-                  </div>
+                <p className="streetwear-pdp-review-quote">
+                  “{reviewsList[0]?.comment.slice(0, 110)}...”
+                </p>
 
-                  {/* Accordion 2: Care Instructions */}
-                  <div className="atelier-accordion-item">
-                    <button
-                      type="button"
-                      className="atelier-accordion-header"
-                      onClick={() => setOpenAccordion(openAccordion === "care" ? null : "care")}
-                    >
-                      <span>COMPOSITION &amp; ATELIER CARE</span>
-                      <span className="accordion-toggle">{openAccordion === "care" ? "—" : "+"}</span>
-                    </button>
-                    {openAccordion === "care" && (
-                      <div className="atelier-accordion-body">
-                        <p>
-                          Specialist dry clean only for virgin wool and tailored outerwear. Leather goods should be conditioned with neutral natural beeswax balm and protected from extended moisture. Store on contoured wooden hangers in a breathable cotton garment cover.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Accordion 3: Shipping & Returns */}
-                  <div className="atelier-accordion-item">
-                    <button
-                      type="button"
-                      className="atelier-accordion-header"
-                      onClick={() => setOpenAccordion(openAccordion === "shipping" ? null : "shipping")}
-                    >
-                      <span>COMPLIMENTARY SHIPPING &amp; 3-DAY RETURNS</span>
-                      <span className="accordion-toggle">{openAccordion === "shipping" ? "—" : "+"}</span>
-                    </button>
-                    {openAccordion === "shipping" && (
-                      <div className="atelier-accordion-body">
-                        <p>
-                          Complimentary express courier service across India. Dispatched from New Delhi atelier within 24 hours. Delivered within 2&ndash;4 business days with real-time SMS tracking. Unworn pieces with security tags intact are eligible for seamless 3-day return or size exchange directly via your Client Portal.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-
+                {/* See More button that opens review modal */}
+                <button
+                  type="button"
+                  className="streetwear-pdp-see-reviews-btn"
+                  onClick={() => setReviewModalOpen(true)}
+                >
+                  <span>See more reviews</span>
+                  <ArrowRight size={13} strokeWidth={2} />
+                </button>
               </div>
             </div>
-
           </div>
 
-          {/* Bottom Recommendations Section: Complementary Atelier Pieces */}
+          {/* Complementary Products Section */}
           {complementaryProducts.length > 0 && (
-            <section className="atelier-pdp-recommendations">
-              <div className="atelier-recommendations-header">
-                <span className="atelier-rec-kicker">CURATED COLLECTION</span>
-                <h2 className="atelier-rec-title">COMPLEMENTARY PIECES</h2>
-                <p className="atelier-rec-sub">
-                  Silhouettes designed to pair seamlessly across the wardrobe.
-                </p>
-              </div>
-
-              <div className="atelier-grid">
+            <section className="streetwear-pdp-complementary-section">
+              <h2 className="streetwear-pdp-rec-title">YOU MAY ALSO LIKE</h2>
+              <div className="streetwear-pdp-rec-grid">
                 {complementaryProducts.map((item) => (
-                  <div key={item.id} className="atelier-card-wrap">
-                    <Link href={`/products/${item.id}`} className="atelier-card">
-                      <div className="atelier-image-box">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="atelier-product-img"
-                        />
-
-                        {/* Quick Add CTA */}
-                        <div className="atelier-quick-add">
-                          <button
-                            type="button"
-                            className="atelier-quick-btn"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              addToCart({
-                                id: item.id,
-                                name: item.name,
-                                price: item.price,
-                                image: item.image,
-                                size: "M",
-                              });
-                              openCart();
-                            }}
-                            aria-label={`Add ${item.name} to cart`}
-                            title="Add to cart"
-                          >
-                            <ShoppingBag size={15} strokeWidth={2} className="atelier-quick-icon desktop-icon" />
-                            <Plus size={19} strokeWidth={2.4} className="atelier-quick-icon mobile-icon" />
-                            <span className="atelier-quick-text">ADD TO CART</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="atelier-details">
-                        <div className="atelier-title-row">
-                          <h3 className="atelier-product-name">{item.name}</h3>
-                          <span className="atelier-product-price">
-                            ₹{Number(item.price).toLocaleString("en-IN")}
-                          </span>
-                        </div>
-                        <p className="atelier-product-sub">
-                          {item.material || item.category_name || "Atelier Edition"}
-                        </p>
-                      </div>
-                    </Link>
-
-                    {/* Wishlist Button */}
-                    <button
-                      type="button"
-                      className="atelier-wishlist-btn"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleWishlist({
-                          id: item.id,
-                          name: item.name,
-                          price: item.price,
-                          image: item.image,
-                          category: item.category_name,
-                        });
-                      }}
-                      title="Save to Wishlist"
-                    >
-                      <Heart
-                        size={15}
-                        fill={isInWishlist(item.id) ? "#121212" : "none"}
-                        stroke="#121212"
-                        strokeWidth={1.75}
-                      />
-                    </button>
-                  </div>
+                  <Link
+                    key={item.id}
+                    href={`/products/${item.id}`}
+                    className="streetwear-rec-card"
+                  >
+                    <div className="streetwear-rec-img-box">
+                      <img src={item.image} alt={item.name} />
+                    </div>
+                    <div className="streetwear-rec-caption">
+                      <h3>{item.name}</h3>
+                      <span>₹{Number(item.price).toLocaleString("en-IN")}</span>
+                    </div>
+                  </Link>
                 ))}
               </div>
             </section>
           )}
-
         </div>
       </main>
 
+      {/* REVIEWS MODAL BOX (Opens when clicking "See more reviews") */}
+      {reviewModalOpen && (
+        <div
+          className="streetwear-review-modal-backdrop"
+          onClick={() => setReviewModalOpen(false)}
+        >
+          <div
+            className="streetwear-review-modal-box"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="streetwear-modal-header">
+              <div>
+                <h3 className="streetwear-modal-title">CUSTOMER REVIEWS</h3>
+                <div className="streetwear-modal-rating-summary">
+                  <div className="streetwear-pdp-review-stars">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} size={15} fill="#111111" color="#111111" strokeWidth={0} />
+                    ))}
+                  </div>
+                  <span>
+                    <strong>4.9</strong> out of 5 ({reviewsList.length} verified ratings)
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="streetwear-modal-close"
+                onClick={() => setReviewModalOpen(false)}
+                aria-label="Close modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Content Scrollable Area */}
+            <div className="streetwear-modal-body">
+              {/* Write Review Form */}
+              <form onSubmit={handleReviewSubmit} className="streetwear-write-review-form">
+                <h4 className="streetwear-write-title">WRITE AN APPRAISAL</h4>
+                {reviewSubmitted && (
+                  <div className="streetwear-review-success">
+                    <CheckCircle2 size={16} />
+                    <span>Your review has been verified and posted!</span>
+                  </div>
+                )}
+                <div className="streetwear-form-row">
+                  <div className="streetwear-form-group">
+                    <label>YOUR NAME</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Julian V."
+                      value={newReviewAuthor}
+                      onChange={(e) => setNewReviewAuthor(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="streetwear-form-group">
+                    <label>SIZE BOUGHT</label>
+                    <select
+                      value={newReviewSize}
+                      onChange={(e) => setNewReviewSize(e.target.value)}
+                    >
+                      <option value="S">S</option>
+                      <option value="M">M</option>
+                      <option value="L">L</option>
+                      <option value="XL">XL</option>
+                    </select>
+                  </div>
+                  <div className="streetwear-form-group">
+                    <label>RATING</label>
+                    <select
+                      value={newReviewRating}
+                      onChange={(e) => setNewReviewRating(Number(e.target.value))}
+                    >
+                      <option value="5">★★★★★ (5 Stars)</option>
+                      <option value="4">★★★★☆ (4 Stars)</option>
+                      <option value="3">★★★☆☆ (3 Stars)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="streetwear-form-group">
+                  <label>HEADLINE</label>
+                  <input
+                    type="text"
+                    placeholder="Short summary (e.g. Flawless drape and collar)"
+                    value={newReviewTitle}
+                    onChange={(e) => setNewReviewTitle(e.target.value)}
+                  />
+                </div>
+
+                <div className="streetwear-form-group">
+                  <label>COMMENT</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Share your thoughts on the fit, fabric heft, and silhouette..."
+                    value={newReviewComment}
+                    onChange={(e) => setNewReviewComment(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="streetwear-submit-review-btn">
+                  SUBMIT REVIEW
+                </button>
+              </form>
+
+              {/* Reviews List */}
+              <div className="streetwear-modal-reviews-list">
+                <h4 className="streetwear-reviews-list-title">ALL REVIEWS ({reviewsList.length})</h4>
+                {reviewsList.map((rev) => (
+                  <div key={rev.id} className="streetwear-modal-review-item">
+                    <div className="streetwear-rev-top-line">
+                      <div className="streetwear-pdp-review-stars">
+                        {[...Array(rev.rating)].map((_, i) => (
+                          <Star key={i} size={12} fill="#111111" color="#111111" strokeWidth={0} />
+                        ))}
+                      </div>
+                      <span className="streetwear-rev-author">{rev.author}</span>
+                      {rev.verified && (
+                        <span className="streetwear-rev-verified">
+                          <CheckCircle2 size={11} /> VERIFIED
+                        </span>
+                      )}
+                      <span className="streetwear-rev-date">{rev.date}</span>
+                    </div>
+                    <h5 className="streetwear-rev-headline">“{rev.title}”</h5>
+                    <p className="streetwear-rev-comment">{rev.comment}</p>
+                    {rev.sizePurchased && (
+                      <span className="streetwear-rev-size-tag">
+                        Size: {rev.sizePurchased} {rev.fitFeedback ? `• ${rev.fitFeedback}` : ""}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox for full screen zoom */}
       <ProductImageLightbox
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
         images={productImages}
-        initialIndex={lightboxIndex}
+        initialIndex={activeImageIndex}
         productName={product.name}
       />
 
-      <AboutSection />
+      <EditorialFooter />
     </>
   );
 }

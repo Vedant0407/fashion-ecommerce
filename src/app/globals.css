@@ -13965,3 +13965,977 @@ select {
   font-weight: inherit !important;
   display: inline-block !important;
 }
+
+/* =========================================================
+   STREETWEAR PRODUCT DESCRIPTION PAGE (3-COLUMN LAYOUT)
+========================================================= */
+
+.streetwear-pdp-page {
+  width: 100%;
+  min-height: 100vh;
+  background: #ffffff;
+  color: #111111;
+  padding-top: clamp(80px, 10vh, 110px);
+  padding-bottom: 80px;
+}
+
+.streetwear-pdp-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3.5vw, 48px);
+}
+
+.streetwear-pdp-loading,
+.streetwear-pdp-not-found {
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.streetwear-pdp-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid #ebebeb;
+  border-top-color: #111111;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.streetwear-pdp-btn-return {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 24px;
+  background: #111111;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  text-decoration: none;
+}
+
+/* Nav & Breadcrumbs */
+.streetwear-pdp-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: clamp(24px, 3.5vh, 40px);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #888888;
+}
+
+.streetwear-pdp-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #111111;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 2px;
+  transition: background 0.15s ease;
+}
+
+.streetwear-pdp-back-btn:hover {
+  background: #f4f4f4;
+}
+
+.streetwear-pdp-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.streetwear-pdp-breadcrumbs a {
+  color: #888888;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.streetwear-pdp-breadcrumbs a:hover {
+  color: #111111;
+}
+
+.streetwear-pdp-breadcrumbs .current {
+  color: #111111;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* 3-Column Desktop Grid */
+.streetwear-pdp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr 1fr;
+  gap: clamp(28px, 3.5vw, 60px);
+  align-items: start;
+}
+
+/* Column 1 (Left): Info & Specs */
+.streetwear-pdp-left-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.streetwear-pdp-header-block {
+  margin-bottom: 20px;
+}
+
+.streetwear-pdp-title {
+  font-family: inherit;
+  font-size: clamp(24px, 2.4vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #111111;
+  line-height: 1.22;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.streetwear-pdp-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.streetwear-pdp-price {
+  font-size: clamp(18px, 1.8vw, 22px);
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: 0.02em;
+}
+
+.streetwear-pdp-tax-note {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #888888;
+}
+
+.streetwear-pdp-description {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #444444;
+  margin: 0 0 24px;
+}
+
+.streetwear-pdp-bullet-specs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 20px;
+}
+
+.streetwear-pdp-bullet-specs li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #333333;
+}
+
+.streetwear-pdp-bullet-specs .bullet-dot {
+  color: #111111;
+  font-size: 14px;
+}
+
+/* Column 2 (Center): Product Photography */
+.streetwear-pdp-center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.streetwear-pdp-image-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.streetwear-pdp-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  cursor: zoom-in;
+  transition: transform 0.35s ease;
+}
+
+.streetwear-pdp-main-img:hover {
+  transform: scale(1.02);
+}
+
+.streetwear-pdp-img-wishlist-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.streetwear-pdp-img-wishlist-btn:hover {
+  transform: scale(1.1);
+  background: #ffffff;
+}
+
+.streetwear-pdp-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 4;
+  transition: all 0.2s ease;
+}
+
+.streetwear-pdp-arrow:hover {
+  background: #ffffff;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.streetwear-pdp-arrow.left { left: 12px; }
+.streetwear-pdp-arrow.right { right: 12px; }
+
+.streetwear-pdp-carousel-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.carousel-step-arrow {
+  background: none;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #777777;
+  padding: 4px 8px;
+  transition: color 0.15s ease;
+}
+
+.carousel-step-arrow:hover {
+  color: #111111;
+}
+
+.carousel-dots-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d4d4d4;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s ease;
+}
+
+.carousel-dot.active {
+  background: #111111;
+  width: 18px;
+  border-radius: 9999px;
+}
+
+.streetwear-pdp-thumb-strip {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.streetwear-thumb-tile {
+  width: 50px;
+  height: 60px;
+  border: 1px solid #e5e5e5;
+  border-radius: 2px;
+  background: #fafafa;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.streetwear-thumb-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.streetwear-thumb-tile.active {
+  border-color: #111111;
+}
+
+/* Column 3 (Right): Controls & Actions */
+.streetwear-pdp-right-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.streetwear-pdp-section-block {
+  margin-bottom: 22px;
+}
+
+.streetwear-pdp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.streetwear-pdp-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #111111;
+}
+
+.streetwear-pdp-stock-warn {
+  font-size: 10px;
+  font-weight: 700;
+  color: #d97706;
+  letter-spacing: 0.08em;
+}
+
+.streetwear-pdp-stock-out {
+  font-size: 10px;
+  font-weight: 700;
+  color: #dc2626;
+  letter-spacing: 0.08em;
+}
+
+.streetwear-pdp-size-tiles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.streetwear-size-box {
+  min-width: 46px;
+  height: 46px;
+  padding: 0 12px;
+  border: 1px solid #d4d4d4;
+  background: #ffffff;
+  color: #111111;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.streetwear-size-box:hover {
+  border-color: #111111;
+}
+
+.streetwear-size-box.active {
+  background: #111111;
+  border-color: #111111;
+  color: #ffffff;
+}
+
+/* Quantity Stepper */
+.streetwear-pdp-qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  height: 44px;
+}
+
+.streetwear-pdp-qty-stepper button {
+  width: 40px;
+  height: 100%;
+  border: none;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #111111;
+  transition: background 0.15s ease;
+}
+
+.streetwear-pdp-qty-stepper button:hover:not(:disabled) {
+  background: #f4f4f4;
+}
+
+.streetwear-pdp-qty-stepper button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.streetwear-pdp-qty-num {
+  min-width: 36px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111111;
+}
+
+/* Actions: Cart + Wishlist + Buy Now */
+.streetwear-pdp-cta-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.streetwear-pdp-cart-row {
+  display: flex;
+  gap: 10px;
+}
+
+.streetwear-pdp-add-btn {
+  flex: 1;
+  height: 48px;
+  background: #111111;
+  color: #ffffff;
+  border: 1.5px solid #111111;
+  border-radius: 2px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.streetwear-pdp-add-btn:hover:not(:disabled) {
+  background: #000000;
+  border-color: #000000;
+}
+
+.streetwear-pdp-add-btn.added {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+}
+
+.streetwear-pdp-add-btn:disabled {
+  background: #999999;
+  border-color: #999999;
+  cursor: not-allowed;
+}
+
+.streetwear-pdp-action-wish-btn {
+  width: 48px;
+  height: 48px;
+  border: 1px solid #d4d4d4;
+  background: #ffffff;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.streetwear-pdp-action-wish-btn:hover {
+  border-color: #111111;
+}
+
+.streetwear-pdp-action-wish-btn.active {
+  border-color: #e11d48;
+}
+
+.streetwear-pdp-buy-now-btn {
+  width: 100%;
+  height: 48px;
+  background: #ffffff;
+  color: #111111;
+  border: 1.5px solid #111111;
+  border-radius: 2px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.streetwear-pdp-buy-now-btn:hover:not(:disabled) {
+  background: #111111;
+  color: #ffffff;
+}
+
+.streetwear-pdp-buy-now-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Small Review Section Below Buy Now Button */
+.streetwear-pdp-review-card {
+  margin-top: 26px;
+  padding: 18px 20px;
+  background: #fafafa;
+  border: 1px solid #eeeeee;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.streetwear-pdp-review-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.streetwear-pdp-review-stars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.streetwear-pdp-review-rating {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.streetwear-pdp-review-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #777777;
+  letter-spacing: 0.05em;
+}
+
+.streetwear-pdp-review-quote {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #444444;
+  margin: 0;
+  font-style: italic;
+}
+
+.streetwear-pdp-see-reviews-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #111111;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  margin-top: 4px;
+  transition: color 0.15s ease;
+}
+
+.streetwear-pdp-see-reviews-btn:hover {
+  color: #555555;
+}
+
+/* Complementary Products Section */
+.streetwear-pdp-complementary-section {
+  margin-top: clamp(64px, 8vh, 100px);
+  border-top: 1px solid #eeeeee;
+  padding-top: 48px;
+}
+
+.streetwear-pdp-rec-title {
+  text-align: center;
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 36px;
+  color: #111111;
+}
+
+.streetwear-pdp-rec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(20px, 3vw, 40px);
+}
+
+.streetwear-rec-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.streetwear-rec-img-box {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: #fafafa;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.streetwear-rec-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.streetwear-rec-card:hover .streetwear-rec-img-box img {
+  transform: translateY(-4px) scale(1.02);
+}
+
+.streetwear-rec-caption {
+  text-align: center;
+}
+
+.streetwear-rec-caption h3 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+  color: #111111;
+}
+
+.streetwear-rec-caption span {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666666;
+}
+
+/* =========================================================
+   REVIEWS MODAL BOX
+========================================================= */
+
+.streetwear-review-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.streetwear-review-modal-box {
+  width: 100%;
+  max-width: 640px;
+  max-height: 88vh;
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.streetwear-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.streetwear-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+  color: #111111;
+}
+
+.streetwear-modal-rating-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #666666;
+}
+
+.streetwear-modal-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #888888;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.streetwear-modal-close:hover {
+  background: #f4f4f4;
+  color: #111111;
+}
+
+.streetwear-modal-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Form Inside Modal */
+.streetwear-write-review-form {
+  background: #fafafa;
+  border: 1px solid #eeeeee;
+  border-radius: 4px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.streetwear-write-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+  color: #111111;
+}
+
+.streetwear-review-success {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 600;
+  background: #f0fdf4;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.streetwear-form-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1.2fr;
+  gap: 12px;
+}
+
+.streetwear-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.streetwear-form-group label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #555555;
+}
+
+.streetwear-form-group input,
+.streetwear-form-group select,
+.streetwear-form-group textarea {
+  border: 1px solid #d4d4d4;
+  background: #ffffff;
+  border-radius: 2px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #111111;
+  outline: none;
+}
+
+.streetwear-form-group input:focus,
+.streetwear-form-group select:focus,
+.streetwear-form-group textarea:focus {
+  border-color: #111111;
+}
+
+.streetwear-submit-review-btn {
+  background: #111111;
+  color: #ffffff;
+  border: none;
+  border-radius: 2px;
+  padding: 10px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.15s ease;
+}
+
+.streetwear-submit-review-btn:hover {
+  background: #000000;
+}
+
+/* Reviews List Inside Modal */
+.streetwear-modal-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.streetwear-reviews-list-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #888888;
+  margin: 0;
+}
+
+.streetwear-modal-review-item {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.streetwear-rev-top-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+}
+
+.streetwear-rev-author {
+  font-weight: 700;
+  color: #111111;
+}
+
+.streetwear-rev-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.streetwear-rev-date {
+  color: #888888;
+  font-size: 11px;
+}
+
+.streetwear-rev-headline {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111111;
+  margin: 0;
+}
+
+.streetwear-rev-comment {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #444444;
+  margin: 0;
+}
+
+.streetwear-rev-size-tag {
+  font-size: 10px;
+  color: #888888;
+  background: #f4f4f4;
+  padding: 2px 6px;
+  border-radius: 2px;
+  align-self: flex-start;
+}
+
+/* =========================================================
+   RESPONSIVE (MOBILE & TABLET)
+========================================================= */
+
+@media (max-width: 960px) {
+  .streetwear-pdp-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .streetwear-pdp-left-col {
+    order: 1;
+  }
+
+  .streetwear-pdp-center-col {
+    order: 2;
+  }
+
+  .streetwear-pdp-right-col {
+    order: 3;
+  }
+
+  .streetwear-pdp-rec-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .streetwear-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .streetwear-modal-header,
+  .streetwear-modal-body {
+    padding: 16px 20px;
+  }
+}
