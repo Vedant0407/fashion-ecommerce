@@ -8,34 +8,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 
 function getProductImages(product: Product): string[] {
-  if (Array.isArray(product.images) && product.images.length > 1) {
-    return product.images;
-  }
-  const baseImg = product.image || "/black-tee.jfif";
-  const cat = (
-    product.category_name ||
-    product.category_slug ||
-    product.name ||
-    ""
-  ).toLowerCase();
-
-  let pool: string[];
-  if (cat.includes("tee") || cat.includes("t-shirt") || cat.includes("shirt")) {
-    pool = [baseImg, "/white-tee.jfif", "/grey-hoodie.jfif", "/hero.jfif"];
-  } else if (cat.includes("hoodie") || cat.includes("sweat")) {
-    pool = [baseImg, "/black-tee.jfif", "/hero.jfif", "/white-tee.jfif"];
-  } else if (cat.includes("pant") || cat.includes("cargo") || cat.includes("trouser")) {
-    pool = [baseImg, "/grey-hoodie.jfif", "/black-tee.jfif"];
-  } else if (cat.includes("cap") || cat.includes("hat")) {
-    pool = [baseImg, "/black-tee.jfif", "/white-tee.jfif"];
-  } else if (cat.includes("bag") || cat.includes("crossbody")) {
-    pool = [baseImg, "/cargo-pants.jfif", "/black-tee.jfif"];
-  } else {
-    pool = [baseImg, "/white-tee.jfif", "/black-tee.jfif", "/grey-hoodie.jfif"];
-  }
-
-  const unique = pool.filter((img, idx, arr) => arr.indexOf(img) === idx);
-  return unique.length > 1 ? unique : [baseImg, "/black-tee.jfif", "/white-tee.jfif"];
+  return [product.image || "/black-tee.jfif"];
 }
 
 export default function ProductCard({
@@ -178,6 +151,7 @@ export default function ProductCard({
         <button
           type="button"
           className="product-card-arrow product-card-arrow-left"
+          style={{ display: images.length > 1 ? undefined : "none" }}
           onClick={handlePrevPhoto}
           aria-label="Previous photo"
           title="Previous photo"
@@ -189,6 +163,7 @@ export default function ProductCard({
         <button
           type="button"
           className="product-card-arrow product-card-arrow-right"
+          style={{ display: images.length > 1 ? undefined : "none" }}
           onClick={handleNextPhoto}
           aria-label="Next photo"
           title="Next photo"

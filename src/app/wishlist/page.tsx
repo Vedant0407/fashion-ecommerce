@@ -9,24 +9,7 @@ import { useWishlist, WishlistItem } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 
 function getWishlistImages(item: WishlistItem): string[] {
-  const baseImg = item.image || "/black-tee.jfif";
-  const cat = (item.category || item.name || "").toLowerCase();
-
-  let pool: string[];
-  if (cat.includes("pant") || cat.includes("trouser")) {
-    pool = [baseImg, "/atelier-trousers-detail.jpg", "/atelier-trousers.jpg"];
-  } else if (cat.includes("bag") || cat.includes("tote")) {
-    pool = [baseImg, "/atelier-bag-detail.jpg", "/atelier-tote-bag.jpg"];
-  } else if (cat.includes("tee") || cat.includes("t-shirt") || cat.includes("shirt")) {
-    pool = [baseImg, "/white-tee.jfif", "/grey-hoodie.jfif"];
-  } else if (cat.includes("hoodie") || cat.includes("knit") || cat.includes("sweater")) {
-    pool = [baseImg, "/atelier-knitwear.jpg", "/grey-hoodie.jfif"];
-  } else {
-    pool = [baseImg, "/atelier-hero-model.jpg", "/atelier-coat.jpg"];
-  }
-
-  const unique = pool.filter((img, idx, arr) => arr.indexOf(img) === idx);
-  return unique.length > 1 ? unique : [baseImg];
+  return [item.image || "/black-tee.jfif"];
 }
 
 function WishlistItemCard({
