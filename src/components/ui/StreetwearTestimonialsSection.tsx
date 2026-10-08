@@ -87,26 +87,7 @@ export default function StreetwearTestimonialsSection() {
       <div className="streetwear-testimonials-container">
         {/* Section Header */}
         <div className="streetwear-testimonials-header">
-          <span className="streetwear-testimonials-tag">COMMUNITY // 05</span>
           <h2 className="streetwear-testimonials-title">TESTIMONIALS</h2>
-
-          {/* Social Proof Star Rating */}
-          <div className="streetwear-testimonials-rating-bar">
-            <div className="streetwear-testimonials-stars">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  size={16}
-                  fill="#111111"
-                  color="#111111"
-                  strokeWidth={0}
-                />
-              ))}
-            </div>
-            <span className="streetwear-testimonials-rating-text">
-              <strong>4.9 / 5.0</strong> FROM OVER 1,500+ VERIFIED PATRONS
-            </span>
-          </div>
         </div>
 
         {/* Testimonials Grid: 3 cards on desktop, responsive stack/slider on mobile */}

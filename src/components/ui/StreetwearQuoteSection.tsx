@@ -5,14 +5,12 @@ import { motion } from "framer-motion";
 interface StreetwearQuoteSectionProps {
   quote?: string;
   author?: string;
-  tag?: string;
   image?: string;
 }
 
 export default function StreetwearQuoteSection({
   quote = "“WE DO NOT FOLLOW SEASONS. WE BUILD SILHOUETTES THAT OUTLAST THEM.”",
   author = "CRAFTED FOR THOSE WHO KNOW",
-  tag = "THE PHILOSOPHY // 04",
   image = "/editorial-quote-banner.jpg",
 }: StreetwearQuoteSectionProps) {
   return (
@@ -30,16 +28,6 @@ export default function StreetwearQuoteSection({
 
       {/* Centered Overlay Quote */}
       <div className="streetwear-quote-overlay-content">
-        <motion.span
-          initial={{ opacity: 0, y: 14 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-          className="streetwear-quote-tag"
-        >
-          {tag}
-        </motion.span>
-
         <motion.blockquote
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
