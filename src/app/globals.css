@@ -14379,7 +14379,7 @@ select {
 
 .streetwear-pdp-size-tiles {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 2px;
   flex-wrap: wrap;
 }
