@@ -1268,8 +1268,26 @@
   }
 
   .mobileTabNav {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
     padding-bottom: 12px;
+  }
+
+  .mobileTabBtn {
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 2px;
+    font-size: 9.5px;
+    letter-spacing: 0;
+  }
+
+  .mobileLogoutBtn {
+    display: none;
   }
 
   .sidebar {
