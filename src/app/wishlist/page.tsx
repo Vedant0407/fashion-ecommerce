@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Heart, Check, ShoppingBag } from "lucide-react";
 
 import { useWishlist, WishlistItem } from "@/context/WishlistContext";
@@ -94,7 +93,6 @@ function WishlistItemCard({
   );
 }
 export default function WishlistPage() {
-  const router = useRouter();
   const { wishlist, removeFromWishlist } = useWishlist();
 
   return (
@@ -108,48 +106,6 @@ export default function WishlistPage() {
       }}
     >
       <div className="streetwear-grid-container">
-        {/* Navigation & Breadcrumb */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-          }}
-        >
-          <button
-            onClick={() => router.back()}
-            style={{
-              background: "transparent",
-              border: "none",
-              fontSize: "10.5px",
-              letterSpacing: "0.18em",
-              color: "#777777",
-              cursor: "pointer",
-              padding: 0,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              transition: "color 0.2s ease",
-            }}
-          >
-            ← BACK
-          </button>
-          <span
-            style={{
-              fontSize: "10px",
-              letterSpacing: "0.22em",
-              color: "#777777",
-              fontWeight: 600,
-              textTransform: "uppercase",
-            }}
-          >
-            GREENO ATELIER // WISHLIST
-          </span>
-        </div>
-
         {/* Heading & Counter */}
         <div
           style={{
