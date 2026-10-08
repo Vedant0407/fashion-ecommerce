@@ -102,12 +102,12 @@ export default function WishlistPage() {
       style={{
         minHeight: "100vh",
         padding: "130px 5vw 90px",
-        background: "#F7F6F2",
+        background: "#FFFFFF",
         color: "#121212",
         boxSizing: "border-box",
       }}
     >
-      <div style={{ maxWidth: "1360px", margin: "0 auto" }}>
+      <div className="streetwear-grid-container">
         {/* Navigation & Breadcrumb */}
         <div
           style={{
