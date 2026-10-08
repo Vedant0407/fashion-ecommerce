@@ -15082,6 +15082,10 @@ select {
 }
 
 @media (max-width: 640px) {
+  .streetwear-pdp-page {
+    padding-top: calc(28px + 48px + 8px);
+  }
+
   .streetwear-pdp-container {
     padding: 0 16px;
   }
@@ -15105,8 +15109,9 @@ select {
   }
 
   .streetwear-pdp-image-container {
-    aspect-ratio: 3 / 4;
-    max-height: none;
+    aspect-ratio: 4 / 5;
+    max-height: calc(100vh - 112px);
+    max-height: calc(100svh - 112px);
     background: #ffffff;
     touch-action: pan-y;
   }
