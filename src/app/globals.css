@@ -13975,7 +13975,7 @@ select {
   min-height: 100vh;
   background: #ffffff;
   color: #111111;
-  padding-top: clamp(80px, 10vh, 110px);
+  padding-top: clamp(24px, 4vh, 48px);
   padding-bottom: 80px;
 }
 
@@ -14074,17 +14074,21 @@ select {
 }
 
 /* 3-Column Desktop Grid */
+/* 3-Column Desktop Grid (Middle-Aligned) */
 .streetwear-pdp-grid {
   display: grid;
   grid-template-columns: 1fr 1.35fr 1fr;
   gap: clamp(28px, 3.5vw, 60px);
-  align-items: start;
+  align-items: center;
+  min-height: calc(100vh - 120px);
 }
 
-/* Column 1 (Left): Info & Specs */
+/* Column 1 (Left): Info & Specs (Middle-Aligned) */
 .streetwear-pdp-left-col {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-self: center;
 }
 
 .streetwear-pdp-header-block {
@@ -14282,6 +14286,26 @@ select {
   border-radius: 9999px;
 }
 
+.streetwear-pdp-scroll-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #777777;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.streetwear-pdp-scroll-hint .scroll-hint-arrow {
+  font-size: 13px;
+  line-height: 1;
+  color: #111111;
+}
+
 .streetwear-pdp-thumb-strip {
   display: flex;
   gap: 10px;
@@ -14310,10 +14334,12 @@ select {
   border-color: #111111;
 }
 
-/* Column 3 (Right): Controls & Actions */
+/* Column 3 (Right): Controls & Actions (Middle-Aligned) */
 .streetwear-pdp-right-col {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-self: center;
 }
 
 .streetwear-pdp-section-block {
@@ -14910,6 +14936,8 @@ select {
   .streetwear-pdp-grid {
     grid-template-columns: 1fr;
     gap: 32px;
+    min-height: auto;
+    align-items: stretch;
   }
 
   .streetwear-pdp-left-col {

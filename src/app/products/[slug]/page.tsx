@@ -1,20 +1,18 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
   Heart,
   ShoppingBag,
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   Star,
   CheckCircle2,
   X,
   ArrowRight,
-  ThumbsUp,
-  Share2,
 } from "lucide-react";
 
 import { useCart } from "@/context/CartContext";
@@ -101,6 +99,7 @@ export default function ProductPage() {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const params = useParams();
   const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const rawSlug = params?.slug;
   const slug = useMemo(() => {
@@ -123,6 +122,14 @@ export default function ProductPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+
+  // Scroll down animation for center photo
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
+  const photoY = useTransform(scrollYProgress, [0, 1], [0, 90]);
+  const photoScale = useTransform(scrollYProgress, [0, 1], [1, 0.96]);
 
   // Review submission state
   const [reviewsList, setReviewsList] = useState<ReviewItem[]>(DEFAULT_REVIEWS);
@@ -336,30 +343,10 @@ export default function ProductPage() {
   return (
     <>
       <main className="streetwear-pdp-page">
-        <div className="streetwear-pdp-container">
-          {/* Back Nav */}
-          <nav className="streetwear-pdp-nav">
-            <button
-              type="button"
-              className="streetwear-pdp-back-btn"
-              onClick={() => router.back()}
-              aria-label="Go back"
-            >
-              <ArrowLeft size={14} />
-              <span>BACK</span>
-            </button>
-            <div className="streetwear-pdp-breadcrumbs">
-              <Link href="/">HOME</Link>
-              <span>/</span>
-              <Link href="/shop">COLLECTION</Link>
-              <span>/</span>
-              <span className="current">{product.name}</span>
-            </div>
-          </nav>
-
-          {/* 3-Column Desktop / Responsive Mobile Grid */}
+        <div className="streetwear-pdp-container" ref={containerRef}>
+          {/* 3-Column Desktop / Responsive Mobile Grid (Vertically Centered in Middle) */}
           <div className="streetwear-pdp-grid">
-            {/* COLUMN 1 (LEFT): Product Title, Price, Description, Bullet Specs */}
+            {/* COLUMN 1 (LEFT): Product Title, Price, Description, Bullet Specs (Middle Aligned) */}
             <div className="streetwear-pdp-left-col">
               <div className="streetwear-pdp-header-block">
                 <h1 className="streetwear-pdp-title">{product.name}</h1>
@@ -388,16 +375,26 @@ export default function ProductPage() {
               </ul>
             </div>
 
-            {/* COLUMN 2 (CENTER): Large Product Cutout/Photography with Slider Dots */}
+            {/* COLUMN 2 (CENTER): Large Product Cutout/Photography with Scrolling Down Animation */}
             <div className="streetwear-pdp-center-col">
-              <div className="streetwear-pdp-image-container">
-                <img
-                  src={currentDisplayImage}
-                  alt={product.name}
-                  className="streetwear-pdp-main-img"
-                  onClick={() => setLightboxOpen(true)}
-                  title="Click to view full screen"
-                />
+              <motion.div
+                style={{ y: photoY, scale: photoScale }}
+                className="streetwear-pdp-image-container"
+              >
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={currentDisplayImage}
+                    src={currentDisplayImage}
+                    alt={product.name}
+                    className="streetwear-pdp-main-img"
+                    onClick={() => setLightboxOpen(true)}
+                    initial={{ opacity: 0, y: -16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                    title="Click to view full screen"
+                  />
+                </AnimatePresence>
 
                 {/* Wishlist Button Overlaid on Image */}
                 <button
@@ -444,7 +441,7 @@ export default function ProductPage() {
                     </button>
                   </>
                 )}
-              </div>
+              </motion.div>
 
               {/* Slider Dots Indicator */}
               <div className="streetwear-pdp-carousel-nav">
@@ -485,6 +482,16 @@ export default function ProductPage() {
                 </button>
               </div>
 
+              {/* Scroll Down Photo Prompt */}
+              <motion.div
+                animate={{ y: [0, 4, 0] }}
+                transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                className="streetwear-pdp-scroll-hint"
+              >
+                <span>SCROLL DOWN</span>
+                <span className="scroll-hint-arrow">↓</span>
+              </motion.div>
+
               {/* Thumbnail strip if multiple images */}
               {productImages.length > 1 && (
                 <div className="streetwear-pdp-thumb-strip">
@@ -502,7 +509,7 @@ export default function ProductPage() {
               )}
             </div>
 
-            {/* COLUMN 3 (RIGHT): Size, Quantity, Add to Cart, Buy Now, Reviews Card */}
+            {/* COLUMN 3 (RIGHT): Size, Quantity, Add to Cart, Buy Now, Reviews Card (Middle Aligned) */}
             <div className="streetwear-pdp-right-col">
               {/* Size Selector */}
               <div className="streetwear-pdp-section-block">
