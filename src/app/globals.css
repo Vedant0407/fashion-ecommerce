@@ -3403,6 +3403,10 @@ select {
 }
 
 @media (max-width: 768px) {
+  .nav-menu {
+    width: min(320px, 78vw);
+  }
+
   .nav-menu-wrapper {
     margin-left: -8px;
   }
