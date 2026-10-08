@@ -98,6 +98,7 @@ export default function ProductPage() {
   const params = useParams();
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
+  const productImageRef = useRef<HTMLDivElement>(null);
   const lastImageWheelAt = useRef(0);
 
   const rawSlug = params?.slug;
@@ -227,18 +228,28 @@ export default function ProductPage() {
     return [primaryImage];
   }, [product, primaryImage]);
 
-  const handleProductImageWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    if (productImages.length < 2 || Math.abs(event.deltaY) < 20) return;
-    const now = Date.now();
-    if (now - lastImageWheelAt.current < 500) return;
-    lastImageWheelAt.current = now;
-    setActiveImageIndex((prev) =>
-      event.deltaY > 0
-        ? (prev + 1) % productImages.length
-        : (prev - 1 + productImages.length) % productImages.length
-    );
-  };
+  useEffect(() => {
+    const imageContainer = productImageRef.current;
+    if (!imageContainer || productImages.length < 2) return;
 
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      if (Math.abs(event.deltaY) < 20) return;
+
+      const now = Date.now();
+      if (now - lastImageWheelAt.current < 500) return;
+      lastImageWheelAt.current = now;
+
+      setActiveImageIndex((prev) =>
+        event.deltaY > 0
+          ? (prev + 1) % productImages.length
+          : (prev - 1 + productImages.length) % productImages.length
+      );
+    };
+
+    imageContainer.addEventListener("wheel", handleWheel, { passive: false });
+    return () => imageContainer.removeEventListener("wheel", handleWheel);
+  }, [productImages.length]);
   const currentDisplayImage = productImages[activeImageIndex] || productImages[0] || primaryImage;
 
   const handleAddToCart = () => {
@@ -391,7 +402,7 @@ export default function ProductPage() {
               <motion.div
                 style={{ y: photoY, scale: photoScale }}
                 className="streetwear-pdp-image-container"
-                onWheel={handleProductImageWheel}
+                ref={productImageRef}
               >
                 <AnimatePresence mode="wait">
                   <motion.img
