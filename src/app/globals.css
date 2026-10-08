@@ -3404,7 +3404,7 @@ select {
 
 @media (max-width: 768px) {
   .nav-menu {
-    width: min(320px, 78vw);
+    width: min(270px, 70vw);
   }
 
   .nav-menu-wrapper {
@@ -6317,8 +6317,8 @@ select {
   }
 
   .cart-drawer-panel {
-    width: 100% !important;
-    max-width: 100% !important;
+    width: min(270px, 70vw) !important;
+    max-width: min(270px, 70vw) !important;
     height: 100% !important;
     height: 100dvh !important;
     max-height: 100dvh !important;
