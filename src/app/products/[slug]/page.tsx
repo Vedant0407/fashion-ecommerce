@@ -222,10 +222,8 @@ export default function ProductPage() {
   const primaryImage = product?.image || "/train-black-tee-cutout.png";
   const productImages = useMemo(() => {
     if (!product) return [primaryImage];
-    if (Array.isArray(product.images) && product.images.length > 0) {
-      return product.images;
-    }
-    return [primaryImage];
+    const additionalImages = Array.isArray(product.images) ? product.images : [];
+    return [primaryImage, ...additionalImages.filter((image) => image !== primaryImage)];
   }, [product, primaryImage]);
 
   useEffect(() => {
