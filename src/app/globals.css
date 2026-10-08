@@ -13433,6 +13433,14 @@ select {
   filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.12));
 }
 
+@media (max-width: 768px) {
+  .streetwear-product-cutout--chalk-tee,
+  .streetwear-product-card:hover .streetwear-product-cutout--chalk-tee {
+    transform: scaleY(0.97);
+    transform-origin: center bottom;
+  }
+}
+
 .streetwear-product-caption {
   display: flex;
   flex-direction: column;

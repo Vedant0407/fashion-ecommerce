@@ -137,7 +137,9 @@ export default function StreetwearProductGrid() {
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="streetwear-product-cutout"
+                      className={`streetwear-product-cutout ${
+                        product.id === "minimalist-chalk-tee" ? "streetwear-product-cutout--chalk-tee" : ""
+                      }`}
                       loading="lazy"
                     />
                   </Link>
