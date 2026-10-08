@@ -441,7 +441,7 @@ function AccountPageContent() {
         </div>
 
         {/* Main Reference Card Container */}
-        <div className={styles.accountCard}>
+        <div className={`${styles.accountCard} ${activeTab === "orders" ? styles.ordersActive : ""}`}>
           {/* Left Sidebar Navigation */}
           <aside className={styles.sidebar}>
             <button
@@ -494,7 +494,7 @@ function AccountPageContent() {
           <div className={styles.dividerLine} />
 
           {/* Right Content Area */}
-          <section className={styles.contentArea}>
+          <section className={`${styles.contentArea} ${activeTab === "orders" ? styles.ordersContentArea : ""}`}>
             {/* 1. Account Details */}
             {activeTab === "account" && (
               <div>
@@ -589,7 +589,7 @@ function AccountPageContent() {
 
             {/* 2. Order History Tab */}
             {activeTab === "orders" && (
-              <div>
+              <div className={styles.ordersTabContent}>
                 <div className={styles.tabHeader}>
                   <h2 className={styles.tabTitle}>Order history</h2>
                   <p className={styles.tabSubtitle}>Review your previous orders and check delivery status.</p>

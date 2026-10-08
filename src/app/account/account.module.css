@@ -45,6 +45,12 @@
   overflow: hidden;
 }
 
+.ordersActive {
+  height: 520px;
+  min-height: 520px;
+  grid-template-rows: minmax(0, 1fr);
+}
+
 /* Sidebar on Left */
 .sidebar {
   padding: 28px 18px;
@@ -131,6 +137,24 @@
   padding: 44px 52px;
   min-width: 0;
   background: #FFFFFF;
+}
+
+.ordersContentArea {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ordersTabContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ordersTabContent > .tabHeader {
+  flex: 0 0 auto;
 }
 
 .tabHeader {
@@ -337,8 +361,14 @@
 /* Order History Tab */
 .ordersListContainer {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px;
 }
 
 .orderCardItem {
@@ -1170,6 +1200,12 @@
   .accountCard {
     grid-template-columns: 1fr;
     min-height: auto;
+  }
+
+  .ordersActive {
+    height: 520px;
+    min-height: 520px;
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .dividerLine {
