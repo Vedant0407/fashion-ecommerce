@@ -11908,8 +11908,9 @@ select {
   }
 
   .editorial-footer-grid {
-    grid-template-columns: 1fr;
-    gap: 32px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+    row-gap: 32px;
   }
 
   .editorial-footer-bottom {
