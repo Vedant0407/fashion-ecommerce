@@ -14379,14 +14379,14 @@ select {
 
 .streetwear-pdp-size-tiles {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .streetwear-size-box {
-  min-width: 46px;
-  height: 46px;
-  padding: 0 12px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 8px;
   border: 1px solid #d4d4d4;
   background: #ffffff;
   color: #111111;
