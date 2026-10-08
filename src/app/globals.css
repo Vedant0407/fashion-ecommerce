@@ -14342,6 +14342,8 @@ select {
   flex-direction: column;
   justify-content: center;
   align-self: center;
+  position: relative;
+  top: 12px;
 }
 
 .streetwear-pdp-section-block {
