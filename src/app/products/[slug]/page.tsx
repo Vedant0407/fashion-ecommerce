@@ -570,21 +570,77 @@ export default function ProductPage() {
             <section className="streetwear-pdp-complementary-section">
               <h2 className="streetwear-pdp-rec-title">YOU MAY ALSO LIKE</h2>
               <div className="streetwear-pdp-rec-grid">
-                {complementaryProducts.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/products/${item.id}`}
-                    className="streetwear-rec-card"
-                  >
-                    <div className="streetwear-rec-img-box">
-                      <img src={item.image} alt={item.name} />
-                    </div>
-                    <div className="streetwear-rec-caption">
-                      <h3>{item.name}</h3>
-                      <span>₹{Number(item.price).toLocaleString("en-IN")}</span>
-                    </div>
-                  </Link>
-                ))}
+                {complementaryProducts.map((item) => {
+                  const itemWishlisted = isInWishlist(item.id);
+                  return (
+                    <article key={item.id} className="streetwear-product-card">
+                      <div className="streetwear-product-img-box">
+                        <Link href={`/products/${item.id}`} className="streetwear-product-img-link">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="streetwear-product-cutout"
+                            loading="lazy"
+                          />
+                        </Link>
+                        <button
+                          type="button"
+                          className={`streetwear-product-heart-btn ${itemWishlisted ? "active" : ""}`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            toggleWishlist({
+                              id: item.id,
+                              name: item.name,
+                              price: Number(item.price),
+                              image: item.image,
+                              category: item.category_name,
+                            });
+                          }}
+                          aria-label={itemWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                          title={itemWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                        >
+                          <Heart
+                            size={18}
+                            strokeWidth={2}
+                            fill={itemWishlisted ? "#e11d48" : "none"}
+                            color={itemWishlisted ? "#e11d48" : "#111111"}
+                          />
+                        </button>
+                      </div>
+                      <Link href={`/products/${item.id}`} className="streetwear-product-caption-link">
+                        <div className="streetwear-product-caption">
+                          <h3 className="streetwear-product-name">{item.name}</h3>
+                          <span className="streetwear-product-price">
+                            ₹{Number(item.price).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                      </Link>
+                      <button
+                        type="button"
+                        className="streetwear-product-cart-btn"
+                        onClick={() => {
+                          addToCart(
+                            {
+                              id: item.id,
+                              name: item.name,
+                              price: Number(item.price),
+                              image: item.image,
+                              size: "M",
+                              color: item.color || "BLACK",
+                            },
+                            1
+                          );
+                          openCart();
+                        }}
+                        aria-label={`Add ${item.name} to cart`}
+                      >
+                        <ShoppingBag size={14} strokeWidth={2} />
+                        <span>ADD TO CART</span>
+                      </button>
+                    </article>
+                  );
+                })}
               </div>
             </section>
           )}
