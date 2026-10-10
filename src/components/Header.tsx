@@ -7,10 +7,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { createClient } from "@/lib/supabase/client";
-import SearchModal from "@/components/SearchModal";
 import CartDrawer from "@/components/CartDrawer";
 import StoryViewerModal from "@/components/ui/StoryViewerModal";
-import { Search, Heart, ShoppingBag, Sparkles, Menu, X } from "lucide-react";
+import { Heart, ShoppingBag, Sparkles, Menu, X } from "lucide-react";
 import { type StoreStory } from "@/lib/story-constants";
 
 export default function Header() {
@@ -21,7 +20,6 @@ export default function Header() {
   const isHomePage = pathname === "/";
   const [isScrolled, setIsScrolled] = useState(() => !isHomePage);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [storyOpen, setStoryOpen] = useState(false);
   const [stories, setStories] = useState<StoreStory[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -257,16 +255,6 @@ export default function Header() {
           </Link>
 
           <div className="header-actions atelier-header-actions">
-            <button
-              type="button"
-              className="header-icon-action"
-              aria-label="Search"
-              title="Search"
-              onClick={() => setSearchOpen(true)}
-            >
-              <Search size={17} strokeWidth={1.7} />
-            </button>
-
             <Link
               href="/wishlist"
               className="header-icon-action"
@@ -345,29 +333,10 @@ export default function Header() {
 
       {/* =========================================
           MOBILE CURVY RECTANGLE DOCK (PHONE ONLY)
-          Icons: Search, Wishlist, Account, Cart
+          Icons: Wishlist, Account, Cart
       ========================================= */}
       <nav className="mobile-bottom-dock" aria-label="Mobile navigation">
         <div className="mobile-dock-inner">
-          {/* SEARCH */}
-          <button
-            type="button"
-            className="mobile-dock-item"
-            aria-label="Search"
-            onClick={() => setSearchOpen(true)}
-            title="Search catalogue"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
-            </svg>
-          </button>
-
           {/* WISHLIST */}
           <Link
             href="/wishlist"
@@ -440,11 +409,6 @@ export default function Header() {
           </button>
         </div>
       </nav>
-
-      <SearchModal
-        isOpen={searchOpen}
-        onClose={() => setSearchOpen(false)}
-      />
 
       <CartDrawer />
 
