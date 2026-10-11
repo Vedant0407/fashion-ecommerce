@@ -4,10 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieEmail = request.cookies.get("greeno_session")?.value
-      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
-      : null;
-
     let authenticatedUser: any = null;
     try {
       const supabase = await createClient();
@@ -17,10 +13,9 @@ export async function POST(request: NextRequest) {
       authenticatedUser = user;
     } catch {}
 
-    const authEmail =
-      cookieEmail ||
-      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
-
+    const authEmail = authenticatedUser?.email
+      ? authenticatedUser.email.trim().toLowerCase()
+      : null;
     if (!authEmail) {
       return NextResponse.json(
         { success: false, message: "Unauthorized. Please log in to sync orders." },

@@ -85,31 +85,33 @@ export default function Header() {
 
     function updateLoginState(sessionUser?: any) {
       if (sessionUser?.email) {
-        localStorage.setItem("greeno_user_email", sessionUser.email);
+        const email = sessionUser.email.trim().toLowerCase();
+        localStorage.setItem("greeno_user_email", email);
         if (!localStorage.getItem("greeno_user_name")) {
           const name =
             sessionUser.user_metadata?.full_name ||
             sessionUser.user_metadata?.name ||
-            sessionUser.email.split("@")[0].toUpperCase();
+            email.split("@")[0].toUpperCase();
           localStorage.setItem("greeno_user_name", name);
         }
+      } else {
+        localStorage.removeItem("greeno_user_email");
+        localStorage.removeItem("greeno_user_name");
       }
-      const storedEmail = typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : null;
-      setIsLoggedIn(!!sessionUser || !!storedEmail);
+
+      setIsLoggedIn(Boolean(sessionUser?.email));
     }
 
     async function loadSession() {
       try {
         const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        updateLoginState(session?.user);
-      } catch (err) {
+          data: { user },
+        } = await supabase.auth.getUser();
+        updateLoginState(user);
+      } catch {
         updateLoginState();
       }
     }
-
     loadSession();
 
     const {

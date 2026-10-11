@@ -74,12 +74,7 @@ export default function AuthSlidingCard({
           data: { user },
         } = await supabase.auth.getUser();
 
-        const storedEmail =
-          typeof window !== "undefined"
-            ? localStorage.getItem("greeno_user_email")
-            : null;
-
-        if (user || storedEmail) {
+        if (user?.email) {
           router.push(redirectUrl);
           return;
         }
@@ -153,51 +148,29 @@ export default function AuthSlidingCard({
       return;
     }
 
-    if (loginPassword.length < 6) {
-      setLoginError("Password must be at least 6 characters.");
-      return;
-    }
-
     try {
       setLoginLoading(true);
-
-      // 1. Authenticate with secure permanent database endpoint
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: loginEmail.trim(),
-          password: loginPassword,
-        }),
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail.trim().toLowerCase(),
+        password: loginPassword,
       });
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
+      if (error || !data.user?.email) {
         setLoginError(
-          data.message ||
-            "Invalid email or password. If you don't have an account yet, please sign up."
+          error?.status && error.status >= 500
+            ? "Authentication is temporarily unavailable. Please try again."
+            : "Invalid email or password."
         );
         return;
       }
 
-      // 2. Client-side Supabase sync (non-blocking)
-      try {
-        const supabase = createClient();
-        await supabase.auth.signInWithPassword({
-          email: loginEmail.trim(),
-          password: loginPassword,
-        });
-      } catch (sbErr) {
-        console.warn("Client-side Supabase signin notice:", sbErr);
-      }
-
-      // 3. User session setup
+      const normalizedEmail = data.user.email.trim().toLowerCase();
       const userName =
-        data.user?.name || loginEmail.split("@")[0].toUpperCase();
-      const normalizedEmail = loginEmail.trim().toLowerCase();
+        data.user.user_metadata?.full_name ||
+        data.user.user_metadata?.name ||
+        normalizedEmail.split("@")[0];
 
-      // Clean up previous account orders if logging into a different account
       const prevEmail = localStorage.getItem("greeno_user_email");
       if (prevEmail && prevEmail.trim().toLowerCase() !== normalizedEmail) {
         localStorage.removeItem("greeno_customer_orders");
@@ -206,15 +179,11 @@ export default function AuthSlidingCard({
       }
 
       localStorage.setItem("greeno_user_name", userName);
-      localStorage.setItem("greeno_user_email", loginEmail.trim());
-      document.cookie = `greeno_session=${encodeURIComponent(
-        loginEmail.trim()
-      )}; path=/; max-age=2592000; SameSite=Lax`;
+      localStorage.setItem("greeno_user_email", normalizedEmail);
       window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new CustomEvent("greeno_auth_change"));
 
       setLoginMessage("Login successful! Redirecting...");
-
       setTimeout(() => {
         router.push(redirectUrl);
         router.refresh();
@@ -226,7 +195,6 @@ export default function AuthSlidingCard({
       setLoginLoading(false);
     }
   }
-
   // Forgot password
   async function handleForgotPassword() {
     setLoginError("");

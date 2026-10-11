@@ -1,196 +1,120 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getStoreOrders } from "@/lib/store-data";
+import { getStoreOrders, syncStoreOrders } from "@/lib/store-data";
 import { isOrderMatch } from "@/lib/order-utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const noStoreHeaders = { "Cache-Control": "no-store, no-cache, must-revalidate" };
+
+async function getAuthenticatedUser() {
+  const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user?.email) return null;
+  return { supabase, user, email: user.email.trim().toLowerCase() };
+}
+
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const cleanId = (id || "").trim();
-
-    const rawQueryEmail = request.nextUrl.searchParams.get("email");
-    const queryEmail = rawQueryEmail
-      ? decodeURIComponent(rawQueryEmail).replace(/^["']|["']$/g, "").trim().toLowerCase()
-      : null;
-    const cookieVal = request.cookies.get("greeno_session")?.value;
-    const cookieEmail = cookieVal
-      ? decodeURIComponent(cookieVal).replace(/^["']|["']$/g, "").trim().toLowerCase()
-      : null;
-
-    let authenticatedUser: any = null;
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      authenticatedUser = user;
-    } catch {
-      // Supabase user fetch failed
-    }
-
-    const authEmail =
-      queryEmail ||
-      cookieEmail ||
-      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
-
-    if (!authEmail) {
+    const auth = await getAuthenticatedUser();
+    if (!auth) {
       return NextResponse.json(
         { success: false, message: "Unauthorized. Please log in." },
-        {
-          status: 401,
-          headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
-        }
+        { status: 401, headers: noStoreHeaders }
       );
     }
 
-    // Read cookie-based status overrides to bridge serverless environments
-    const cookieStatusesRaw = request.cookies.get("greeno_order_statuses")?.value;
-    let cookieStatuses: Record<string, string> = {};
-    if (cookieStatusesRaw) {
-      try {
-        cookieStatuses = JSON.parse(decodeURIComponent(cookieStatusesRaw));
-      } catch {}
-    }
-
-    // Check store-data first to get full item options and latest admin status
+    const { id } = await params;
+    const cleanId = (id || "").trim();
     const allStoreOrders = await getStoreOrders(true);
-    const matched = allStoreOrders.find((o) => o.id === cleanId || isOrderMatch(o.id, cleanId));
+    const matched = allStoreOrders.find((order) =>
+      order.id === cleanId || isOrderMatch(order.id, cleanId)
+    );
 
     if (matched) {
-      const orderCustomerEmail = matched.customer?.email?.trim().toLowerCase();
-
-      // Strict per-account security check: Order must belong to this user
-      if (orderCustomerEmail && orderCustomerEmail !== authEmail) {
+      const orderEmail = matched.customer?.email?.trim().toLowerCase();
+      if (orderEmail !== auth.email) {
         return NextResponse.json(
-          { success: false, message: "Forbidden. You cannot view an order belonging to another account." },
-          {
-            status: 403,
-            headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
-          }
+          { success: false, message: "Forbidden. You cannot view another account's order." },
+          { status: 403, headers: noStoreHeaders }
         );
       }
 
-      // Check if Supabase has an updated status (e.g. from Supabase dashboard)
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
-      if (isUuid) {
-        try {
-          const supabase = await createClient();
-          const { data: dbOrder } = await supabase
-            .from("orders")
-            .select("id, status, payment_status")
-            .eq("id", cleanId)
-            .maybeSingle();
-
-          if (dbOrder) {
-            if (dbOrder.status && !cookieStatuses[cleanId]) {
-              if (dbOrder.status !== "confirmed" || matched.status === "confirmed") {
-                matched.status = dbOrder.status as any;
-              }
-            }
-            if (dbOrder.payment_status && matched.payment_status === "pending") {
-              matched.payment_status = dbOrder.payment_status as any;
-            }
-          }
-        } catch {}
-      }
-
-      // Apply cookie status override if present
-      if (cookieStatuses[cleanId]) {
-        matched.status = cookieStatuses[cleanId] as any;
-      }
-
-      return NextResponse.json({
-        success: true,
-        order: {
-          id: matched.id,
-          status: matched.status,
-          subtotal: matched.subtotal,
-          shipping: matched.shipping,
-          discount: matched.discount || 0,
-          total: matched.total,
-          payment_status: matched.payment_status,
-          payment_method: matched.payment_method,
-          created_at: matched.created_at,
-          customer: matched.customer,
-          addresses: {
-            full_name: matched.customer?.fullName || "Customer",
-            name: matched.customer?.fullName || "Customer",
-            phone: matched.customer?.phone || "",
-            address_line1: matched.customer?.address || "",
-            city: matched.customer?.city || "",
-            state: matched.customer?.state || "",
-            postal_code: matched.customer?.pincode || "",
-            pincode: matched.customer?.pincode || "",
-            country: "India",
+      return NextResponse.json(
+        {
+          success: true,
+          order: {
+            id: matched.id,
+            status: matched.status,
+            subtotal: matched.subtotal,
+            shipping: matched.shipping,
+            discount: matched.discount || 0,
+            total: matched.total,
+            payment_status: matched.payment_status,
+            payment_method: matched.payment_method,
+            created_at: matched.created_at,
+            customer: matched.customer,
+            addresses: {
+              full_name: matched.customer?.fullName || "Customer",
+              name: matched.customer?.fullName || "Customer",
+              phone: matched.customer?.phone || "",
+              address_line1: matched.customer?.address || "",
+              city: matched.customer?.city || "",
+              state: matched.customer?.state || "",
+              postal_code: matched.customer?.pincode || "",
+              pincode: matched.customer?.pincode || "",
+              country: "India",
+            },
+            items: (matched.items || []).map((item) => ({
+              id: item.id || item.product_id,
+              product_id: item.product_id,
+              product_name: item.name,
+              product_price: item.price,
+              quantity: item.quantity,
+              image: item.image,
+              size: item.size,
+              color: item.color,
+            })),
           },
-          items: matched.items.map((it) => ({
-            id: it.id || it.product_id,
-            product_id: it.product_id,
-            product_name: it.name,
-            product_price: it.price,
-            quantity: it.quantity,
-            image: it.image,
-            size: it.size,
-            color: it.color,
-          })),
         },
-      }, {
-        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
-      });
+        { headers: noStoreHeaders }
+      );
     }
 
-    const isUuid =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+    if (isUuid) {
+      const { data: order, error } = await auth.supabase
+        .from("orders")
+        .select("id, status, subtotal, shipping, total, payment_status, payment_method, created_at, address_id, addresses(*)")
+        .eq("id", cleanId)
+        .eq("user_id", auth.user.id)
+        .maybeSingle();
 
-    if (isUuid && authenticatedUser) {
-      try {
-        const supabase = await createClient();
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .select(
-            "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, address_id, addresses(*)"
-          )
-          .eq("id", cleanId)
-          .eq("user_id", authenticatedUser.id)
-          .maybeSingle();
-
-        if (!orderError && order) {
-          const { data: items } = await supabase
-            .from("order_items")
-            .select("id, product_id, product_name, product_price, quantity")
-            .eq("order_id", cleanId);
-
-          const finalStatus = cookieStatuses[cleanId] || order.status || "confirmed";
-
-          return NextResponse.json({
-            success: true,
-            order: {
-              ...order,
-              status: finalStatus,
-              items: items || [],
-            },
-          }, {
-            headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
-          });
-        }
-      } catch {}
+      if (!error && order) {
+        const { data: items } = await auth.supabase
+          .from("order_items")
+          .select("id, product_id, product_name, product_price, quantity")
+          .eq("order_id", cleanId);
+        return NextResponse.json(
+          { success: true, order: { ...order, items: items || [] } },
+          { headers: noStoreHeaders }
+        );
+      }
     }
 
     return NextResponse.json(
       { success: false, message: "Order not found." },
-      { status: 404 }
+      { status: 404, headers: noStoreHeaders }
     );
   } catch (error: any) {
     console.error("GET /api/orders/[id] error:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to fetch order" },
-      { status: 500 }
+      { success: false, message: "Failed to fetch order." },
+      { status: 500, headers: noStoreHeaders }
     );
   }
 }
@@ -200,57 +124,40 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthenticatedUser();
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Please log in." },
+        { status: 401, headers: noStoreHeaders }
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
-    const clientOrder = body.order;
-
+    const clientOrder = body?.order;
     if (!clientOrder || clientOrder.id !== id) {
       return NextResponse.json(
-        { success: false, message: "Valid order object matching ID is required" },
-        { status: 400 }
+        { success: false, message: "Valid order object matching ID is required." },
+        { status: 400, headers: noStoreHeaders }
       );
     }
 
-    const cookieEmail = request.cookies.get("greeno_session")?.value
-      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
-      : null;
-
-    let authenticatedUser: any = null;
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      authenticatedUser = user;
-    } catch {}
-
-    const authEmail =
-      cookieEmail ||
-      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
-
-    const clientOrderEmail = clientOrder.customer?.email?.trim().toLowerCase();
-
-    // Verify ownership: client cannot heal/sync an order belonging to another email
-    if (authEmail && clientOrderEmail && clientOrderEmail !== authEmail) {
+    const orderEmail = clientOrder.customer?.email?.trim().toLowerCase();
+    if (orderEmail !== auth.email) {
       return NextResponse.json(
-        { success: false, message: "Forbidden. You cannot modify an order for another account." },
-        { status: 403 }
+        { success: false, message: "Forbidden. You cannot modify another account's order." },
+        { status: 403, headers: noStoreHeaders }
       );
     }
 
-    const { syncStoreOrders } = await import("@/lib/store-data");
     const updated = await syncStoreOrders([clientOrder]);
-    const matched = updated.find((o) => o.id === id) || clientOrder;
-
-    return NextResponse.json({
-      success: true,
-      order: matched,
-    });
+    const order = updated.find((item) => item.id === id) || clientOrder;
+    return NextResponse.json({ success: true, order }, { headers: noStoreHeaders });
   } catch (error: any) {
     console.error("POST /api/orders/[id] error:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to sync order" },
-      { status: 500 }
+      { success: false, message: "Failed to sync order." },
+      { status: 500, headers: noStoreHeaders }
     );
   }
 }

@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma";
 
 export type UserRecord = {
@@ -28,11 +27,6 @@ const TMP_USERS_FILE = path.join(
 );
 const OTP_STORE_FILE = path.join(DATA_DIR, "otp-store.json");
 
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://pxzwrwzkiljeqagsyeom.supabase.co";
-const SUPABASE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_Qkrxh2RDBlbuEGzOqRNVgw_IZwVH6Q0";
 
 // In-memory cache for fast lookups
 let inMemoryUsersCache: Map<string, UserRecord> = new Map();
@@ -179,21 +173,6 @@ export async function isKnownVerifiedUser(email: string): Promise<boolean> {
     console.warn("Notice checking otp store for known user:", err);
   }
 
-  // 4. Check Supabase Auth
-  try {
-    const supabase = createSupabaseClient(SUPABASE_URL, SUPABASE_KEY);
-    const { data } = await supabase.auth.signUp({
-      email: clean,
-      password: "CheckUserKnownDummyPassword999!",
-    });
-    // In Supabase, if identities is an empty array, the user exists in auth
-    if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-      return true;
-    }
-  } catch (err) {
-    console.warn("Notice checking Supabase for known user:", err);
-  }
-
   return false;
 }
 
@@ -333,82 +312,31 @@ export async function verifyUserCredentials(
   loadUsersFromDisk();
 
   const normalized = normalizeEmail(email);
-  let user = inMemoryUsersCache.get(normalized);
+  const user = await getUserByEmail(normalized);
 
-  // Master recovery passkey for site owner/admin ("aman2026")
-  const isMasterKey =
-    password === "aman2026" &&
-    (normalized === "vedantshrivastava0407@gmail.com" ||
-      user?.email === "vedantshrivastava0407@gmail.com");
-
-  // If user not in local store yet, check if this is a known verified user from OTP or Supabase
-  if (!user) {
-    const isKnown = await isKnownVerifiedUser(normalized);
-    if (isKnown) {
-      const defaultName =
-        normalized === "vedantshrivastava0407@gmail.com"
-          ? "Vedant Shrivastava"
-          : normalized.split("@")[0];
-
-      const created = await createUser({
-        name: defaultName,
-        email: normalized,
-        password,
-        provider: "email",
-        email_verified: true,
-      });
-
-      if (created.success && created.user) {
-        return {
-          success: true,
-          user: created.user,
-          message: "Login successful.",
-        };
-      }
-    }
-
+  if (!user || !user.email_verified || !user.passwordHash) {
     return {
       success: false,
-      message: "Invalid email or password. If you don't have an account yet, please sign up.",
+      message: "Invalid email or password. Please use your verified account credentials.",
     };
   }
 
-  // If user exists but has no password hash yet
-  if (!user.passwordHash) {
-    user.passwordHash = hashPassword(password);
-    user.updated_at = new Date().toISOString();
-    user.last_login_at = new Date().toISOString();
-    saveUsersToDisk();
-    return {
-      success: true,
-      user: toSafeUser(user),
-      message: "Login successful.",
-    };
-  }
-
-  // Check master key or password match
-  const isMatch = isMasterKey || verifyPassword(password, user.passwordHash);
-  if (!isMatch) {
-    if (isMasterKey) {
-      user.passwordHash = hashPassword(password);
-      user.last_login_at = new Date().toISOString();
-      saveUsersToDisk();
-      return {
-        success: true,
-        user: toSafeUser(user),
-        message: "Login successful.",
-      };
-    }
-
+  if (!verifyPassword(password, user.passwordHash)) {
     return {
       success: false,
       message: "Invalid email or password. Please check your credentials.",
     };
   }
 
-  // Update last login timestamp
   user.last_login_at = new Date().toISOString();
   saveUsersToDisk();
+
+  try {
+    await prisma.user.update({
+      where: { email: normalized },
+      data: { last_login_at: new Date() },
+    });
+  } catch {}
 
   return {
     success: true,
@@ -416,7 +344,6 @@ export async function verifyUserCredentials(
     message: "Login successful.",
   };
 }
-
 export async function resetUserPassword(
   email: string,
   newPassword: string

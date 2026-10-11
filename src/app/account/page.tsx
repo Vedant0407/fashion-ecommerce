@@ -113,28 +113,23 @@ function AccountPageContent() {
           }
         } catch {}
 
-        if (typeof window !== "undefined") {
-          const localEmail = localStorage.getItem("greeno_user_email");
-          const localName = localStorage.getItem("greeno_user_name");
-          const localPhone = localStorage.getItem("greeno_user_phone");
-
-          if (!authEmail && localEmail) authEmail = localEmail;
-          if (!authName && localName) authName = localName;
-          if (!authPhone && localPhone) authPhone = localPhone;
-        }
-
         if (!authEmail) {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("greeno_user_email");
+          }
           router.push("/login");
           return;
         }
 
+        if (typeof window !== "undefined") {
+          const localName = localStorage.getItem("greeno_user_name");
+          const localPhone = localStorage.getItem("greeno_user_phone");
+          if (!authName && localName) authName = localName;
+          if (!authPhone && localPhone) authPhone = localPhone;
+        }
+
         const cleanEmail = authEmail.trim().toLowerCase();
         const displayName = authName || cleanEmail.split("@")[0];
-
-        // Ensure session cookie is refreshed and synchronized
-        if (typeof document !== "undefined") {
-          document.cookie = `greeno_session=${encodeURIComponent(cleanEmail)}; path=/; max-age=2592000; SameSite=Lax`;
-        }
 
         setUserEmail(cleanEmail);
         setUserName(displayName);

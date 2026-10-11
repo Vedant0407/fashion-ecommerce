@@ -19,20 +19,9 @@ export async function GET(request: NextRequest) {
       // Supabase user fetch failed
     }
 
-    const rawQueryEmail = request.nextUrl.searchParams.get("email");
-    const queryEmail = rawQueryEmail
-      ? decodeURIComponent(rawQueryEmail).replace(/^["']|["']$/g, "").trim().toLowerCase()
+    const authEmail = authenticatedUser?.email
+      ? authenticatedUser.email.trim().toLowerCase()
       : null;
-    const cookieVal = request.cookies.get("greeno_session")?.value;
-    const cookieEmail = cookieVal
-      ? decodeURIComponent(cookieVal).replace(/^["']|["']$/g, "").trim().toLowerCase()
-      : null;
-
-    // Resilient authentication: query email from authenticated client page takes precedence, fallback to cookie / supabase session
-    const authEmail =
-      queryEmail ||
-      cookieEmail ||
-      (authenticatedUser?.email ? authenticatedUser.email.trim().toLowerCase() : null);
 
     if (!authEmail) {
       return NextResponse.json(
@@ -40,7 +29,6 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
-
     let dbOrders: any[] = [];
     if (authenticatedUser) {
       try {
@@ -149,12 +137,6 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
     );
 
-    response.cookies.set("greeno_session", encodeURIComponent(authEmail), {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      sameSite: "lax",
-      httpOnly: false,
-    });
 
     return response;
   } catch (error: any) {
@@ -330,13 +312,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Ensure session cookie matches this order's owner
-    response.cookies.set("greeno_session", encodeURIComponent(cleanEmail), {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      sameSite: "lax",
-      httpOnly: false,
-    });
 
     return response;
   } catch (error: any) {
