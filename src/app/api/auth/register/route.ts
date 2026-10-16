@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const verification = verifyEmailOtpChallenge(
+    const verification = await verifyEmailOtpChallenge(
       request.cookies.get(EMAIL_OTP_COOKIE)?.value,
       cleanEmail,
       code

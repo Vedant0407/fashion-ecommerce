@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const challenge = createEmailOtpChallenge(email, name);
+      const challenge = await createEmailOtpChallenge(email, name);
       const result = await sendRealEmail(email, challenge.code, name);
       if (!result.sent) {
         return NextResponse.json(
