@@ -157,6 +157,29 @@ export default function AuthSlidingCard({
       });
 
       if (error || !data.user?.email) {
+        const emailNeedsConfirmation =
+          error?.code === "email_not_confirmed" ||
+          /email not confirmed/i.test(error?.message || "");
+
+        if (emailNeedsConfirmation) {
+          const confirmationRedirect =
+            window.location.origin +
+            "/auth/callback?next=" +
+            encodeURIComponent(redirectUrl);
+          const { error: resendError } = await supabase.auth.resend({
+            type: "signup",
+            email: loginEmail.trim().toLowerCase(),
+            options: { emailRedirectTo: confirmationRedirect },
+          });
+          setLoginError("");
+          setLoginMessage(
+            resendError
+              ? "Your email is not confirmed yet. Check your inbox and Spam folder for Supabase's confirmation link."
+              : "Your email is not confirmed yet. We sent a new confirmation link; open it before logging in."
+          );
+          return;
+        }
+
         setLoginError(
           error?.status && error.status >= 500
             ? "Authentication is temporarily unavailable. Please try again."
@@ -180,6 +203,10 @@ export default function AuthSlidingCard({
 
       localStorage.setItem("greeno_user_name", userName);
       localStorage.setItem("greeno_user_email", normalizedEmail);
+      document.cookie =
+        "greeno_session=" +
+        encodeURIComponent(normalizedEmail) +
+        "; path=/; max-age=2592000; SameSite=Lax";
       window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new CustomEvent("greeno_auth_change"));
 
@@ -340,6 +367,14 @@ export default function AuthSlidingCard({
         setSignupError(
           registerData.message ||
             "Registration failed. Please check the code and try again."
+        );
+        return;
+      }
+
+      if (registerData.requiresEmailConfirmation) {
+        setSignupMessage(
+          registerData.message ||
+            "Check your inbox for Supabase's confirmation link before logging in."
         );
         return;
       }

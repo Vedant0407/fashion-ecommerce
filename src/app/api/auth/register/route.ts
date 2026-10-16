@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createUser, normalizeEmail } from "@/lib/user-store";
+import { normalizeEmail } from "@/lib/user-store";
 import {
   EMAIL_OTP_COOKIE,
   emailOtpCookieOptions,
@@ -67,36 +67,76 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    const createResult = await createUser({
-      name: name.trim(),
+    const supabase = await createClient();
+    const confirmationRedirect = new URL(
+      "/auth/callback?next=%2Faccount",
+      request.url
+    ).toString();
+    const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
       password,
-      provider: "email",
-      email_verified: true,
+      options: {
+        data: { full_name: name.trim(), name: name.trim() },
+        emailRedirectTo: confirmationRedirect,
+      },
     });
-    if (!createResult.success || !createResult.user) {
+
+    if (error) {
+      const alreadyExists =
+        error.code === "user_already_exists" ||
+        error.code === "email_exists" ||
+        /already registered/i.test(error.message);
       return NextResponse.json(
-        { success: false, message: createResult.message || "Failed to create account." },
-        { status: 400 }
+        {
+          success: false,
+          message: alreadyExists
+            ? "An account with this email already exists. Log in or use Forgot Password."
+            : "Supabase could not create your account. Please try again.",
+        },
+        { status: alreadyExists ? 409 : 502 }
       );
     }
 
-    try {
-      const supabase = await createClient();
-      await supabase.auth.signUp({
-        email: cleanEmail,
-        password,
-        options: { data: { full_name: name.trim(), name: name.trim() } },
-      });
-    } catch (error) {
-      console.warn("Supabase sign-up sync notice:", error);
+    if (!data.user) {
+      return NextResponse.json(
+        { success: false, message: "Supabase did not create the account. Please try again." },
+        { status: 502 }
+      );
     }
 
-    const response = NextResponse.json({
-      success: true,
-      user: createResult.user,
-      message: "Account created and verified successfully. Welcome to GreenO!",
-    });
+    if (!data.session) {
+      const response = NextResponse.json({
+        success: true,
+        requiresEmailConfirmation: true,
+        user: {
+          id: data.user.id,
+          email: cleanEmail,
+          name: data.user.user_metadata?.full_name || name.trim(),
+        },
+        message:
+          "Your GreenO code is verified. Supabase also requires email confirmation, so check your inbox and open its confirmation link before logging in.",
+      });
+      response.cookies.set(EMAIL_OTP_COOKIE, "", emailOtpCookieOptions());
+      return response;
+    }
+
+    const response = NextResponse.json(
+      {
+        success: true,
+        user: {
+          id: data.user.id,
+          email: cleanEmail,
+          name:
+            data.user.user_metadata?.full_name ||
+            data.user.user_metadata?.name ||
+            name.trim(),
+          email_verified: Boolean(data.user.email_confirmed_at || data.user.confirmed_at),
+          provider: data.user.app_metadata?.provider || "email",
+        },
+        message: "Account created and signed in successfully.",
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
     response.cookies.set(EMAIL_OTP_COOKIE, "", emailOtpCookieOptions());
     response.cookies.set("greeno_session", encodeURIComponent(cleanEmail), {
       path: "/",
@@ -105,7 +145,7 @@ export async function POST(request: NextRequest) {
       httpOnly: false,
     });
     return response;
-  } catch (error: any) {
+  } catch (error) {
     console.error("POST /api/auth/register error:", error);
     return NextResponse.json(
       { success: false, message: "Registration failed. Please try again." },

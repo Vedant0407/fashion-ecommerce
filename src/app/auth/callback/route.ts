@@ -26,10 +26,23 @@ export async function GET(request: Request) {
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(new URL(nextPath, origin));
+      const response = NextResponse.redirect(new URL(nextPath, origin));
+      if (data.user?.email) {
+        response.cookies.set(
+          "greeno_session",
+          encodeURIComponent(data.user.email.trim().toLowerCase()),
+          {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 30,
+            sameSite: "lax",
+            httpOnly: false,
+          }
+        );
+      }
+      return response;
     }
   } catch (error) {
     console.error("Supabase auth callback error:", error);
