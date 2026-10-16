@@ -344,22 +344,6 @@ export default function AuthSlidingCard({
         return;
       }
 
-      try {
-        const supabase = createClient();
-        await supabase.auth.signUp({
-          email: signupEmail.trim(),
-          password: signupPassword,
-          options: {
-            data: {
-              full_name: signupName.trim(),
-              name: signupName.trim(),
-            },
-          },
-        });
-      } catch (sbErr) {
-        console.warn("Client-side Supabase sync notice:", sbErr);
-      }
-
       const normalizedEmail = signupEmail.trim().toLowerCase();
       localStorage.removeItem("greeno_customer_orders");
       localStorage.removeItem("greeno_last_order");

@@ -195,7 +195,6 @@ export async function sendRealEmail(
   console.log(`[REAL EMAIL GATEWAY NOTICE]`);
   console.log(`No active Email SMTP or API Key configured.`);
   console.log(`Recipient: ${cleanEmail}`);
-  console.log(`Generated OTP: ${otpCode}`);
   console.log(`To receive the 6-digit code in your Gmail / email inbox:`);
   console.log(`1. Enter your Gmail & App Password in /admin -> EMAIL GATEWAY`);
   console.log(`   or in .env.local as SMTP_USER=... and SMTP_PASS=...`);
