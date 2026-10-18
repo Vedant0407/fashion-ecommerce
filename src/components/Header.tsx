@@ -23,10 +23,12 @@ export default function Header() {
   const [storyOpen, setStoryOpen] = useState(false);
   const [stories, setStories] = useState<StoreStory[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [announcementText, setAnnouncementText] = useState(
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"
   );
   const menuRef = useRef<HTMLDivElement>(null);
+  const authCheckVersion = useRef(0);
 
   useEffect(() => {
     async function loadSettings() {
@@ -102,30 +104,64 @@ export default function Header() {
       setIsLoggedIn(Boolean(sessionUser?.email));
     }
 
+    async function updateAdminState(version: number) {
+      try {
+        const response = await fetch("/api/admin/session", { cache: "no-store" });
+        const result = await response.json();
+        if (version === authCheckVersion.current) {
+          setIsAdmin(response.ok && result.admin === true);
+        }
+      } catch {
+        if (version === authCheckVersion.current) setIsAdmin(false);
+      }
+    }
+
     async function loadSession() {
+      const version = ++authCheckVersion.current;
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser();
+        if (version !== authCheckVersion.current) return;
         updateLoginState(user);
+        if (user?.email) {
+          await updateAdminState(version);
+        } else {
+          setIsAdmin(false);
+        }
       } catch {
-        updateLoginState();
+        if (version !== authCheckVersion.current) return;
+        updateLoginState(undefined);
+        setIsAdmin(false);
       }
     }
-    loadSession();
+
+    void loadSession();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      updateLoginState(session?.user);
+      const version = ++authCheckVersion.current;
+      const user = session?.user;
+      updateLoginState(user);
+      if (user?.email) {
+        void updateAdminState(version);
+      } else {
+        setIsAdmin(false);
+      }
     });
 
-    const handleStorageChange = () => updateLoginState();
-    window.addEventListener("storage", handleStorageChange);
+    // A real `storage` event comes from another tab. Auth flows also dispatch
+    // one in this tab, so always re-read Supabase instead of treating it as sign-out.
+    const handleSessionRefresh = () => { void loadSession(); };
+    window.addEventListener("storage", handleSessionRefresh);
+    window.addEventListener("greeno_auth_change", handleSessionRefresh);
 
     return () => {
+      authCheckVersion.current += 1;
       subscription.unsubscribe();
-      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("storage", handleSessionRefresh);
+      window.removeEventListener("greeno_auth_change", handleSessionRefresh);
     };
   }, []);
 
@@ -322,6 +358,7 @@ export default function Header() {
               <Link href="/account" onClick={() => setMenuOpen(false)}>ACCOUNT DETAILS</Link>
               <Link href="/account?tab=orders" onClick={() => setMenuOpen(false)}>MY ORDERS</Link>
               <button type="button" onClick={handleLogout}>LOG OUT</button>
+              {isAdmin && <Link href="/admin" onClick={() => setMenuOpen(false)}>ADMIN CONSOLE →</Link>}
             </>
           ) : (
             <>
@@ -329,7 +366,6 @@ export default function Header() {
               <Link href="/signup" onClick={() => setMenuOpen(false)}>CREATE ACCOUNT</Link>
             </>
           )}
-          <Link href="/admin" onClick={() => setMenuOpen(false)}>ADMIN CONSOLE →</Link>
         </div>
       </aside>
 
