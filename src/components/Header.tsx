@@ -23,7 +23,6 @@ export default function Header() {
   const [storyOpen, setStoryOpen] = useState(false);
   const [stories, setStories] = useState<StoreStory[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [announcementText, setAnnouncementText] = useState(
     "COMPLIMENTARY SHIPPING ACROSS INDIA • COD AVAILABLE • NEW DROP IS LIVE"
   );
@@ -104,18 +103,6 @@ export default function Header() {
       setIsLoggedIn(Boolean(sessionUser?.email));
     }
 
-    async function updateAdminState(version: number) {
-      try {
-        const response = await fetch("/api/admin/session", { cache: "no-store" });
-        const result = await response.json();
-        if (version === authCheckVersion.current) {
-          setIsAdmin(response.ok && result.admin === true);
-        }
-      } catch {
-        if (version === authCheckVersion.current) setIsAdmin(false);
-      }
-    }
-
     async function loadSession() {
       const version = ++authCheckVersion.current;
       try {
@@ -124,15 +111,9 @@ export default function Header() {
         } = await supabase.auth.getUser();
         if (version !== authCheckVersion.current) return;
         updateLoginState(user);
-        if (user?.email) {
-          await updateAdminState(version);
-        } else {
-          setIsAdmin(false);
-        }
       } catch {
         if (version !== authCheckVersion.current) return;
         updateLoginState(undefined);
-        setIsAdmin(false);
       }
     }
 
@@ -141,14 +122,8 @@ export default function Header() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      const version = ++authCheckVersion.current;
-      const user = session?.user;
-      updateLoginState(user);
-      if (user?.email) {
-        void updateAdminState(version);
-      } else {
-        setIsAdmin(false);
-      }
+      authCheckVersion.current += 1;
+      updateLoginState(session?.user);
     });
 
     // A real `storage` event comes from another tab. Auth flows also dispatch
@@ -358,7 +333,6 @@ export default function Header() {
               <Link href="/account" onClick={() => setMenuOpen(false)}>ACCOUNT DETAILS</Link>
               <Link href="/account?tab=orders" onClick={() => setMenuOpen(false)}>MY ORDERS</Link>
               <button type="button" onClick={handleLogout}>LOG OUT</button>
-              {isAdmin && <Link href="/admin" onClick={() => setMenuOpen(false)}>ADMIN CONSOLE →</Link>}
             </>
           ) : (
             <>
