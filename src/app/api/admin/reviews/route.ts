@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getStoreReviews,
@@ -8,6 +9,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get("productId") || undefined;
@@ -41,6 +44,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const body = await request.json();
     const { id, verified, is_featured, rating, comment, title } = body;
@@ -83,6 +88,8 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

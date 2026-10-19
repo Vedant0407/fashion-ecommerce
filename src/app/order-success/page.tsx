@@ -13,20 +13,14 @@ function OrderSuccessContent() {
   const [order, setOrder] = useState<any>(null);
 
   useEffect(() => {
-    // Try to load cached order snapshot from checkout
-    const saved = localStorage.getItem("greeno_last_order");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (!orderId || parsed.id === orderId) {
-          setOrder(parsed);
-        }
-      } catch {
-        // ignore
-      }
-    }
+    if (!orderId) return;
+    let active = true;
+    fetch(`/api/orders/${encodeURIComponent(orderId)}`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => { if (active && data?.success) setOrder(data.order); })
+      .catch(() => {});
+    return () => { active = false; };
   }, [orderId]);
-
   return (
     <main className={styles.page}>
       <div className={styles.container}>
@@ -151,7 +145,7 @@ function OrderSuccessContent() {
 
               <div className={styles.summaryRow}>
                 <span style={{ color: "#777" }}>PAYMENT METHOD</span>
-                <strong>{order?.paymentMethod || "CASH ON DELIVERY"}</strong>
+                <strong>{order?.payment_method || order?.paymentMethod || "CASH ON DELIVERY"}</strong>
               </div>
 
               <div className={styles.summaryRow}>

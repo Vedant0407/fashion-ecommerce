@@ -1,4 +1,5 @@
 "use client";
+import { createClient } from "@/lib/supabase/client";
 
 import {
   createContext,
@@ -52,29 +53,16 @@ type CartContextType = {
 
 function getCartStorageKey(email: string | null): string {
   if (!email || !email.trim() || !email.includes("@")) {
-    return "greeno_cart_guest";
+    return "greeno_cart_guest_v2";
   }
-  return `greeno_cart_${email.trim().toLowerCase()}`;
+  return `greeno_cart_v2_${email.trim().toLowerCase()}`;
 }
 
 function getCouponStorageKey(email: string | null): string {
   if (!email || !email.trim() || !email.includes("@")) {
-    return "greeno_coupon_guest";
+    return "greeno_coupon_guest_v2";
   }
-  return `greeno_coupon_${email.trim().toLowerCase()}`;
-}
-
-function getCurrentUserEmail(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const stored = localStorage.getItem("greeno_user_email");
-    if (stored && stored.trim().includes("@")) {
-      return stored.trim().toLowerCase();
-    }
-  } catch {
-    // Ignore
-  }
-  return null;
+  return `greeno_coupon_v2_${email.trim().toLowerCase()}`;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -85,6 +73,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [activeEmail, setActiveEmail] = useState<string | null>(null);
   const activeEmailRef = useRef<string | null>(null);
   const isLoadedRef = useRef(false);
+  const serverReadyRef = useRef(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const openCart = () => setIsCartOpen(true);
@@ -114,7 +103,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, cart: cartList, coupon }),
+        body: JSON.stringify({ cart: cartList, coupon }),
       });
     } catch (err) {
       console.warn("Notice: Cart server sync error:", err);
@@ -123,103 +112,66 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Load cart for a specific user email
   const loadCartForAccount = async (email: string | null) => {
+    isLoadedRef.current = false;
+    serverReadyRef.current = false;
     activeEmailRef.current = email;
     setActiveEmail(email);
-
     const cartKey = getCartStorageKey(email);
     const couponKey = getCouponStorageKey(email);
-
-    let items: CartProduct[] = [];
-    let savedCouponObj: AppliedCoupon | null = null;
-
-    try {
-      const saved = localStorage.getItem(cartKey);
-      if (saved) {
-        items = JSON.parse(saved);
-      } else {
-        // Migration: If user previously had an un-scoped legacy greeno_cart
-        const legacy = localStorage.getItem("greeno_cart");
-        if (legacy) {
-          try {
-            const parsedLegacy = JSON.parse(legacy);
-            if (Array.isArray(parsedLegacy) && parsedLegacy.length > 0) {
-              items = parsedLegacy;
-              localStorage.setItem(cartKey, JSON.stringify(items));
-            }
-          } catch {}
-          localStorage.removeItem("greeno_cart");
-        } else if (email) {
-          // If guest added items before logging in, transfer them to this account
-          const guestCart = localStorage.getItem("greeno_cart_guest");
-          if (guestCart) {
-            try {
-              const parsedGuest = JSON.parse(guestCart);
-              if (Array.isArray(parsedGuest) && parsedGuest.length > 0) {
-                items = parsedGuest;
-                localStorage.setItem(cartKey, JSON.stringify(items));
-                localStorage.removeItem("greeno_cart_guest");
-              }
-            } catch {}
-          }
-        }
-      }
-    } catch {
-      items = [];
-    }
-
-    try {
-      const savedCoupon = localStorage.getItem(couponKey);
-      if (savedCoupon) {
-        savedCouponObj = JSON.parse(savedCoupon);
-      }
-    } catch {
-      savedCouponObj = null;
-    }
-
-    setCart(Array.isArray(items) ? items : []);
-    setAppliedCoupon(savedCouponObj);
-    isLoadedRef.current = true;
-
-    // Cross-device backend synchronization for logged in accounts
-    if (email && email.includes("@")) {
+    if (email) {
       try {
-        const res = await fetch(`/api/cart?email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-        if (data.success) {
-          if (Array.isArray(data.cart) && data.cart.length > 0 && items.length === 0) {
-            setCart(data.cart);
-            localStorage.setItem(cartKey, JSON.stringify(data.cart));
-            if (data.coupon) {
-              setAppliedCoupon(data.coupon);
-              localStorage.setItem(couponKey, JSON.stringify(data.coupon));
-            }
-          } else if (items.length > 0) {
-            syncToServer(email, items, savedCouponObj);
-          }
-        }
-      } catch (err) {
-        console.warn("Notice: Cart server fetch error:", err);
+        const response = await fetch("/api/cart", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error("Could not load saved cart.");
+        const items = Array.isArray(data.cart) ? data.cart : [];
+        const coupon = data.coupon || null;
+        setCart(items);
+        setAppliedCoupon(coupon);
+        localStorage.setItem(cartKey, JSON.stringify(items));
+        if (coupon) localStorage.setItem(couponKey, JSON.stringify(coupon));
+        else localStorage.removeItem(couponKey);
+        serverReadyRef.current = true;
+      } catch (error) {
+        console.warn("Saved cart unavailable:", error);
+        setCart([]);
+        setAppliedCoupon(null);
       }
+      isLoadedRef.current = true;
+      return;
     }
+    try {
+      const savedItems = localStorage.getItem(cartKey);
+      const savedCoupon = localStorage.getItem(couponKey);
+      setCart(savedItems ? JSON.parse(savedItems) : []);
+      setAppliedCoupon(savedCoupon ? JSON.parse(savedCoupon) : null);
+    } catch {
+      setCart([]);
+      setAppliedCoupon(null);
+    }
+    isLoadedRef.current = true;
   };
 
   // On mount: initialize for current user and listen to account switches
   useEffect(() => {
-    const initialEmail = getCurrentUserEmail();
-    loadCartForAccount(initialEmail);
-
-    const handleAccountChange = () => {
-      const current = getCurrentUserEmail();
-      if (current !== activeEmailRef.current) {
-        loadCartForAccount(current);
-      }
+    const supabase = createClient();
+    let mounted = true;
+    const loadVerifiedAccount = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (mounted) await loadCartForAccount(data.user?.email?.trim().toLowerCase() || null);
     };
-
+    void loadVerifiedAccount();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(() => {
+        if (mounted) void loadCartForAccount(session?.user?.email?.trim().toLowerCase() || null);
+      }, 0);
+    });
+    const handleAccountChange = () => { void loadVerifiedAccount(); };
     window.addEventListener("storage", handleAccountChange);
     window.addEventListener("greeno_auth_change", handleAccountChange);
     window.addEventListener("greeno_account_switched", handleAccountChange);
-
     return () => {
+      mounted = false;
+      subscription.unsubscribe();
       window.removeEventListener("storage", handleAccountChange);
       window.removeEventListener("greeno_auth_change", handleAccountChange);
       window.removeEventListener("greeno_account_switched", handleAccountChange);

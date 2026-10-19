@@ -1,7 +1,10 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getStoreSettings, saveStoreSettings } from "@/lib/store-data";
 
 export async function GET() {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const settings = await getStoreSettings();
     return NextResponse.json({ success: true, settings });
@@ -15,6 +18,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const body = await request.json();
     const updated = await saveStoreSettings(body);

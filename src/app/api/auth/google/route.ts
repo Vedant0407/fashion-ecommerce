@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { syncUserProfile } from "@/lib/user-store";
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,17 +28,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const profile = await syncUserProfile(data.user);
+
     return NextResponse.json(
       {
         success: true,
         user: {
-          id: data.user.id,
-          email: data.user.email,
-          name:
-            data.user.user_metadata?.full_name ||
-            data.user.user_metadata?.name ||
-            data.user.email?.split("@")[0] ||
-            "",
+          id: profile.id,
+          email: profile.email,
+          name: profile.name,
         },
       },
       { headers: { "Cache-Control": "no-store" } }

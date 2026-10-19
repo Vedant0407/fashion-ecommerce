@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Heart, ShoppingBag, Check } from "lucide-react";
@@ -16,61 +16,36 @@ export interface GridProduct {
   color?: string;
 }
 
-export const SHIRTS_PRODUCTS: GridProduct[] = [
-  {
-    id: "washed-tee-green",
-    name: "WASHED TEE GREEN",
-    price: 2499,
-    image: "/train-olive-tee-cutout.png",
-    link: "/products/minimalist-chalk-tee",
-    color: "Olive",
-  },
-  {
-    id: "washed-tee-gray-blue",
-    name: "WASHED TEE GRAY BLUE",
-    price: 2699,
-    image: "/train-blue-tee-cutout.png",
-    link: "/products/oversized-black-tee",
-    color: "Gray Blue",
-  },
-  {
-    id: "oversized-tee-black",
-    name: "OVERSIZED TEE BLACK",
-    price: 2499,
-    image: "/train-black-tee-cutout.png",
-    link: "/products/oversized-black-tee",
-    color: "Black",
-  },
-  {
-    id: "tailored-poplin-shirt",
-    name: "TAILORED POPLIN SHIRT",
-    price: 3499,
-    image: "/train-poplin-shirt-cutout.png",
-    link: "/products/tailored-poplin-shirt",
-    color: "White",
-  },
-  {
-    id: "charcoal-oxford-overshirt",
-    name: "CHARCOAL OXFORD",
-    price: 3899,
-    image: "/train-oxford-shirt-cutout.png",
-    link: "/products/charcoal-oxford-overshirt",
-    color: "Charcoal",
-  },
-  {
-    id: "minimalist-chalk-tee",
-    name: "MINIMALIST CHALK TEE",
-    price: 2499,
-    image: "/train-white-tee-cutout.png",
-    link: "/products/minimalist-chalk-tee",
-    color: "Chalk",
-  },
-];
-
 export default function StreetwearProductGrid() {
   const { addToCart, openCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const [products, setProducts] = useState<GridProduct[]>([]);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/products", { cache: "no-store", signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to load products");
+        return response.json();
+      })
+      .then((data) => {
+        const items: Array<{ id: string; name: string; price: number; image: string; color?: string | null }> =
+          Array.isArray(data.products) ? data.products : [];
+        setProducts(items.filter((item) => item?.id && item?.name && item?.image).map((item) => ({
+          id: String(item.id),
+          name: String(item.name),
+          price: Number(item.price) || 0,
+          image: String(item.image),
+          link: `/products/${encodeURIComponent(String(item.id))}`,
+          color: typeof item.color === "string" ? item.color : undefined,
+        })));
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") console.error("Unable to load storefront products.", error);
+      });
+    return () => controller.abort();
+  }, []);
 
   const handleAddToCart = (e: React.MouseEvent, product: GridProduct) => {
     e.preventDefault();
@@ -108,6 +83,8 @@ export default function StreetwearProductGrid() {
     });
   };
 
+  if (products.length === 0) return null;
+
   return (
     <section className="streetwear-grid-section">
       <div className="streetwear-grid-container">
@@ -118,7 +95,7 @@ export default function StreetwearProductGrid() {
 
         {/* Product Cards Grid: 3 columns on Desktop, 2 columns on Mobile */}
         <div className="streetwear-product-grid">
-          {SHIRTS_PRODUCTS.map((product, idx) => {
+          {products.map((product, idx) => {
             const isWishlisted = isInWishlist(product.id);
             const isAdded = addedIds.has(product.id);
 
@@ -137,9 +114,7 @@ export default function StreetwearProductGrid() {
                     <img
                       src={product.image}
                       alt={product.name}
-                      className={`streetwear-product-cutout ${
-                        product.id === "minimalist-chalk-tee" ? "streetwear-product-cutout--chalk-tee" : ""
-                      }`}
+                      className="streetwear-product-cutout"
                       loading="lazy"
                     />
                   </Link>

@@ -36,64 +36,7 @@ interface ReviewItem {
   helpfulCount: number;
 }
 
-const DEFAULT_REVIEWS: ReviewItem[] = [
-  {
-    id: "rev-1",
-    author: "Julian V.",
-    location: "Milan, IT",
-    rating: 5,
-    date: "3 days ago",
-    title: "Impeccable collar stance and refined weave",
-    comment:
-      "The collar retains its sharp architectural profile with zero buckling. The fabric has an exquisite substantial weight while remaining breathable throughout the day.",
-    verified: true,
-    sizePurchased: "M",
-    fitFeedback: "True to Size",
-    helpfulCount: 14,
-  },
-  {
-    id: "rev-2",
-    author: "Aarav M.",
-    location: "Mumbai, IN",
-    rating: 5,
-    date: "1 week ago",
-    title: "Fluid drape, quiet luxury tailoring",
-    comment:
-      "Fits impeccably through the shoulders with just enough ease in the torso. Doesn't crease easily and moves with an understated elegance. Easily rivals European luxury fashion houses.",
-    verified: true,
-    sizePurchased: "L",
-    fitFeedback: "True to Size",
-    helpfulCount: 9,
-  },
-  {
-    id: "rev-3",
-    author: "Marcus K.",
-    location: "London, UK",
-    rating: 5,
-    date: "2 weeks ago",
-    title: "Substantial handfeel and immaculate stitching",
-    comment:
-      "Very clean French seams and premium cotton density. Sits slightly relaxed in the body as intended by the architectural silhouette. Highly recommended daily staple.",
-    verified: true,
-    sizePurchased: "XL",
-    fitFeedback: "True to Size",
-    helpfulCount: 12,
-  },
-  {
-    id: "rev-4",
-    author: "Dev R.",
-    location: "New Delhi, IN",
-    rating: 5,
-    date: "3 weeks ago",
-    title: "Dense combed cotton, zero collar baconing",
-    comment:
-      "The 300gsm cotton heft is phenomenal. Holds its shape wash after wash and has the perfect dropped shoulder proportion.",
-    verified: true,
-    sizePurchased: "M",
-    fitFeedback: "True to Size",
-    helpfulCount: 8,
-  },
-];
+const DEFAULT_REVIEWS: ReviewItem[] = [];
 
 export default function ProductPage() {
   const { addToCart, openCart } = useCart();
@@ -210,7 +153,7 @@ export default function ProductPage() {
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.reviews) && json.reviews.length > 0) {
-            setReviewsList([...json.reviews, ...DEFAULT_REVIEWS]);
+            setReviewsList(json.reviews);
           }
         }
       } catch {

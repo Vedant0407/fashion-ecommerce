@@ -1,98 +1,74 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { syncUserProfile } from "@/lib/user-store";
 
-const DATA_DIR = path.join(process.cwd(), "src", "data");
-const WISHLISTS_FILE = path.join(DATA_DIR, "wishlists.json");
+const noStore = { "Cache-Control": "no-store" };
 
-function ensureWishlistsFile(): Record<string, any[]> {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    if (!fs.existsSync(WISHLISTS_FILE)) {
-      fs.writeFileSync(WISHLISTS_FILE, JSON.stringify({}), "utf-8");
-      return {};
-    }
-    const raw = fs.readFileSync(WISHLISTS_FILE, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
+async function getIdentity() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return null;
+  await syncUserProfile(data.user);
+  return data.user;
 }
 
-function saveWishlists(data: Record<string, any[]>): void {
+export async function GET() {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    fs.writeFileSync(WISHLISTS_FILE, JSON.stringify(data, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Failed to write wishlists.json:", err);
-  }
-}
-
-// GET /api/wishlist?email=...
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const email = searchParams.get("email");
-
-    if (!email || !email.trim().includes("@")) {
-      return NextResponse.json({ success: true, wishlist: [] });
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-    const wishlists = ensureWishlistsFile();
-    const userWishlist = wishlists[cleanEmail] || [];
-
-    return NextResponse.json({
-      success: true,
-      wishlist: userWishlist,
+    const user = await getIdentity();
+    if (!user) return NextResponse.json({ success: false, message: "Please log in to view your wishlist." }, { status: 401, headers: noStore });
+    const records = await prisma.wishlistItem.findMany({
+      where: { user_id: user.id },
+      include: { product: true },
+      orderBy: { created_at: "desc" },
     });
-  } catch (error: any) {
+    const wishlist = records.filter((record) => record.product).map((record) => ({
+      id: record.product!.id,
+      name: record.product!.name,
+      price: record.product!.price,
+      image: record.product!.image,
+      category: record.product!.category_name,
+    }));
+    return NextResponse.json({ success: true, wishlist }, { headers: noStore });
+  } catch (error) {
     console.error("GET /api/wishlist error:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to load wishlist." },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: "Unable to load your wishlist." }, { status: 503, headers: noStore });
   }
 }
 
-// POST /api/wishlist
 export async function POST(request: NextRequest) {
   try {
+    const user = await getIdentity();
+    if (!user) return NextResponse.json({ success: false, message: "Please log in to save your wishlist." }, { status: 401, headers: noStore });
     const body = await request.json();
-    const { email, wishlist } = body;
-
-    if (!email || typeof email !== "string" || !email.trim().includes("@")) {
-      return NextResponse.json(
-        { success: false, message: "Valid email is required." },
-        { status: 400 }
-      );
+    if (!Array.isArray(body.wishlist) || body.wishlist.length > 100) {
+      return NextResponse.json({ success: false, message: "Wishlist must contain at most 100 items." }, { status: 400, headers: noStore });
     }
-
-    if (!Array.isArray(wishlist)) {
-      return NextResponse.json(
-        { success: false, message: "Wishlist must be an array." },
-        { status: 400 }
-      );
+    const productIds: string[] = Array.from(new Set<string>(
+      body.wishlist
+        .map((item: any): string => typeof item?.id === "string" ? item.id.trim() : "")
+        .filter((id: string) => id.length > 0)
+    ));
+    const products = productIds.length ? await prisma.product.findMany({ where: { id: { in: productIds } } }) : [];
+    if (products.length !== productIds.length) {
+      return NextResponse.json({ success: false, message: "One or more saved products are no longer available." }, { status: 409, headers: noStore });
     }
-
-    const cleanEmail = email.trim().toLowerCase();
-    const wishlists = ensureWishlistsFile();
-    wishlists[cleanEmail] = wishlist;
-    saveWishlists(wishlists);
-
-    return NextResponse.json({
-      success: true,
-      message: "Wishlist saved successfully.",
+    await prisma.$transaction(async (tx) => {
+      await tx.wishlistItem.deleteMany({ where: { user_id: user.id } });
+      if (products.length) await tx.wishlistItem.createMany({
+        data: products.map((product) => ({
+          user_id: user.id,
+          product_id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          category: product.category_name,
+        })),
+      });
     });
-  } catch (error: any) {
+    return NextResponse.json({ success: true, message: "Wishlist saved." }, { headers: noStore });
+  } catch (error) {
     console.error("POST /api/wishlist error:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to save wishlist." },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: "Unable to save your wishlist." }, { status: 503, headers: noStore });
   }
 }

@@ -1,95 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateOtp } from "@/lib/otp-store";
-import { sendRealEmail } from "@/lib/email-gateway";
-import { sendRealSms } from "@/lib/sms-gateway";
-import {
-  createEmailOtpChallenge,
-  EMAIL_OTP_COOKIE,
-  emailOtpCookieOptions,
-} from "@/lib/email-otp-cookie";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { target, type = "email", name } = body;
-
-    if (!target || typeof target !== "string") {
-      return NextResponse.json(
-        { success: false, message: "A valid email address or phone number is required." },
-        { status: 400 }
-      );
+    const email = typeof body.target === "string" ? body.target.trim().toLowerCase() : "";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ success: false, message: "Enter a valid email address." }, { status: 400 });
+    }
+    if (body.type !== "signup") {
+      return NextResponse.json({ success: false, message: "Request a password reset from the reset-password form." }, { status: 400 });
     }
 
-    if (type === "email") {
-      const email = target.trim().toLowerCase();
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return NextResponse.json(
-          { success: false, message: "Please enter a valid email address." },
-          { status: 400 }
-        );
-      }
-
-      const challenge = await createEmailOtpChallenge(email, name);
-      const result = await sendRealEmail(email, challenge.code, name);
-      if (!result.sent) {
-        return NextResponse.json(
-          { success: false, message: "We couldn't send the verification email. Please try again shortly." },
-          { status: 503 }
-        );
-      }
-
-      const response = NextResponse.json({
-        success: true,
-        message: `A 6-digit verification code has been sent to ${email}.`,
-        expiresAt: challenge.expiresAt,
-        realEmailSent: true,
-        emailProvider: result.provider,
-      });
-      response.cookies.set(
-        EMAIL_OTP_COOKIE,
-        challenge.token,
-        emailOtpCookieOptions(challenge.expiresAt)
-      );
-      return response;
-    }
-
-    if (type !== "phone") {
-      return NextResponse.json(
-        { success: false, message: "Invalid verification type. Expected 'email' or 'phone'." },
-        { status: 400 }
-      );
-    }
-
-    const digits = target.replace(/\D/g, "");
-    if (digits.length < 10) {
-      return NextResponse.json(
-        { success: false, message: "Please enter a valid 10-digit mobile number." },
-        { status: 400 }
-      );
-    }
-
-    const { code, expiresAt } = await generateOtp(target, "phone", name);
-    const smsResult = await sendRealSms(target, code);
-
-    return NextResponse.json({
-      success: true,
-      message: smsResult.sent
-        ? `A verification code has been sent to +91 ${digits.slice(-10)}.`
-        : `Carrier SMS is not configured. Code for +91 ${digits.slice(-10)} is ${code}.`,
-      code,
-      expiresAt,
-      realSmsSent: smsResult.sent,
-      smsProvider: smsResult.provider,
-      smsMessage: smsResult.message,
-      type,
-      target,
+    const supabase = await createClient();
+    const redirectTo = new URL("/auth/callback?next=%2Faccount", request.url).toString();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: redirectTo },
     });
-  } catch (error: any) {
+
+    if (error) {
+      console.error("Supabase signup OTP resend rejected:", {
+        code: error.code,
+        status: error.status,
+        message: error.message.replaceAll(email, "[redacted email]"),
+      });
+      return NextResponse.json(
+        { success: false, message: "We could not resend the verification code. Wait a moment and try again." },
+        { status: error.status && error.status >= 500 ? 503 : 429 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: true, message: "A new verification code was sent to your email." },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (error) {
     console.error("POST /api/auth/send-otp error:", error);
     return NextResponse.json(
-      { success: false, message: "Failed to send verification code. Please try again." },
-      { status: 500 }
+      { success: false, message: "We could not send the verification code right now." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

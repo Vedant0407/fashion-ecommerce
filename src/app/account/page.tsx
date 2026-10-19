@@ -91,264 +91,77 @@ function AccountPageContent() {
   const [ordersLoading, setOrdersLoading] = useState(false);
 
   useEffect(() => {
-    async function loadAccount() {
+    let active = true;
+    const loadAccount = async () => {
       try {
-        let authEmail = "";
-        let authName = "";
-        let authPhone = "";
-
-        try {
-          const supabase = createClient();
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-
-          if (user) {
-            authEmail = user.email || "";
-            authName =
-              user.user_metadata?.full_name ||
-              user.user_metadata?.name ||
-              "";
-            authPhone = user.phone || user.user_metadata?.phone || "";
-          }
-        } catch {}
-
-        if (!authEmail) {
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("greeno_user_email");
-          }
-          router.push("/login");
-          return;
-        }
-
-        if (typeof window !== "undefined") {
-          const localName = localStorage.getItem("greeno_user_name");
-          const localPhone = localStorage.getItem("greeno_user_phone");
-          if (!authName && localName) authName = localName;
-          if (!authPhone && localPhone) authPhone = localPhone;
-        }
-
-        const cleanEmail = authEmail.trim().toLowerCase();
-        const displayName = authName || cleanEmail.split("@")[0];
-
-        setUserEmail(cleanEmail);
-        setUserName(displayName);
-        setEditName(displayName);
-
-        // Try to retrieve phone and address from recent order or saved address
-        let detectedPhone = authPhone;
-        let detectedAddress = {
-          fullName: displayName,
-          phone: authPhone,
-          address: "",
-          city: "",
-          state: "",
-          pincode: "",
-        };
-
-        if (typeof window !== "undefined") {
-          const savedAddr = localStorage.getItem("greeno_default_address");
-          if (savedAddr) {
-            try {
-              const parsed = JSON.parse(savedAddr);
-              detectedAddress = { ...detectedAddress, ...parsed };
-              if (parsed.phone && !detectedPhone) detectedPhone = parsed.phone;
-            } catch {}
-          }
-
-          // Check scoped orders if address/phone not yet found
-          if (!detectedPhone || !detectedAddress.address) {
-            const rawOrders = localStorage.getItem(`greeno_orders_${cleanEmail}`);
-            if (rawOrders) {
-              try {
-                const list = JSON.parse(rawOrders);
-                if (Array.isArray(list) && list.length > 0 && list[0]?.customer) {
-                  const cust = list[0].customer;
-                  if (cust.phone && !detectedPhone) detectedPhone = cust.phone;
-                  if (cust.address && !detectedAddress.address) {
-                    detectedAddress = {
-                      fullName: cust.fullName || displayName,
-                      phone: cust.phone || detectedPhone,
-                      address: cust.address || "",
-                      city: cust.city || "",
-                      state: cust.state || "",
-                      pincode: cust.pincode || "",
-                    };
-                  }
-                }
-              } catch {}
-            }
-          }
-        }
-
-        setUserPhone(detectedPhone || "+91 9039353101");
-        setEditPhone(detectedPhone || "+91 9039353101");
-        setShippingAddress(detectedAddress);
-        setLoading(false);
-      } catch (err) {
-        console.warn("Account load notice:", err);
-        setLoading(false);
+        const response = await fetch("/api/account", { cache: "no-store" });
+        if (response.status === 401) { router.push("/login"); return; }
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Unable to load account.");
+        if (!active) return;
+        const profile = data.profile;
+        setUserEmail(profile.email);
+        setUserName(profile.name);
+        setEditName(profile.name);
+        setUserPhone(profile.phone || "");
+        setEditPhone(profile.phone || "");
+        setShippingAddress(data.address || { fullName: profile.name, phone: profile.phone || "", address: "", city: "", state: "", pincode: "" });
+      } catch (error) {
+        console.error("Account load failed:", error);
+        if (active) router.push("/login");
+      } finally {
+        if (active) setLoading(false);
       }
-    }
-
-    loadAccount();
+    };
+    void loadAccount();
+    return () => { active = false; };
   }, [router]);
 
-  // Load orders when the Orders tab is active, and listen for real-time updates
   useEffect(() => {
-    if (activeTab !== "orders" || !userEmail) return;
-
-    const cleanEmail = userEmail.trim().toLowerCase();
-    setOrdersLoading(true);
-
-    function loadLocalOrders() {
-      if (typeof window === "undefined") return;
-      let cookieStatuses: Record<string, string> = {};
+    if (activeTab !== "orders") return;
+    let active = true;
+    const fetchOrders = async () => {
+      setOrdersLoading(true);
       try {
-        const cookieMatch = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("greeno_order_statuses="));
-        if (cookieMatch) {
-          cookieStatuses = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
-        }
-      } catch {}
-
-      const raw = localStorage.getItem(`greeno_orders_${cleanEmail}`);
-      if (raw) {
-        try {
-          const list = JSON.parse(raw);
-          if (Array.isArray(list)) {
-            const withOverrides = list.map((o: any) => {
-              const statusOverride = cookieStatuses[o.id];
-              return statusOverride ? { ...o, status: statusOverride } : o;
-            });
-            setOrders(withOverrides);
-          }
-        } catch {}
-      }
-    }
-
-    // Check local cache immediately for instant render
-    loadLocalOrders();
-
-    // Query server for latest orders and merge intelligently
-    function fetchServerOrders() {
-      fetch(`/api/orders?email=${encodeURIComponent(cleanEmail)}&t=${Date.now()}`, {
-        cache: "no-store",
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.orders)) {
-            let cookieStatuses: Record<string, string> = {};
-            try {
-              const cookieMatch = document.cookie
-                .split("; ")
-                .find((row) => row.startsWith("greeno_order_statuses="));
-              if (cookieMatch) {
-                cookieStatuses = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
-              }
-            } catch {}
-
-            const rawLocal = localStorage.getItem(`greeno_orders_${cleanEmail}`);
-            const localList = rawLocal ? JSON.parse(rawLocal) : [];
-            const localMap = new Map<string, any>(
-              Array.isArray(localList) ? localList.map((o: any) => [o.id, o]) : []
-            );
-
-            const merged = data.orders.map((so: any) => {
-              const lo = localMap.get(so.id);
-              const statusOverride = cookieStatuses[so.id];
-              const finalStatus = statusOverride || so.status || lo?.status || "confirmed";
-              return {
-                ...(lo || {}),
-                ...so,
-                status: finalStatus,
-              };
-            });
-
-            // Also include any local orders not yet in server response
-            const serverIds = new Set(data.orders.map((o: any) => o.id));
-            if (Array.isArray(localList)) {
-              for (const lo of localList) {
-                if (lo?.id && !serverIds.has(lo.id)) {
-                  const statusOverride = cookieStatuses[lo.id];
-                  merged.push({
-                    ...lo,
-                    status: statusOverride || lo.status || "confirmed",
-                  });
-                }
-              }
-            }
-
-            merged.sort(
-              (a: any, b: any) =>
-                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-
-            setOrders(merged);
-            try {
-              localStorage.setItem(`greeno_orders_${cleanEmail}`, JSON.stringify(merged));
-            } catch {}
-          }
-        })
-        .catch(() => {})
-        .finally(() => setOrdersLoading(false));
-    }
-
-    fetchServerOrders();
-
-    // Listen to real-time events across tabs/windows and on re-focus
-    function handleStorageOrOrderUpdated() {
-      loadLocalOrders();
-      fetchServerOrders();
-    }
-
-    const handleRevalidate = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        fetchServerOrders();
+        const response = await fetch("/api/orders", { cache: "no-store" });
+        const data = await response.json();
+        if (active && response.ok && data.success && Array.isArray(data.orders)) setOrders(data.orders);
+        else if (active) setOrders([]);
+      } catch {
+        if (active) setOrders([]);
+      } finally {
+        if (active) setOrdersLoading(false);
       }
     };
-
-    window.addEventListener("storage", handleStorageOrOrderUpdated);
-    window.addEventListener("greeno_order_updated", handleStorageOrOrderUpdated);
-    window.addEventListener("focus", handleRevalidate);
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", handleRevalidate);
-    }
-    const intervalId = setInterval(handleRevalidate, 20000);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageOrOrderUpdated);
-      window.removeEventListener("greeno_order_updated", handleStorageOrOrderUpdated);
-      window.removeEventListener("focus", handleRevalidate);
-      if (typeof document !== "undefined") {
-        document.removeEventListener("visibilitychange", handleRevalidate);
-      }
-      clearInterval(intervalId);
-    };
-  }, [activeTab, userEmail]);
-
-  function handleSaveDetails() {
+    void fetchOrders();
+    window.addEventListener("focus", fetchOrders);
+    return () => { active = false; window.removeEventListener("focus", fetchOrders); };
+  }, [activeTab]);
+  async function handleSaveDetails() {
     if (!editName.trim()) return;
-    setUserName(editName.trim());
-    setUserPhone(editPhone.trim());
-    setIsEditing(false);
-    setSaveSuccess(true);
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("greeno_user_name", editName.trim());
-      localStorage.setItem("greeno_user_phone", editPhone.trim());
-      window.dispatchEvent(new Event("storage"));
+    try {
+      const response = await fetch("/api/account", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profile: { name: editName, phone: editPhone } }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to save details.");
+      setUserName(data.profile.name);
+      setUserPhone(data.profile.phone || "");
+      setIsEditing(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error("Account update failed:", error);
     }
-
-    setTimeout(() => setSaveSuccess(false), 3000);
   }
 
-  function handleSaveAddress() {
-    setIsEditingAddress(false);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("greeno_default_address", JSON.stringify(shippingAddress));
-      window.dispatchEvent(new Event("storage"));
+  async function handleSaveAddress() {
+    try {
+      const response = await fetch("/api/account", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address: shippingAddress }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to save address.");
+      if (data.address) setShippingAddress(data.address);
+      setIsEditingAddress(false);
+    } catch (error) {
+      console.error("Address update failed:", error);
     }
   }
 
@@ -366,7 +179,6 @@ function AccountPageContent() {
       localStorage.removeItem("greeno_customer_orders");
       localStorage.removeItem("greeno_last_order");
       localStorage.removeItem("greeno_all_orders");
-      document.cookie = "greeno_session=; path=/; max-age=0";
       window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new CustomEvent("greeno_auth_change"));
     }

@@ -163,94 +163,6 @@ export default function ChatbotAssistant() {
         content: m.content,
       }));
 
-      let storedEmail =
-        typeof window !== "undefined"
-          ? localStorage.getItem("greeno_user_email")
-          : null;
-
-      // Auto-detect email from greeno_orders_* localStorage keys if greeno_user_email is empty
-      if (!storedEmail && typeof window !== "undefined") {
-        try {
-          for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith("greeno_orders_")) {
-              const detected = k.replace("greeno_orders_", "").trim();
-              if (detected && detected.includes("@")) {
-                storedEmail = detected;
-                localStorage.setItem("greeno_user_email", detected);
-                break;
-              }
-            }
-          }
-        } catch {}
-      }
-
-      // Collect all orders stored in the browser (from Account page / Order history)
-      const clientOrders: any[] = [];
-      if (typeof window !== "undefined") {
-        if (storedEmail) {
-          try {
-            const rawScoped = localStorage.getItem(`greeno_orders_${storedEmail.trim().toLowerCase()}`);
-            if (rawScoped) {
-              const list = JSON.parse(rawScoped);
-              if (Array.isArray(list)) clientOrders.push(...list);
-            }
-          } catch {}
-        }
-
-        try {
-          for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith("greeno_orders_")) {
-              const raw = localStorage.getItem(k);
-              if (raw) {
-                const list = JSON.parse(raw);
-                if (Array.isArray(list)) {
-                  for (const ord of list) {
-                    if (ord?.id && !clientOrders.some((co) => co.id === ord.id)) {
-                      clientOrders.push(ord);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } catch {}
-
-        try {
-          const rawCust = localStorage.getItem("greeno_customer_orders");
-          if (rawCust) {
-            const list = JSON.parse(rawCust);
-            if (Array.isArray(list)) {
-              for (const ord of list) {
-                if (ord?.id && !clientOrders.some((co) => co.id === ord.id)) {
-                  clientOrders.push(ord);
-                }
-              }
-            }
-          }
-        } catch {}
-
-        try {
-          const rawLast = localStorage.getItem("greeno_last_order");
-          if (rawLast) {
-            const last = JSON.parse(rawLast);
-            if (last?.id && !clientOrders.some((co) => co.id === last.id)) {
-              clientOrders.push(last);
-            }
-          }
-        } catch {}
-      }
-
-      let lastOrderParsed: any = null;
-      try {
-        const rawLast =
-          typeof window !== "undefined"
-            ? localStorage.getItem("greeno_last_order")
-            : null;
-        if (rawLast) lastOrderParsed = JSON.parse(rawLast);
-      } catch {}
-
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -258,12 +170,8 @@ export default function ChatbotAssistant() {
           messages: payloadMessages,
           currentProductId: currentProduct?.id || null,
           previousProducts: recentProducts,
-          userEmail: storedEmail,
-          clientOrders,
-          lastOrder: lastOrderParsed,
         }),
       });
-
       const data = await res.json();
 
       const assistantMsg: Message = {

@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
-    const response = NextResponse.json({
-      success: true,
-      message: "Logged out successfully.",
-    });
-
-    // Delete session cookie
-    response.cookies.delete("greeno_session");
-
-    return response;
-  } catch (error: any) {
-    console.error("POST /api/auth/logout error:", error);
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) throw error;
     return NextResponse.json(
-      { success: false, message: "Failed to log out." },
-      { status: 500 }
+      { success: true, message: "Logged out successfully." },
+      { headers: { "Cache-Control": "no-store" } }
     );
+  } catch (error) {
+    console.error("POST /api/auth/logout error:", error);
+    return NextResponse.json({ success: false, message: "Failed to log out." }, { status: 503 });
   }
 }

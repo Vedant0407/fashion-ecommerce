@@ -1,28 +1,34 @@
-// Prisma Schema for GreenO Atelier Relational Database
-// Supports SQLite out of the box and seamlessly switches to PostgreSQL (Supabase/Neon) via DATABASE_URL
-
+// PostgreSQL schema for GreenO. Supabase Auth owns credentials; this schema stores commerce data.
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id             String    @id @default(cuid())
+  id             String    @id @db.Uuid
   name           String
   email          String    @unique
-  passwordHash   String?
-  provider       String    @default("email") // "email" | "google"
+  provider       String    @default("email")
   email_verified Boolean   @default(false)
+  role           String    @default("customer")
+  phone          String?
   created_at     DateTime  @default(now())
   updated_at     DateTime  @updatedAt
   last_login_at  DateTime?
   orders         Order[]
+  addresses      Address[]
+  wishlist       WishlistItem[]
+  reviews       Review[]
+  cart           Cart?
 
   @@index([email])
+  @@index([role])
+  @@map("profiles")
 }
 
 model Category {
@@ -36,6 +42,7 @@ model Category {
   products    Product[]
 
   @@index([slug])
+  @@map("categories")
 }
 
 model Product {
@@ -48,10 +55,10 @@ model Product {
   category_name  String      @default("SHIRTS")
   category       Category?   @relation(fields: [category_id], references: [id], onDelete: SetNull)
   image          String
-  images         String      @default("[]") // JSON stringified array of image URLs
+  images         String      @default("[]")
   stock          Int         @default(50)
-  size_stock     String      @default("{}") // JSON stringified object { S: 10, M: 15, ... }
-  colors         String      @default("[]") // JSON stringified array of color strings
+  size_stock     String      @default("{}")
+  colors         String      @default("[]")
   color          String      @default("BLACK")
   product_no     String?
   material       String?
@@ -65,19 +72,44 @@ model Product {
   updated_at     DateTime    @updatedAt
   order_items    OrderItem[]
   reviews        Review[]
+  wishlisted_by  WishlistItem[]
 
   @@index([category_slug])
   @@index([is_featured])
   @@index([is_new])
   @@index([is_trending])
+  @@map("products")
+}
+
+model Address {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String   @db.Uuid
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  full_name      String
+  phone          String
+  address_line1  String
+  address_line2  String?
+  city           String
+  state          String
+  postal_code    String
+  country        String   @default("India")
+  is_default     Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  orders         Order[]
+
+  @@index([user_id])
+  @@map("addresses")
 }
 
 model Order {
-  id             String          @id
-  created_at     DateTime        @default(now())
-  updated_at     DateTime        @updatedAt
-  user_id        String?
-  user           User?           @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  id             String      @id
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+  user_id        String?     @db.Uuid
+  user           User?       @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  address_id     String?     @db.Uuid
+  address_record Address?    @relation(fields: [address_id], references: [id], onDelete: SetNull)
   customer_name  String
   customer_email String
   customer_phone String
@@ -87,28 +119,30 @@ model Order {
   pincode        String
   subtotal       Float
   shipping       Float
-  discount       Float           @default(0)
+  discount       Float       @default(0)
   total          Float
-  status         String          @default("confirmed") // confirmed, processing, shipped, delivered, reached, cancelled
-  payment_method String          @default("COD")
-  payment_status String          @default("pending") // pending, paid, failed
+  status         String      @default("confirmed")
+  payment_method String      @default("COD")
+  payment_status String      @default("pending")
   notes          String?
   items          OrderItem[]
   returns        ReturnRequest[]
 
+  @@index([user_id])
   @@index([customer_email])
   @@index([status])
   @@index([created_at])
+  @@map("orders")
 }
 
 model OrderItem {
-  id         String   @id @default(cuid())
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   order_id   String
   order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
   product_id String?
   product    Product? @relation(fields: [product_id], references: [id], onDelete: SetNull)
-  name       String
-  price      Float
+  name       String   @map("product_name")
+  price      Float    @map("product_price")
   quantity   Int
   size       String?
   color      String?
@@ -116,12 +150,15 @@ model OrderItem {
 
   @@index([order_id])
   @@index([product_id])
+  @@map("order_items")
 }
 
 model Review {
   id            String   @id @default(cuid())
   product_id    String
   product       Product? @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  user_id       String?  @db.Uuid
+  user          User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
   product_name  String?
   author        String
   location      String?
@@ -140,6 +177,8 @@ model Review {
   @@index([product_id])
   @@index([is_featured])
   @@index([rating])
+  @@index([user_id])
+  @@map("reviews")
 }
 
 model ReturnRequest {
@@ -147,8 +186,8 @@ model ReturnRequest {
   order_id        String
   order           Order        @relation(fields: [order_id], references: [id], onDelete: Cascade)
   created_at      DateTime     @default(now())
-  type            String       @default("return") // return | exchange
-  status          String       @default("pending") // pending, approved, pickup_scheduled, received, completed, rejected
+  type            String       @default("return")
+  status          String       @default("pending")
   reason_category String
   customer_notes  String?
   admin_notes     String?
@@ -161,6 +200,7 @@ model ReturnRequest {
 
   @@index([order_id])
   @@index([status])
+  @@map("return_requests")
 }
 
 model ReturnItem {
@@ -179,12 +219,40 @@ model ReturnItem {
   reason         String?
 
   @@index([return_id])
+  @@map("return_items")
+}
+
+model WishlistItem {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product_id String
+  product    Product? @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  name       String
+  price      Float
+  image      String
+  category   String?
+  created_at DateTime @default(now())
+
+  @@unique([user_id, product_id])
+  @@index([user_id])
+  @@map("wishlist_items")
+}
+
+model Cart {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @unique @db.Uuid
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items      Json     @default("[]")
+  updated_at DateTime @updatedAt
+
+  @@map("carts")
 }
 
 model Coupon {
   id          String   @id @default(cuid())
   code        String   @unique
-  type        String   @default("percentage") // percentage, fixed, free_shipping
+  type        String   @default("percentage")
   value       Float
   minOrder    Float    @default(0)
   description String
@@ -194,6 +262,7 @@ model Coupon {
   updated_at  DateTime @updatedAt
 
   @@index([code])
+  @@map("coupons")
 }
 
 model StoreSetting {
@@ -202,20 +271,10 @@ model StoreSetting {
   storeNotice      String   @default("All orders placed today are dispatched within 24 hours.")
   supportPhone     String   @default("+91 98765 43210")
   supportEmail     String   @default("concierge@greeno.in")
-  adminPasskey     String   @default("aman2026")
   currency         String   @default("INR")
-  smsApiKey        String?  @default("")
-  smsProvider      String?  @default("2factor")
-  emailProvider    String?  @default("gmail")
-  smtpHost         String?  @default("smtp.gmail.com")
-  smtpPort         Int?     @default(465)
-  smtpSecure       Boolean? @default(true)
-  smtpUser         String?  @default("vedantshrivastava0407@gmail.com")
-  smtpPass         String?  @default("qqzjjbpozvfvhlhv")
-  smtpFrom         String?  @default("GreenO Security <vedantshrivastava0407@gmail.com>")
-  brevoApiKey      String?  @default("")
-  resendApiKey     String?  @default("")
   updated_at       DateTime @updatedAt
+
+  @@map("store_settings")
 }
 
 model Story {
@@ -225,7 +284,7 @@ model Story {
   image       String
   link_url    String?
   link_text   String?  @default("EXPLORE PIECE")
-  duration    Int      @default(5) // in seconds
+  duration    Int      @default(5)
   active      Boolean  @default(true)
   order_index Int      @default(0)
   views_count Int      @default(0)
@@ -234,5 +293,5 @@ model Story {
 
   @@index([active])
   @@index([order_index])
+  @@map("stories")
 }
-

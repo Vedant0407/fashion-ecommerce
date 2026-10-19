@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStoreProducts, syncStoreOrders } from "@/lib/store-data";
+import { getStoreProducts } from "@/lib/store-data";
 import { Product, getProductByIdOrSlug } from "@/lib/catalog";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -19,18 +19,9 @@ export async function POST(request: NextRequest) {
       currentProductId = null,
       previousProducts = [],
       userEmail = null,
-      clientOrders = [],
-      lastOrder = null,
     } = body;
-
-    // 1. Sync any client orders to persistent store-data
-    if (Array.isArray(clientOrders) && clientOrders.length > 0) {
-      try {
-        await syncStoreOrders(clientOrders);
-      } catch {}
-    }
-
-    // 2. Fetch authenticated Supabase user & orders if available
+    // Use only the signed-in Supabase identity for account-specific questions.
+    // Fetch authenticated Supabase user & orders if available
     let authUserEmail: string | null = null;
     let supabaseOrders: any[] = [];
     try {
@@ -76,23 +67,7 @@ export async function POST(request: NextRequest) {
       }
     } catch {}
 
-    const cookieEmail = request.cookies.get("greeno_session")?.value
-      ? decodeURIComponent(request.cookies.get("greeno_session")!.value).trim().toLowerCase()
-      : null;
-
-    const effectiveEmail =
-      (userEmail ? String(userEmail).trim().toLowerCase() : null) ||
-      authUserEmail ||
-      cookieEmail;
-
-    // 3. Read cookie-based status overrides
-    const cookieStatusesRaw = request.cookies.get("greeno_order_statuses")?.value;
-    let cookieStatuses: Record<string, string> = {};
-    if (cookieStatusesRaw) {
-      try {
-        cookieStatuses = JSON.parse(decodeURIComponent(cookieStatusesRaw));
-      } catch {}
-    }
+    const effectiveEmail = authUserEmail;
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -228,10 +203,10 @@ Respond with valid JSON in this exact schema:
       prevList,
       {
         email: effectiveEmail,
-        clientOrders: Array.isArray(clientOrders) ? clientOrders : [],
+        clientOrders: [],
         supabaseOrders,
-        cookieStatuses,
-        lastOrder,
+        cookieStatuses: {},
+        lastOrder: supabaseOrders[0] || null,
       }
     );
 

@@ -62,8 +62,8 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+    if (password.length < 8) {
+      setError("Use a password with at least 8 characters.");
       return;
     }
 
@@ -97,9 +97,6 @@ function ResetPasswordForm() {
       if (data.user?.name) {
         localStorage.setItem("greeno_user_name", data.user.name);
       }
-      document.cookie = `greeno_session=${encodeURIComponent(
-        email.trim()
-      )}; path=/; max-age=2592000; SameSite=Lax`;
       window.dispatchEvent(new Event("storage"));
 
       setMessage("Password updated successfully! Redirecting to your account...");
@@ -124,7 +121,7 @@ function ResetPasswordForm() {
         <h1>RESET PASSWORD</h1>
 
         <p className="auth-subtitle">
-          Enter the 6-digit code sent to your email along with your new password.
+          Enter the 6-digit password reset code sent to your email along with a new password.
         </p>
 
         <form onSubmit={handleUpdatePassword}>

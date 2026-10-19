@@ -1,7 +1,10 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getAllSafeUsers, getTotalUsersCount } from "@/lib/user-store";
 
 export async function GET(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const users = await getAllSafeUsers();
     const count = await getTotalUsersCount();

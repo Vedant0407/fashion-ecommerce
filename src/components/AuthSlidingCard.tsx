@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -64,6 +64,7 @@ export default function AuthSlidingCard({
   const [signupError, setSignupError] = useState("");
   const [signupMessage, setSignupMessage] = useState("");
   const [signupLoading, setSignupLoading] = useState(false);
+  const verifyOtpInFlight = useRef(false);
 
   // Check existing session
   useEffect(() => {
@@ -142,7 +143,6 @@ export default function AuthSlidingCard({
       setLoginError("Please agree to the Terms & Conditions to continue.");
       return;
     }
-
     if (!loginEmail.trim() || !loginPassword) {
       setLoginError("Please enter your email and password.");
       return;
@@ -150,63 +150,42 @@ export default function AuthSlidingCard({
 
     try {
       setLoginLoading(true);
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginEmail.trim().toLowerCase(),
-        password: loginPassword,
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword }),
       });
+      const result = await response.json();
 
-      if (error || !data.user?.email) {
-        const emailNeedsConfirmation =
-          error?.code === "email_not_confirmed" ||
-          /email not confirmed/i.test(error?.message || "");
-
-        if (emailNeedsConfirmation) {
-          const confirmationRedirect =
-            window.location.origin +
-            "/auth/callback?next=" +
-            encodeURIComponent(redirectUrl);
-          const { error: resendError } = await supabase.auth.resend({
-            type: "signup",
-            email: loginEmail.trim().toLowerCase(),
-            options: { emailRedirectTo: confirmationRedirect },
+      if (!response.ok || !result.success) {
+        if (result.emailNotConfirmed) {
+          const resend = await fetch("/api/auth/send-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target: loginEmail.trim(), type: "signup" }),
           });
-          setLoginError("");
+          const resendResult = await resend.json();
           setLoginMessage(
-            resendError
-              ? "Your email is not confirmed yet. Check your inbox and Spam folder for Supabase's confirmation link."
-              : "Your email is not confirmed yet. We sent a new confirmation link; open it before logging in."
+            resend.ok && resendResult.success
+              ? "Your email is not verified yet. We sent a fresh verification code."
+              : result.message
           );
           return;
         }
-
-        setLoginError(
-          error?.status && error.status >= 500
-            ? "Authentication is temporarily unavailable. Please try again."
-            : "Invalid email or password."
-        );
+        setLoginError(result.message || "Invalid email or password.");
         return;
       }
 
-      const normalizedEmail = data.user.email.trim().toLowerCase();
-      const userName =
-        data.user.user_metadata?.full_name ||
-        data.user.user_metadata?.name ||
-        normalizedEmail.split("@")[0];
-
-      const prevEmail = localStorage.getItem("greeno_user_email");
-      if (prevEmail && prevEmail.trim().toLowerCase() !== normalizedEmail) {
+      const normalizedEmail = result.user.email.trim().toLowerCase();
+      const previousEmail = localStorage.getItem("greeno_user_email");
+      if (previousEmail && previousEmail.trim().toLowerCase() !== normalizedEmail) {
         localStorage.removeItem("greeno_customer_orders");
         localStorage.removeItem("greeno_last_order");
         localStorage.removeItem("greeno_all_orders");
       }
-
-      localStorage.setItem("greeno_user_name", userName);
+      localStorage.setItem("greeno_user_name", result.user.name || normalizedEmail.split("@")[0]);
       localStorage.setItem("greeno_user_email", normalizedEmail);
-      document.cookie =
-        "greeno_session=" +
-        encodeURIComponent(normalizedEmail) +
-        "; path=/; max-age=2592000; SameSite=Lax";
+      await createClient().auth.getUser();
       window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new CustomEvent("greeno_auth_change"));
 
@@ -273,62 +252,62 @@ export default function AuthSlidingCard({
       setSignupError("Please agree to the Terms & Conditions to proceed.");
       return;
     }
-
     if (!signupName.trim() || !signupEmail.trim() || !signupPassword) {
       setSignupError("Please fill in all fields.");
       return;
     }
-
-    if (signupPassword.length < 6) {
-      setSignupError("Password must be at least 6 characters.");
+    if (signupPassword.length < 8) {
+      setSignupError("Use a password with at least 8 characters.");
       return;
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(signupEmail.trim())) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signupEmail.trim())) {
       setSignupError("Please enter a valid email address.");
       return;
     }
 
     try {
       setSignupLoading(true);
-
-      const res = await fetch("/api/auth/send-otp", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          target: signupEmail.trim(),
-          type: "email",
           name: signupName.trim(),
+          email: signupEmail.trim(),
+          password: signupPassword,
         }),
       });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to dispatch verification code.");
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        setSignupError(result.message || "We could not create your account.");
+        return;
       }
 
-      setTimer(60);
-      setCanResend(false);
       setOtpCode("");
-      setSignupMessage(
-        data.realEmailSent
-          ? `6-digit code sent to ${signupEmail.trim()}! Please check your inbox and Spam.`
-          : `A 6-digit verification code has been dispatched to ${signupEmail.trim()}.`
-      );
-      setSignupStep("verify");
+      if (result.requiresEmailConfirmation) {
+        setTimer(60);
+        setCanResend(false);
+        setSignupMessage(result.message || "A 6-digit verification code was sent to your email.");
+        setSignupStep("verify");
+        return;
+      }
+
+      localStorage.setItem("greeno_user_name", result.user?.name || signupName.trim());
+      localStorage.setItem("greeno_user_email", signupEmail.trim().toLowerCase());
+      await createClient().auth.getUser();
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("greeno_auth_change"));
+      setSignupMessage("Account created. Redirecting...");
+      setTimeout(() => {
+        router.push(redirectUrl);
+        router.refresh();
+      }, 400);
     } catch (err: any) {
-      console.error("SIGNUP OTP REQUEST ERROR:", err);
-      setSignupError(
-        err.message ||
-          "Failed to send verification code. Please check your email and try again."
-      );
+      console.error("SIGNUP ERROR:", err);
+      setSignupError(err.message || "Registration is temporarily unavailable.");
     } finally {
       setSignupLoading(false);
     }
   }
-
   // ---------------------------------------------
   // SIGNUP STEP 2: VERIFY OTP & COMPLETE SIGNUP
   // ---------------------------------------------
@@ -337,45 +316,27 @@ export default function AuthSlidingCard({
     codeToVerify?: string
   ) {
     if (e) e.preventDefault();
+    if (verifyOtpInFlight.current) return;
     setSignupError("");
     setSignupMessage("");
 
-    const finalCode = (codeToVerify || otpCode).trim();
-
-    if (!finalCode || finalCode.length !== 6) {
-      setSignupError("Please enter the complete 6-digit verification code.");
+    const code = (codeToVerify || otpCode).trim();
+    if (!/^\d{6}$/.test(code)) {
+      setSignupError("Enter all 6 digits from the latest verification email.");
       return;
     }
 
     try {
+      verifyOtpInFlight.current = true;
       setSignupLoading(true);
-
-      const registerRes = await fetch("/api/auth/register", {
+      const response = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: signupName.trim(),
-          email: signupEmail.trim(),
-          password: signupPassword,
-          code: finalCode,
-        }),
+        body: JSON.stringify({ email: signupEmail.trim(), code, type: "signup" }),
       });
-
-      const registerData = await registerRes.json();
-
-      if (!registerRes.ok || !registerData.success) {
-        setSignupError(
-          registerData.message ||
-            "Registration failed. Please check the code and try again."
-        );
-        return;
-      }
-
-      if (registerData.requiresEmailConfirmation) {
-        setSignupMessage(
-          registerData.message ||
-            "Check your inbox for Supabase's confirmation link before logging in."
-        );
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        setSignupError(result.message || "That code is invalid or expired. Request a new one.");
         return;
       }
 
@@ -383,35 +344,25 @@ export default function AuthSlidingCard({
       localStorage.removeItem("greeno_customer_orders");
       localStorage.removeItem("greeno_last_order");
       localStorage.removeItem("greeno_all_orders");
-
-      const savedName = registerData.user?.name || signupName.trim();
-      localStorage.setItem("greeno_user_name", savedName);
-      localStorage.setItem("greeno_user_email", signupEmail.trim());
-      document.cookie = `greeno_session=${encodeURIComponent(
-        signupEmail.trim()
-      )}; path=/; max-age=2592000; SameSite=Lax`;
+      localStorage.setItem("greeno_user_name", result.user?.name || signupName.trim());
+      localStorage.setItem("greeno_user_email", normalizedEmail);
+      await createClient().auth.getUser();
       window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new CustomEvent("greeno_auth_change"));
 
-      setSignupMessage(
-        "Email verified successfully! Welcome to GreenO. Redirecting..."
-      );
-
+      setSignupMessage("Email verified successfully. Redirecting...");
       setTimeout(() => {
         router.push(redirectUrl);
         router.refresh();
-      }, 500);
+      }, 400);
     } catch (err: any) {
       console.error("SIGNUP VERIFY ERROR:", err);
-      setSignupError(
-        err.message ||
-          "Verification failed. Please check the code and try again."
-      );
+      setSignupError(err.message || "Verification is temporarily unavailable.");
     } finally {
+      verifyOtpInFlight.current = false;
       setSignupLoading(false);
     }
   }
-
   // Resend OTP
   async function handleResendCode() {
     if (!canResend || signupLoading) return;
@@ -420,31 +371,26 @@ export default function AuthSlidingCard({
 
     try {
       setSignupLoading(true);
-      const res = await fetch("/api/auth/send-otp", {
+      const response = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          target: signupEmail.trim(),
-          type: "email",
-          name: signupName.trim(),
-        }),
+        body: JSON.stringify({ target: signupEmail.trim(), type: "signup" }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to resend code.");
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        setSignupError(result.message || "Failed to resend the verification code.");
+        return;
       }
       setTimer(60);
       setCanResend(false);
-      setSignupMessage(
-        `New 6-digit verification code dispatched to ${signupEmail.trim()}!`
-      );
+      setOtpCode("");
+      setSignupMessage("A new verification code was sent to your email.");
     } catch (err: any) {
-      setSignupError(err.message || "Failed to resend code.");
+      setSignupError(err.message || "Failed to resend the verification code.");
     } finally {
       setSignupLoading(false);
     }
   }
-
   if (checkingSession) {
     return null;
   }
@@ -717,7 +663,7 @@ export default function AuthSlidingCard({
                       type={showSignupPassword ? "text" : "password"}
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
-                      placeholder="At least 6 characters"
+                      placeholder="At least 8 characters"
                       className="premium-input-pill"
                       autoComplete="new-password"
                       required
@@ -897,12 +843,7 @@ export default function AuthSlidingCard({
 
                   <OtpInput
                     value={otpCode}
-                    onChange={(newCode) => {
-                      setOtpCode(newCode);
-                      if (newCode.length === 6) {
-                        handleVerifyAndSignup(undefined, newCode);
-                      }
-                    }}
+                    onChange={setOtpCode}
                     error={Boolean(signupError)}
                     darkMode={false}
                   />

@@ -1,5 +1,3 @@
-import { getStoreSettings } from "./store-data";
-
 export type SmsProvider = "fast2sms" | "2factor" | "twilio" | "msg91" | "none";
 
 export interface SmsDispatchResult {
@@ -22,38 +20,12 @@ export async function sendRealSms(
 ): Promise<SmsDispatchResult> {
   const cleanPhone = phone10Digits.replace(/\D/g, "").slice(-10);
 
-  // Check store settings first, then environment variables
-  let fast2smsKey = process.env.FAST2SMS_API_KEY?.trim() || "";
-  let twoFactorKey = process.env.TWO_FACTOR_API_KEY?.trim() || "414d129d-ac3b-11f1-90d7-0200cd936042";
-  let twilioSid = process.env.TWILIO_ACCOUNT_SID?.trim() || "";
-  let twilioToken = process.env.TWILIO_AUTH_TOKEN?.trim() || "";
-  let twilioFrom = process.env.TWILIO_PHONE_NUMBER?.trim() || "";
-  let preferredProvider: string = "2factor";
-
-  try {
-    const settings: any = await getStoreSettings();
-    if (settings.smsProvider) {
-      preferredProvider = settings.smsProvider;
-    }
-    if (settings.smsApiKey) {
-      const key = settings.smsApiKey.trim();
-      if (preferredProvider === "2factor") {
-        twoFactorKey = key;
-      } else if (preferredProvider === "fast2sms") {
-        fast2smsKey = key;
-      } else {
-        fast2smsKey = key;
-      }
-    }
-    if (settings.twilioSid && settings.twilioToken) {
-      twilioSid = settings.twilioSid.trim();
-      twilioToken = settings.twilioToken.trim();
-      twilioFrom = settings.twilioFrom?.trim() || twilioFrom;
-    }
-  } catch (e) {
-    // Ignore settings read error
-  }
-
+  const fast2smsKey = process.env.FAST2SMS_API_KEY?.trim() || "";
+  const twoFactorKey = process.env.TWO_FACTOR_API_KEY?.trim() || "";
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID?.trim() || "";
+  const twilioToken = process.env.TWILIO_AUTH_TOKEN?.trim() || "";
+  const twilioFrom = process.env.TWILIO_PHONE_NUMBER?.trim() || "";
+  const preferredProvider = process.env.SMS_PROVIDER || "none";
   // 1. If 2Factor is selected or available
   if (twoFactorKey && (preferredProvider === "2factor" || !fast2smsKey)) {
     const result = await dispatch2Factor(twoFactorKey, cleanPhone, otpCode);
@@ -79,21 +51,10 @@ export async function sendRealSms(
   }
 
   // No active gateway credentials found
-  console.log(`\n======================================================`);
-  console.log(`[REAL SMS GATEWAY NOTICE]`);
-  console.log(`No active SMS Gateway key configured.`);
-  console.log(`Mobile: +91 ${cleanPhone}`);
-  console.log(`Generated OTP: ${otpCode}`);
-  console.log(`To receive real SMS on your phone:`);
-  console.log(`1. Visit https://www.fast2sms.com/ (free signup, takes 30s)`);
-  console.log(`2. Copy your API Key and paste it into /admin -> Settings`);
-  console.log(`   or in .env.local as FAST2SMS_API_KEY=...`);
-  console.log(`======================================================\n`);
-
   return {
     sent: false,
     provider: "none",
-    message: `Carrier SMS dispatch requires an SMS API key (Fast2SMS or Twilio). Please enter your key in /admin -> Settings or .env.local.`,
+    message: `SMS delivery is not configured on the server. Add a supported SMS provider to the server environment.`,
   };
 }
 
@@ -120,7 +81,7 @@ async function dispatchFast2Sms(
     const json = await response.json();
 
     if (json.return === true || json.status_code === 200) {
-      console.log(`[REAL SMS DELIVERED via Fast2SMS] OTP sent to +91 ${cleanPhone}`);
+
       return {
         sent: true,
         provider: "fast2sms",
@@ -139,7 +100,7 @@ async function dispatchFast2Sms(
       const getRes = await fetch(getUrl);
       const getJson = await getRes.json();
       if (getJson.return === true || getJson.status_code === 200) {
-        console.log(`[REAL SMS DELIVERED via Fast2SMS GET] OTP sent to +91 ${cleanPhone}`);
+
         return {
           sent: true,
           provider: "fast2sms",
@@ -184,7 +145,7 @@ async function dispatch2Factor(
     const json = await response.json();
 
     if (json.Status === "Success") {
-      console.log(`[REAL SMS DELIVERED via 2Factor] OTP sent to +91 ${cleanPhone}`);
+
       return {
         sent: true,
         provider: "2factor",
@@ -238,7 +199,7 @@ async function dispatchTwilio(
     const json = await response.json();
 
     if (json.sid && !json.error_code) {
-      console.log(`[REAL SMS DELIVERED via Twilio] OTP sent to +91 ${cleanPhone}`);
+
       return {
         sent: true,
         provider: "twilio",

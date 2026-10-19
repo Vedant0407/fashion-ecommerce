@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Package, User, Wallet, LogOut, ArrowLeft, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { formatShortOrderId, isOrderMatch } from "@/lib/order-utils";
+import { formatShortOrderId } from "@/lib/order-utils";
 import styles from "../../account.module.css";
 
 type Address = {
@@ -29,6 +29,7 @@ type Order = {
   payment_method: string;
   created_at: string;
   addresses?: any;
+  customer?: { address?: string };
 };
 
 type OrderItem = {
@@ -95,401 +96,46 @@ export default function OrderDetailsPage() {
     router.refresh();
   }
 
-  // Helper to find order in local storage strictly for this user
-  function findLocalOrder(id: string, userEmail?: string): any | null {
-    if (typeof window === "undefined") return null;
-    const cleanEmail = (
-      userEmail ||
-      (typeof window !== "undefined" ? localStorage.getItem("greeno_user_email") : "") ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
-
-    if (!cleanEmail) return null;
-
-    try {
-      const cleanId = (id || "").trim().toLowerCase();
-
-      // 1. Check scoped orders
-      const scopedRaw = localStorage.getItem(`greeno_orders_${cleanEmail}`);
-      if (scopedRaw) {
-        const list = JSON.parse(scopedRaw);
-        const match = Array.isArray(list)
-          ? list.find((o: any) => o?.id && (o.id.trim().toLowerCase() === cleanId || isOrderMatch(o.id, cleanId)))
-          : null;
-        if (match) return match;
-      }
-
-      // 2. Check last order only if it belongs to this account
-      const rawLast = localStorage.getItem("greeno_last_order");
-      if (rawLast) {
-        const parsed = JSON.parse(rawLast);
-        if (
-          parsed?.id &&
-          (parsed.id.trim().toLowerCase() === cleanId || isOrderMatch(parsed.id, cleanId)) &&
-          parsed.customer?.email?.trim().toLowerCase() === cleanEmail
-        ) {
-          return parsed;
-        }
-      }
-
-      // 3. Check customer orders only if matching email
-      const rawCustomer = localStorage.getItem("greeno_customer_orders");
-      if (rawCustomer) {
-        const list = JSON.parse(rawCustomer);
-        const match = Array.isArray(list)
-          ? list.find(
-              (o: any) =>
-                o?.id &&
-                (o.id.trim().toLowerCase() === cleanId || isOrderMatch(o.id, cleanId)) &&
-                o.customer?.email?.trim().toLowerCase() === cleanEmail
-            )
-          : null;
-        if (match) return match;
-      }
-    } catch {}
-    return null;
-  }
-
   useEffect(() => {
-    if (!orderId) return;
-
-    async function fetchOrder() {
-      let cachedOrder: any = null;
+    let active = true;
+    async function loadOrder() {
+      setLoading(true);
+      setError("");
       try {
-        let user: any = null;
-        try {
-          const supabase = createClient();
-          const {
-            data: { user: supabaseUser },
-          } = await supabase.auth.getUser();
-          user = supabaseUser;
-        } catch {
-          // Supabase getUser failed
-        }
-
-        const storedEmail =
-          typeof window !== "undefined"
-            ? localStorage.getItem("greeno_user_email")
-            : null;
-
-        const currentEmail = (user?.email || storedEmail || "").trim().toLowerCase();
-
-        if (!currentEmail) {
-          router.push("/login");
+        const response = await fetch("/api/orders/" + encodeURIComponent(orderId), { cache: "no-store" });
+        if (response.status === 401) {
+          router.push("/login?redirect=" + encodeURIComponent("/account/orders/" + orderId));
           return;
         }
-
-        // Render cached order if it belongs to this user
-        cachedOrder = findLocalOrder(orderId, currentEmail);
-        if (cachedOrder) {
-          setOrder(cachedOrder);
-          setItems(cachedOrder.items || []);
-          setLoading(false);
-        }
-
-        // 1. Fetch via API route
-        try {
-          const res = await fetch(
-            `/api/orders/${encodeURIComponent(orderId)}?email=${encodeURIComponent(currentEmail)}&t=${Date.now()}`,
-            {
-              cache: "no-store",
-            }
-          );
-          if (res.status === 403) {
-            setError("You are not authorized to view this order.");
-            setOrder(null);
-            setItems([]);
-            setLoading(false);
-            return;
-          }
-
-          if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.order) {
-              const orderOwnerEmail = data.order.customer?.email?.trim().toLowerCase();
-              if (orderOwnerEmail && orderOwnerEmail !== currentEmail) {
-                setError("You are not authorized to view this order.");
-                setOrder(null);
-                setItems([]);
-                setLoading(false);
-                return;
-              }
-
-              const currentCached = findLocalOrder(orderId, currentEmail) || cachedOrder;
-
-              // Ensure real items are never wiped out by a hollow server order
-              const resolvedItems =
-                Array.isArray(data.order.items) && data.order.items.length > 0
-                  ? data.order.items
-                  : Array.isArray(currentCached?.items) && currentCached.items.length > 0
-                  ? currentCached.items
-                  : [];
-
-              const resolvedCustomer =
-                data.order.customer?.address ||
-                (data.order.customer?.fullName &&
-                  data.order.customer.fullName !== "Customer")
-                  ? data.order.customer
-                  : currentCached?.customer || data.order.customer;
-
-              const resolvedAddresses =
-                data.order.addresses?.address_line1 ||
-                (data.order.addresses?.full_name &&
-                  data.order.addresses.full_name !== "Customer")
-                  ? data.order.addresses
-                  : currentCached?.addresses ||
-                    currentCached?.customer ||
-                    data.order.addresses;
-
-              const resolvedSubtotal =
-                data.order.subtotal > 0
-                  ? data.order.subtotal
-                  : currentCached?.subtotal || 0;
-
-              const resolvedTotal =
-                data.order.total > 0
-                  ? data.order.total
-                  : currentCached?.total || 0;
-
-              // Read cookie status override if present
-              let cookieStatus: string | undefined;
-              try {
-                const cookieMatch = document.cookie
-                  .split("; ")
-                  .find((row) => row.startsWith("greeno_order_statuses="));
-                if (cookieMatch) {
-                  const map = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
-                  cookieStatus = map[orderId];
-                }
-              } catch {}
-
-              const finalStatus =
-                cookieStatus ||
-                data.order.status ||
-                currentCached?.status ||
-                "confirmed";
-
-              const mergedOrder = {
-                ...currentCached,
-                ...data.order,
-                status: finalStatus,
-                items: resolvedItems,
-                customer: resolvedCustomer,
-                addresses: resolvedAddresses,
-                subtotal: resolvedSubtotal,
-                total: resolvedTotal,
-              };
-
-              setOrder(mergedOrder);
-              setItems(resolvedItems);
-              setLoading(false);
-
-              // Update user-scoped local storage
-              try {
-                const scopedKey = `greeno_orders_${currentEmail}`;
-                const rawScoped = localStorage.getItem(scopedKey);
-                const list = rawScoped ? JSON.parse(rawScoped) : [];
-                if (Array.isArray(list)) {
-                  const updated = list.map((o: any) =>
-                    o.id === data.order.id ? { ...o, ...mergedOrder } : o
-                  );
-                  if (!updated.some((o: any) => o.id === data.order.id)) {
-                    updated.unshift(mergedOrder);
-                  }
-                  localStorage.setItem(scopedKey, JSON.stringify(updated));
-                }
-              } catch {}
-              return;
-            }
-          }
-        } catch (apiErr) {
-          console.warn("Order details API fetch warning:", apiErr);
-        }
-
-        // 2. Direct Supabase fallback
-        const isUuid =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-            orderId
-          );
-        if (user && isUuid) {
-          try {
-            const supabase = createClient();
-            const { data: orderData } = await supabase
-              .from("orders")
-              .select(
-                "id, address_id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
-              )
-              .eq("id", orderId)
-              .eq("user_id", user.id)
-              .maybeSingle();
-
-            if (orderData) {
-              const { data: itemsData } = await supabase
-                .from("order_items")
-                .select("id, product_id, product_name, product_price, quantity")
-                .eq("order_id", orderId);
-
-              const mergedOrder = {
-                ...cachedOrder,
-                ...orderData,
-                items:
-                  itemsData && itemsData.length > 0
-                    ? itemsData
-                    : cachedOrder?.items || [],
-              };
-              setOrder(mergedOrder);
-              setItems(mergedOrder.items || []);
-              setLoading(false);
-              return;
-            }
-          } catch {}
-        }
-
-        if (cachedOrder) {
-          setOrder(cachedOrder);
-          setItems(cachedOrder.items || []);
-          setLoading(false);
-
-          fetch(`/api/orders/${orderId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ order: cachedOrder }),
-          }).catch(() => {});
+        const data = await response.json();
+        if (!response.ok || !data.success || !data.order) {
+          if (active) setError(data.message || "Order not found.");
           return;
         }
-
-        setError("Order not found.");
-      } catch (err) {
-        console.error("ORDER DETAILS ERROR:", err);
-        if (cachedOrder) {
-          setOrder(cachedOrder);
-          setItems(cachedOrder.items || []);
-        } else {
-          setError("Something went wrong while loading the order.");
+        if (!active) return;
+        setOrder(data.order);
+        setItems(Array.isArray(data.order.items) ? data.order.items : []);
+        const returnResponse = await fetch("/api/returns?order_id=" + encodeURIComponent(orderId), { cache: "no-store" });
+        const returnData = await returnResponse.json();
+        if (active && returnData.success && Array.isArray(returnData.returns)) {
+          setExistingReturn(returnData.returns[0] || null);
         }
+      } catch {
+        if (active) setError("Unable to load this order right now.");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
-
-    fetchOrder();
-
-    // Fetch any return or exchange request for this order
-    try {
-      const rawReturns = localStorage.getItem("greeno_returns");
-      if (rawReturns) {
-        const list = JSON.parse(rawReturns);
-        const match = Array.isArray(list)
-          ? list.find((r: any) => r.order_id === orderId)
-          : null;
-        if (match) setExistingReturn(match);
-      }
-
-      fetch(`/api/returns?order_id=${encodeURIComponent(orderId)}`)
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.returns) && data.returns.length > 0) {
-            setExistingReturn(data.returns[0]);
-            try {
-              const raw = localStorage.getItem("greeno_returns");
-              const list = raw ? JSON.parse(raw) : [];
-              const filtered = list.filter((r: any) => r.id !== data.returns[0].id);
-              filtered.unshift(data.returns[0]);
-              localStorage.setItem("greeno_returns", JSON.stringify(filtered));
-            } catch {}
-          }
-        })
-        .catch(() => {});
-    } catch {}
-
-    function handleStorageChange(e?: any) {
-      let cookieStatus: string | undefined;
-      try {
-        const cookieMatch = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("greeno_order_statuses="));
-        if (cookieMatch) {
-          const map = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
-          cookieStatus = map[orderId];
-        }
-      } catch {}
-
-      const customEventStatus = e?.detail?.orderId === orderId ? e.detail.status : undefined;
-      const effectiveOverrideStatus = customEventStatus || cookieStatus;
-
-      const refreshed = findLocalOrder(orderId);
-      if (refreshed) {
-        const finalOrder = {
-          ...refreshed,
-          status: effectiveOverrideStatus || refreshed.status || "confirmed",
-        };
-        setOrder(finalOrder);
-        if (refreshed.items?.length) setItems(refreshed.items);
-      } else if (effectiveOverrideStatus) {
-        setOrder((prev) => (prev ? { ...prev, status: effectiveOverrideStatus } : prev));
-      }
-      try {
-        const rawReturns = localStorage.getItem("greeno_returns");
-        if (rawReturns) {
-          const list = JSON.parse(rawReturns);
-          const match = Array.isArray(list)
-            ? list.find((r: any) => r.order_id === orderId)
-            : null;
-          if (match) setExistingReturn(match);
-        }
-      } catch {}
-    }
-
-    const handleRevalidate = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        fetchOrder();
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("greeno_order_updated", handleStorageChange);
-    window.addEventListener("focus", handleRevalidate);
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", handleRevalidate);
-    }
-    const intervalId = setInterval(handleRevalidate, 20000);
-
+    void loadOrder();
+    const handleRefresh = () => { void loadOrder(); };
+    window.addEventListener("greeno_order_updated", handleRefresh);
+    window.addEventListener("focus", handleRefresh);
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("greeno_order_updated", handleStorageChange);
-      window.removeEventListener("focus", handleRevalidate);
-      if (typeof document !== "undefined") {
-        document.removeEventListener("visibilitychange", handleRevalidate);
-      }
-      clearInterval(intervalId);
+      active = false;
+      window.removeEventListener("greeno_order_updated", handleRefresh);
+      window.removeEventListener("focus", handleRefresh);
     };
   }, [orderId, router]);
-
-  const getStatusBadgeClass = (status: string) => {
-    switch ((status || "").toLowerCase()) {
-      case "confirmed":
-      case "processing":
-        return styles.statusConfirmed;
-      case "shipped":
-        return styles.statusShipped;
-      case "delivered":
-      case "reached":
-        return styles.statusDelivered;
-      default:
-        return styles.statusPending;
-    }
-  };
-
-  const getStepActiveIndex = (status: string) => {
-    const s = (status || "").toLowerCase();
-    if (s === "delivered" || s === "reached") return 4;
-    if (s === "shipped") return 3;
-    if (s === "confirmed" || s === "processing") return 2;
-    return 1;
-  };
-
   function openReturnModal(type: "exchange" | "return") {
     setReturnModalType(type);
     if (items.length > 0) {
@@ -536,54 +182,22 @@ export default function OrderDetailsPage() {
         .map((it) => {
           const itId = it.id || it.product_id || "";
           return {
-            product_id: it.product_id || it.id,
-            name: (it as any).name || it.product_name || "Streetwear Piece",
-            price: parsePrice((it as any).price ?? it.product_price),
-            quantity: Number(it.quantity) || 1,
-            size: (it as any).size || "M",
-            color: (it as any).color || "",
-            image: (it as any).image || "",
+            order_item_id: itId,
+            product_id: it.product_id,
             exchange_size: returnModalType === "exchange" ? exchangeSizes[itId] || "L" : undefined,
             reason: reasonCategory,
           };
         });
-
-      const customerObj = {
-        fullName:
-          order?.addresses?.full_name ||
-          (order as any)?.customer?.fullName ||
-          "Customer",
-        email:
-          (order as any)?.customer?.email ||
-          (typeof window !== "undefined"
-            ? localStorage.getItem("greeno_user_email") || ""
-            : ""),
-        phone:
-          order?.addresses?.phone || (order as any)?.customer?.phone || "",
-        address:
-          pickupAddress ||
-          order?.addresses?.address_line1 ||
-          (order as any)?.customer?.address ||
-          "",
-        city: order?.addresses?.city || (order as any)?.customer?.city || "",
-        state: order?.addresses?.state || (order as any)?.customer?.state || "",
-        pincode:
-          order?.addresses?.postal_code ||
-          (order as any)?.customer?.pincode ||
-          "",
-      };
-
       const res = await fetch("/api/returns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           order_id: orderId,
           type: returnModalType,
-          customer: customerObj,
           items: chosenItems,
           reason_category: reasonCategory,
           customer_notes: customerNotes,
-          pickup_address: pickupAddress || customerObj.address,
+          pickup_address: pickupAddress || order?.addresses?.address_line1 || order?.customer?.address || "",
         }),
       });
 
@@ -593,18 +207,6 @@ export default function OrderDetailsPage() {
       }
 
       setExistingReturn(data.request);
-
-      try {
-        const raw = localStorage.getItem("greeno_returns");
-        const list = raw ? JSON.parse(raw) : [];
-        const filtered = list.filter((r: any) => r.id !== data.request.id);
-        filtered.unshift(data.request);
-        localStorage.setItem("greeno_returns", JSON.stringify(filtered));
-        window.dispatchEvent(new Event("storage"));
-        window.dispatchEvent(
-          new CustomEvent("greeno_order_updated", { detail: { returnReq: data.request } })
-        );
-      } catch {}
 
       setIsReturnModalOpen(false);
       setReturnSuccessMsg(
@@ -1349,4 +951,20 @@ export default function OrderDetailsPage() {
       </div>
     </main>
   );
+}
+
+function getStepActiveIndex(status: string): number {
+  switch (status.toLowerCase()) {
+    case "cancelled":
+      return 0;
+    case "reached":
+    case "delivered":
+      return 4;
+    case "shipped":
+      return 3;
+    case "processing":
+      return 2;
+    default:
+      return 1;
+  }
 }

@@ -32,105 +32,9 @@ export type Category = {
   description?: string;
 };
 
-export const FALLBACK_CATEGORIES: Category[] = [
-  {
-    id: "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
-    name: "T-SHIRTS",
-    slug: "t-shirts",
-    image: "/atelier-tshirt.jpg",
-    description: "Architectural drop-shoulder t-shirts crafted from heavyweight combed jersey.",
-  },
-  {
-    id: "cat-shirts",
-    name: "SHIRTS",
-    slug: "shirts",
-    image: "/atelier-shirt.jpg",
-    description: "Architectural tailored shirting in Italian and Egyptian cotton poplins.",
-  },
-];
+export const FALLBACK_CATEGORIES: Category[] = [];
 
-export const FALLBACK_PRODUCTS: Product[] = [
-  {
-    id: "tailored-poplin-shirt",
-    name: "Tailored Poplin Shirt",
-    price: 3499,
-    description: "Architectural oversized collared shirt in crisp off-white Italian cotton poplin with mother-of-pearl buttons.",
-    category_id: "cat-shirts",
-    category_slug: "shirts",
-    category_name: "SHIRTS",
-    image: "/atelier-shirt.jpg",
-    images: ["/atelier-shirt.jpg", "/atelier-shirt-detail.jpg"],
-    stock: 22,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    color: "OFF-WHITE",
-    product_no: "AT-SHT-01",
-    material: "100% Egyptian Cotton Poplin",
-    fabric: "Crisp 120s Poplin",
-    fit: "Oversized Tailored Drape",
-  },
-  {
-    id: "charcoal-oxford-overshirt",
-    name: "Charcoal Oxford Overshirt",
-    price: 3899,
-    description: "Minimalist relaxed collared overshirt crafted from heavyweight Italian structured cotton oxford weave.",
-    category_id: "cat-shirts",
-    category_slug: "shirts",
-    category_name: "SHIRTS",
-    image: "/atelier-oxford-shirt.jpg",
-    images: ["/atelier-oxford-shirt.jpg", "/atelier-oxford-detail.jpg"],
-    stock: 18,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    color: "CHARCOAL",
-    product_no: "AT-SHT-02",
-    material: "100% Italian Oxford Cotton",
-    fabric: "Heavyweight Structured Weave",
-    fit: "Relaxed Boxy Silhouette",
-  },
-  {
-    id: "oversized-black-tee",
-    name: "Heavyweight Boxy Tee",
-    price: 2499,
-    description: "Architectural drop-shoulder t-shirt cut from 300gsm dense combed cotton jersey.",
-    category_id: "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
-    category_slug: "t-shirts",
-    category_name: "T-SHIRTS",
-    image: "/atelier-tshirt.jpg",
-    images: ["/atelier-tshirt.jpg", "/atelier-tshirt-detail.jpg"],
-    stock: 35,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    color: "BLACK",
-    product_no: "AT-TSH-01",
-    material: "100% Combed Heavyweight Cotton",
-    fabric: "300gsm Dense Jersey",
-    fit: "Boxy Drop-Shoulder",
-  },
-  {
-    id: "minimalist-chalk-tee",
-    name: "Minimalist Chalk Tee",
-    price: 2499,
-    description: "Clean drop-shoulder crewneck t-shirt cut in 320gsm premium off-white combed cotton jersey.",
-    category_id: "6ddd1a2e-ccc1-4e2d-8f34-d406a13dd54c",
-    category_slug: "t-shirts",
-    category_name: "T-SHIRTS",
-    image: "/atelier-white-tee.jpg",
-    images: ["/atelier-white-tee.jpg", "/atelier-white-detail.jpg"],
-    stock: 28,
-    is_featured: true,
-    is_new: true,
-    is_trending: true,
-    color: "CHALK",
-    product_no: "AT-TSH-02",
-    material: "100% Combed Heavyweight Cotton",
-    fabric: "320gsm Dense Jersey",
-    fit: "Relaxed Architectural Fit",
-  },
-];
+export const FALLBACK_PRODUCTS: Product[] = [];
 
 export function ensureProductImages(product: Product): Product {
   const fallback = FALLBACK_PRODUCTS.find((p) => p.id === product.id);
@@ -221,146 +125,17 @@ export function isShirtOrTshirt(product?: Product | null): boolean {
 export async function getAllProducts(): Promise<Product[]> {
   try {
     if (typeof window !== "undefined") {
-      let localProducts: Product[] = [];
-      try {
-        const raw = localStorage.getItem("greeno_store_products");
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) localProducts = parsed.map(ensureProductImages);
-        }
-      } catch (localErr) {
-        console.warn("Error reading local products:", localErr);
-      }
-
-      try {
-        const res = await fetch("/api/products", { cache: "no-store" });
-        if (res.ok) {
-          const json = await res.json();
-          const serverProducts: Product[] =
-            json.success && Array.isArray(json.products) ? json.products : [];
-
-          // Merge local products and server products seamlessly
-          // localProducts (admin created items) MUST BE AT THE FRONT
-          const productMap = new Map<string, Product>();
-          for (const lp of localProducts) {
-            if (lp?.id) productMap.set(lp.id, lp);
-          }
-
-          let hadMissingOnServer = false;
-          const missingOnServer: Product[] = [];
-          const serverIds = new Set(serverProducts.map((p) => p?.id).filter(Boolean));
-
-          for (const lp of localProducts) {
-            if (lp?.id && !serverIds.has(lp.id)) {
-              missingOnServer.push(lp);
-              hadMissingOnServer = true;
-            }
-          }
-
-          for (const sp of serverProducts) {
-            if (sp?.id) {
-              if (!productMap.has(sp.id)) {
-                productMap.set(sp.id, sp);
-              }
-            }
-          }
-
-          const merged = Array.from(productMap.values());
-
-          // Save merged state back to local cache and cookie bridge
-          try {
-            localStorage.setItem("greeno_store_products", JSON.stringify(merged));
-            document.cookie = `greeno_custom_products=${encodeURIComponent(JSON.stringify(merged))}; path=/; max-age=31536000; SameSite=Lax`;
-          } catch {}
-
-          // Background sync to server if local products were missing
-          if (hadMissingOnServer && missingOnServer.length > 0) {
-            fetch("/api/admin/products/sync", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ products: missingOnServer }),
-            }).catch(() => {});
-          }
-
-          if (merged.length > 0) {
-            return merged.filter(isShirtOrTshirt).map(ensureProductImages);
-          }
-        }
-      } catch (clientFetchErr) {
-        console.warn("Client fetch /api/products warning, using local cache:", clientFetchErr);
-        if (localProducts.length > 0) {
-          return localProducts.filter(isShirtOrTshirt).map(ensureProductImages);
-        }
-      }
-
-      if (localProducts.length > 0) {
-        return localProducts.filter(isShirtOrTshirt).map(ensureProductImages);
-      }
+      const response = await fetch("/api/products", { cache: "no-store" });
+      if (!response.ok) return [];
+      const data = await response.json();
+      return Array.isArray(data.products) ? data.products.filter(isShirtOrTshirt).map(ensureProductImages) : [];
     }
-
-    if (typeof window === "undefined") {
-      try {
-        const { getStoreProducts } = await import("./store-data");
-        const storeProducts = await getStoreProducts();
-        if (storeProducts && storeProducts.length > 0) {
-          return storeProducts.filter(isShirtOrTshirt).map(ensureProductImages);
-        }
-      } catch (serverImportErr) {
-        // Continue to Supabase / fallback below
-      }
-    }
-
-    const supabase = createClient();
-    const { data: dbProducts, error } = await supabase
-      .from("products")
-      .select("*, categories(id, name, slug)");
-
-    if (error || !dbProducts || dbProducts.length === 0) {
-      return FALLBACK_PRODUCTS.filter(isShirtOrTshirt);
-    }
-
-    const merged = [...FALLBACK_PRODUCTS];
-
-    dbProducts.forEach((item: any) => {
-      const categoryData = Array.isArray(item.categories)
-        ? item.categories[0]
-        : item.categories;
-
-      const mapped: Product = {
-        id: item.id,
-        name: item.name,
-        price: Number(item.price),
-        description: item.description,
-        category_id: item.category_id,
-        category_slug: categoryData?.slug || undefined,
-        category_name: categoryData?.name || undefined,
-        collection_tag: item.collection_tag || undefined,
-        image: item.image || "/black-tee.jfif",
-        stock: item.stock ?? 50,
-        size_stock: item.size_stock || undefined,
-        is_featured: Boolean(item.is_featured),
-        is_new: Boolean(item.is_new),
-        is_trending: Boolean(item.is_trending),
-        color: item.color || "BLACK",
-        colors: Array.isArray(item.colors) ? item.colors : item.color ? [item.color] : ["BLACK"],
-        product_no: item.product_no || `GO-${item.id.slice(0, 4)}`,
-        material: item.material || "100% Cotton",
-        fabric: item.fabric || "Premium Quality",
-        fit: item.fit || "Relaxed Fit",
-      };
-
-      const existingIndex = merged.findIndex((p) => p.id === mapped.id);
-      if (existingIndex >= 0) {
-        merged[existingIndex] = { ...merged[existingIndex], ...mapped };
-      } else {
-        merged.push(mapped);
-      }
-    });
-
-    return merged.filter(isShirtOrTshirt).map(ensureProductImages);
-  } catch (e) {
-    console.error("Error in getAllProducts:", e);
-    return FALLBACK_PRODUCTS.filter(isShirtOrTshirt);
+    const { getStoreProducts } = await import("./store-data");
+    const products = await getStoreProducts();
+    return products.filter(isShirtOrTshirt).map(ensureProductImages);
+  } catch (error) {
+    console.error("Unable to load products from the store database:", error);
+    return [];
   }
 }
 
@@ -379,26 +154,6 @@ export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | 
       pId.replace(/-/g, " ") === lower.replace(/-/g, " ")
     );
   });
-
-  // Secondary check against localStorage in case of delay
-  if (!found && typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem("greeno_store_products");
-      if (raw) {
-        const localList: Product[] = JSON.parse(raw);
-        found = localList.find((p) => {
-          if (!p || !isShirtOrTshirt(p)) return false;
-          const pId = p.id ? String(p.id).toLowerCase() : "";
-          const pName = p.name ? String(p.name).toLowerCase() : "";
-          return (
-            pId === lower ||
-            pName === lower.replace(/-/g, " ") ||
-            pId.replace(/-/g, " ") === lower.replace(/-/g, " ")
-          );
-        });
-      }
-    } catch {}
-  }
 
   return found || null;
 }

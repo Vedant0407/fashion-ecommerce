@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getStoreProducts,
@@ -8,24 +9,11 @@ import { Product } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     let products = await getStoreProducts();
-
-    // Cookie bridge: merge any client-saved custom products at the front
-    const cookieCustom = request.cookies.get("greeno_custom_products")?.value;
-    if (cookieCustom) {
-      try {
-        const parsedCustom = JSON.parse(decodeURIComponent(cookieCustom));
-        if (Array.isArray(parsedCustom) && parsedCustom.length > 0) {
-          const cookieIds = new Set(parsedCustom.map((p: any) => p?.id).filter(Boolean));
-          products = [
-            ...parsedCustom,
-            ...products.filter((p) => !cookieIds.has(p.id)),
-          ];
-        }
-      } catch {}
-    }
 
     return NextResponse.json({ success: true, count: products.length, products });
   } catch (error: any) {
@@ -38,6 +26,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const body = await request.json();
     const {
@@ -115,14 +105,7 @@ export async function POST(request: NextRequest) {
     };
 
     const saved = await saveStoreProduct(newProduct);
-    const updatedStore = await getStoreProducts();
-    const res = NextResponse.json({ success: true, product: saved });
-    res.cookies.set("greeno_custom_products", encodeURIComponent(JSON.stringify(updatedStore)), {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    });
-    return res;
+    return NextResponse.json({ success: true, product: saved });
   } catch (error: any) {
     console.error("POST /api/admin/products error:", error);
     return NextResponse.json(
@@ -133,6 +116,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const body = await request.json();
     const { id, ...updates } = body;
@@ -181,14 +166,7 @@ export async function PUT(request: NextRequest) {
     };
 
     const saved = await saveStoreProduct(updatedProduct);
-    const updatedStore = await getStoreProducts();
-    const res = NextResponse.json({ success: true, product: saved });
-    res.cookies.set("greeno_custom_products", encodeURIComponent(JSON.stringify(updatedStore)), {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    });
-    return res;
+    return NextResponse.json({ success: true, product: saved });
   } catch (error: any) {
     console.error("PUT /api/admin/products error:", error);
     return NextResponse.json(
@@ -199,6 +177,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -218,14 +198,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const updatedStore = await getStoreProducts();
-    const res = NextResponse.json({ success: true, message: `Product '${id}' deleted successfully.` });
-    res.cookies.set("greeno_custom_products", encodeURIComponent(JSON.stringify(updatedStore)), {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    });
-    return res;
+    return NextResponse.json({ success: true, message: "Product " + id + " deleted successfully." });
   } catch (error: any) {
     console.error("DELETE /api/admin/products error:", error);
     return NextResponse.json(

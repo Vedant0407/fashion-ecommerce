@@ -1,164 +1,96 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { addStoreOrder, getStoreOrders } from "@/lib/store-data";
-import { formatShortOrderId, isOrderMatch } from "@/lib/order-utils";
+import { syncUserProfile } from "@/lib/user-store";
+import { prisma } from "@/lib/prisma";
+import { formatShortOrderId } from "@/lib/order-utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET(request: NextRequest) {
+class CheckoutError extends Error {
+  constructor(message: string, readonly status: number = 400) {
+    super(message);
+  }
+}
+
+function parseSizeStock(value: string): Record<string, number> | null {
   try {
-    let authenticatedUser: any = null;
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      authenticatedUser = user;
-    } catch {
-      // Supabase user fetch failed
-    }
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 
-    const authEmail = authenticatedUser?.email
-      ? authenticatedUser.email.trim().toLowerCase()
-      : null;
-
-    if (!authEmail) {
+export async function GET() {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized. Please log in to view orders." },
-        { status: 401 }
+        { success: false, message: "Please log in to view your orders." },
+        { status: 401, headers: { "Cache-Control": "no-store" } }
       );
     }
-    let dbOrders: any[] = [];
-    if (authenticatedUser) {
-      try {
-        const supabase = await createClient();
-        const { data, error: ordersError } = await supabase
-          .from("orders")
-          .select(
-            "id, status, subtotal, shipping, total, payment_status, payment_method, created_at, addresses(*)"
-          )
-          .eq("user_id", authenticatedUser.id)
-          .order("created_at", { ascending: false });
 
-        if (!ordersError && data) {
-          dbOrders = data;
-        }
-      } catch {}
-    }
-
-    // Read cookie-based status overrides to bridge serverless environments
-    const cookieStatusesRaw = request.cookies.get("greeno_order_statuses")?.value;
-    let cookieStatuses: Record<string, string> = {};
-    if (cookieStatusesRaw) {
-      try {
-        cookieStatuses = JSON.parse(decodeURIComponent(cookieStatusesRaw));
-      } catch {}
-    }
-
-    // Read fresh store orders from disk
-    const allStoreOrders = await getStoreOrders(true);
-
-    // Strictly isolate: Only orders placed by this specific email
-    const storeUserOrders = allStoreOrders.filter((o) => {
-      const custEmail = o.customer?.email?.trim().toLowerCase();
-      return custEmail === authEmail;
+    await syncUserProfile(data.user);
+    const orders = await prisma.order.findMany({
+      where: { user_id: data.user.id },
+      include: { items: true },
+      orderBy: { created_at: "desc" },
     });
 
-    const orderMap = new Map<string, any>();
-
-    // First add DB orders
-    for (const dbOrder of dbOrders) {
-      const rawAddr = dbOrder.addresses;
-      const addr = (Array.isArray(rawAddr) ? rawAddr[0] : rawAddr) || {};
-      const statusOverride = cookieStatuses[dbOrder.id];
-      orderMap.set(dbOrder.id, {
-        id: dbOrder.id,
-        created_at: dbOrder.created_at,
-        status: statusOverride || dbOrder.status || "confirmed",
-        subtotal: dbOrder.subtotal,
-        shipping: dbOrder.shipping,
-        total: dbOrder.total,
-        payment_status: dbOrder.payment_status,
-        payment_method: dbOrder.payment_method,
-        customer: {
-          fullName: addr.full_name || "Customer",
-          email: authEmail,
-          phone: addr.phone || "",
-          address: addr.address_line1 || "",
-          city: addr.city || "",
-          state: addr.state || "",
-          pincode: addr.postal_code || "",
-        },
-      });
-    }
-
-    // Merge store orders with DB orders: keep full item details and latest status synchronized
-    for (const stOrder of storeUserOrders) {
-      const existingDb = orderMap.get(stOrder.id);
-      const statusOverride = cookieStatuses[stOrder.id];
-      if (!existingDb) {
-        orderMap.set(stOrder.id, {
-          ...stOrder,
-          status: statusOverride || stOrder.status || "confirmed",
-        });
-      } else {
-        // If cookie status or store order has an updated status, let it take precedence
-        const finalStatus =
-          statusOverride ||
-          (stOrder.status && stOrder.status !== "confirmed" ? stOrder.status : existingDb.status) ||
-          stOrder.status ||
-          existingDb.status ||
-          "confirmed";
-
-        const finalPaymentStatus =
-          stOrder.payment_status ||
-          existingDb.payment_status ||
-          "pending";
-
-        orderMap.set(stOrder.id, {
-          ...existingDb,
-          ...stOrder,
-          status: finalStatus,
-          payment_status: finalPaymentStatus,
-        });
-      }
-    }
-
-    const mergedOrders = Array.from(orderMap.values()).sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-
-    const response = NextResponse.json(
+    return NextResponse.json(
       {
         success: true,
-        orders: mergedOrders,
+        orders: orders.map((order) => ({
+          id: order.id,
+          short_id: formatShortOrderId(order.id),
+          created_at: order.created_at.toISOString(),
+          user_id: order.user_id,
+          customer: {
+            fullName: order.customer_name,
+            email: order.customer_email,
+            phone: order.customer_phone,
+            address: order.address,
+            city: order.city,
+            state: order.state,
+            pincode: order.pincode,
+          },
+          items: order.items.map((item) => ({
+            id: item.id,
+            product_id: item.product_id || "",
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image || undefined,
+            size: item.size || undefined,
+            color: item.color || undefined,
+          })),
+          subtotal: order.subtotal,
+          shipping: order.shipping,
+          discount: order.discount,
+          total: order.total,
+          status: order.status,
+          payment_method: order.payment_method,
+          payment_status: order.payment_status,
+          notes: order.notes || undefined,
+        })),
       },
       { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
     );
-
-
-    return response;
-  } catch (error: any) {
+  } catch (error) {
     console.error("GET /api/orders error:", error);
     return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
+      { success: false, message: "Unable to load orders right now." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    let authenticatedUser: any = null;
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      authenticatedUser = user;
-    } catch {}
-
     const body = await request.json();
     const {
       fullName,
@@ -169,156 +101,199 @@ export async function POST(request: NextRequest) {
       state,
       pincode,
       items,
-      subtotal,
-      shipping,
-      discount = 0,
       paymentMethod = "COD",
+      couponCode,
     } = body;
 
     if (
-      !fullName ||
-      !email ||
-      !phone ||
-      !address ||
-      !city ||
-      !state ||
-      !pincode ||
-      !items ||
-      !items.length
+      typeof fullName !== "string" || fullName.trim().length < 2 ||
+      typeof email !== "string" ||
+      typeof phone !== "string" ||
+      typeof address !== "string" ||
+      typeof city !== "string" ||
+      typeof state !== "string" ||
+      typeof pincode !== "string" ||
+      !Array.isArray(items) || items.length < 1 || items.length > 30
     ) {
-      return NextResponse.json(
-        { success: false, message: "Missing required order information." },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Complete the delivery details and add valid items." }, { status: 400 });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
+    const cleanEmail = (user?.email || email).trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return NextResponse.json({ success: false, message: "Enter a valid email address." }, { status: 400 });
+    }
+    if (user) await syncUserProfile(user);
 
-    const calculatedSubtotal = items.reduce(
-      (sum: number, item: any) => sum + Number(item.price) * item.quantity,
-      0
-    );
-    const calculatedShipping =
-      calculatedSubtotal > 5000 || calculatedSubtotal === 0 ? 0 : 199;
-    const finalShipping = shipping !== undefined ? shipping : calculatedShipping;
-    const finalTotal = Math.max(0, calculatedSubtotal + finalShipping - discount);
+    const cleanItems = items.map((item: any) => ({
+      id: typeof item?.id === "string" ? item.id : "",
+      quantity: Number(item?.quantity),
+      size: typeof item?.size === "string" ? item.size : null,
+      color: typeof item?.color === "string" ? item.color : null,
+    }));
+    if (cleanItems.some((item: any) => !item.id || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 20)) {
+      return NextResponse.json({ success: false, message: "One or more cart items are invalid." }, { status: 400 });
+    }
 
-    let createdOrderId = `GO-${Math.floor(1000 + Math.random() * 9000)}-${Math.random()
-      .toString(36)
-      .substring(2, 4)
-      .toUpperCase()}`;
+    const payment = typeof paymentMethod === "string" ? paymentMethod.toUpperCase() : "COD";
+    const allowedPayments = new Set(["COD", "ONLINE", "CARD", "UPI"]);
+    if (!allowedPayments.has(payment)) {
+      return NextResponse.json({ success: false, message: "Choose a valid payment method." }, { status: 400 });
+    }
 
-    if (authenticatedUser) {
-      try {
-        const { data: addressData, error: addressError } = await supabase
-          .from("addresses")
-          .insert({
-            user_id: authenticatedUser.id,
-            full_name: fullName.trim(),
-            phone: phone.trim(),
-            address_line1: address.trim(),
-            city: city.trim(),
-            state: state.trim(),
-            postal_code: pincode.trim(),
-            country: "India",
-            is_default: false,
-          })
-          .select("id")
-          .single();
+    const orderId = "GO-" + Date.now().toString(36).toUpperCase() + "-" + randomUUID().slice(0, 6).toUpperCase();
+    const created = await prisma.$transaction(async (tx) => {
+      const orderItems: Array<{
+        product_id: string;
+        name: string;
+        price: number;
+        quantity: number;
+        size: string | null;
+        color: string | null;
+        image: string;
+      }> = [];
+      let subtotal = 0;
 
-        if (!addressError && addressData) {
-          const { data: orderData, error: orderError } = await supabase
-            .from("orders")
-            .insert({
-              user_id: authenticatedUser.id,
-              address_id: addressData.id,
-              status: "confirmed",
-              subtotal: calculatedSubtotal,
-              shipping: finalShipping,
-              total: finalTotal,
-              payment_status: "pending",
-              payment_method: paymentMethod,
-            })
-            .select("id, created_at, status, total")
-            .single();
-
-          if (!orderError && orderData) {
-            createdOrderId = orderData.id;
-            const orderItems = items.map((item: any) => ({
-              order_id: orderData.id,
-              product_id: item.id,
-              product_name: item.name,
-              product_price: Number(item.price),
-              quantity: item.quantity,
-            }));
-
-            await supabase.from("order_items").insert(orderItems);
-          }
+      for (const requested of cleanItems) {
+        const product = await tx.product.findUnique({ where: { id: requested.id } });
+        if (!product) throw new CheckoutError("A product in your cart is no longer available.", 409);
+        if (product.stock < requested.quantity) {
+          throw new CheckoutError("There is not enough stock for " + product.name + ".", 409);
         }
-      } catch (dbErr) {
-        console.warn("Supabase order insert notice (will persist in store-data):", dbErr);
+
+        const sizeStock = parseSizeStock(product.size_stock);
+        if (requested.size && sizeStock) {
+          const available = sizeStock[requested.size];
+          if (typeof available !== "number" || available < requested.quantity) {
+            throw new CheckoutError("The selected size is out of stock for " + product.name + ".", 409);
+          }
+          sizeStock[requested.size] = available - requested.quantity;
+        }
+
+        const changed = await tx.product.updateMany({
+          where: { id: product.id, stock: { gte: requested.quantity } },
+          data: {
+            stock: { decrement: requested.quantity },
+            ...(requested.size && sizeStock ? { size_stock: JSON.stringify(sizeStock) } : {}),
+          },
+        });
+        if (changed.count !== 1) throw new CheckoutError("Stock changed while checking out. Please refresh your cart.", 409);
+
+        subtotal += product.price * requested.quantity;
+        orderItems.push({
+          product_id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: requested.quantity,
+          size: requested.size,
+          color: requested.color,
+          image: product.image,
+        });
       }
+
+      const shipping = subtotal > 5000 ? 0 : 199;
+      let discount = 0;
+      if (typeof couponCode === "string" && couponCode.trim()) {
+        const coupon = await tx.coupon.findUnique({ where: { code: couponCode.trim().toUpperCase() } });
+        if (!coupon || !coupon.active || subtotal < coupon.minOrder) {
+          throw new CheckoutError("This coupon is invalid or does not apply to this order.");
+        }
+        if (coupon.type === "percentage") discount = Math.min(subtotal, subtotal * coupon.value / 100);
+        else if (coupon.type === "fixed") discount = Math.min(subtotal, coupon.value);
+        else if (coupon.type === "free_shipping") discount = shipping;
+        await tx.coupon.update({ where: { id: coupon.id }, data: { usage_count: { increment: 1 } } });
+      }
+
+      const savedAddress = user
+        ? await tx.address.create({
+            data: {
+              user_id: user.id,
+              full_name: fullName.trim(),
+              phone: phone.trim(),
+              address_line1: address.trim(),
+              city: city.trim(),
+              state: state.trim(),
+              postal_code: pincode.trim(),
+              country: "India",
+            },
+          })
+        : null;
+
+      return tx.order.create({
+        data: {
+          id: orderId,
+          user_id: user?.id || null,
+          address_id: savedAddress?.id || null,
+          customer_name: fullName.trim(),
+          customer_email: cleanEmail,
+          customer_phone: phone.trim(),
+          address: address.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          pincode: pincode.trim(),
+          subtotal,
+          shipping,
+          discount,
+          total: Math.max(0, subtotal + shipping - discount),
+          status: "confirmed",
+          payment_method: payment,
+          payment_status: "pending",
+          items: { create: orderItems },
+        },
+        include: { items: true },
+      });
+    }, { isolationLevel: "Serializable" });
+
+    return NextResponse.json(
+      {
+        success: true,
+        orderId: formatShortOrderId(created.id),
+        rawOrderId: created.id,
+        order: {
+          id: created.id,
+          short_id: formatShortOrderId(created.id),
+          created_at: created.created_at.toISOString(),
+          user_id: created.user_id || undefined,
+          customer: {
+            fullName: created.customer_name,
+            email: created.customer_email,
+            phone: created.customer_phone,
+            address: created.address,
+            city: created.city,
+            state: created.state,
+            pincode: created.pincode,
+          },
+          items: created.items.map((item) => ({
+            id: item.id,
+            product_id: item.product_id || "",
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image || undefined,
+            size: item.size || undefined,
+            color: item.color || undefined,
+          })),
+          subtotal: created.subtotal,
+          shipping: created.shipping,
+          discount: created.discount,
+          total: created.total,
+          status: created.status,
+          payment_method: created.payment_method,
+          payment_status: created.payment_status,
+        },
+      },
+      { status: 201, headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (error) {
+    if (error instanceof CheckoutError) {
+      return NextResponse.json({ success: false, message: error.message }, { status: error.status });
     }
-
-    // Save order permanently to persistent store data for customer account and admin dashboard
-    const savedStoreOrder = await addStoreOrder({
-      id: createdOrderId,
-      created_at: new Date().toISOString(),
-      customer: {
-        fullName: fullName.trim(),
-        email: cleanEmail,
-        phone: phone.trim(),
-        address: address.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        pincode: pincode.trim(),
-      },
-      items: items.map((item: any) => {
-        const rawP = item.price ?? item.product_price ?? 0;
-        const cleanP =
-          typeof rawP === "number"
-            ? rawP
-            : parseFloat(String(rawP).replace(/[^0-9.]/g, "")) || 0;
-        const nm = item.name || item.product_name || "Streetwear Piece";
-        return {
-          product_id: item.id || item.product_id,
-          name: nm,
-          product_name: nm,
-          price: cleanP,
-          product_price: cleanP,
-          quantity: Number(item.quantity) || 1,
-          image: item.image,
-          size: item.size || "M",
-          color: item.color,
-        };
-      }),
-      subtotal: calculatedSubtotal,
-      shipping: finalShipping,
-      discount,
-      total: finalTotal,
-      status: "confirmed",
-      payment_method: paymentMethod,
-      payment_status: paymentMethod === "COD" ? "pending" : "paid",
-    });
-
-    const shortOrderId = formatShortOrderId(createdOrderId);
-    const response = NextResponse.json({
-      success: true,
-      orderId: shortOrderId,
-      rawOrderId: createdOrderId,
-      order: {
-        ...savedStoreOrder,
-        short_id: shortOrderId,
-      },
-    });
-
-
-    return response;
-  } catch (error: any) {
     console.error("POST /api/orders error:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to place order" },
-      { status: 500 }
+      { success: false, message: "We could not place this order. Please try again." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

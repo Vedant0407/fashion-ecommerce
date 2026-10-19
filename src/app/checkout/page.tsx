@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 
 import { useCart } from "@/context/CartContext";
 import { createClient } from "@/lib/supabase/client";
-import OtpInput from "@/components/ui/OtpInput";
-import GatewayNotification from "@/components/ui/GatewayNotification";
 import { INDIAN_STATES, INDIA_STATES_AND_CITIES, getPincodeForCity } from "@/data/india-states-cities";
 import styles from "./checkout.module.css";
 
@@ -30,76 +28,45 @@ export default function CheckoutPage() {
   const [pincode, setPincode] = useState("");
   const [delivery, setDelivery] = useState("standard");
 
-  // Phone Verification States
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
-  const [verifiedPhone, setVerifiedPhone] = useState("");
-  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
-  const [phoneOtp, setPhoneOtp] = useState("");
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpError, setOtpError] = useState("");
-  const [toastSmsOtp, setToastSmsOtp] = useState<string | null>(null);
-  const [realSmsDispatched, setRealSmsDispatched] = useState<boolean>(false);
-  const [smsTimer, setSmsTimer] = useState<number>(60);
-  const [canResendSms, setCanResendSms] = useState<boolean>(false);
-
   useEffect(() => {
-    let interval: any;
-    if (isOtpModalOpen && smsTimer > 0) {
-      interval = setInterval(() => {
-        setSmsTimer((prev) => prev - 1);
-      }, 1000);
-    } else if (smsTimer === 0) {
-      setCanResendSms(true);
-    }
-    return () => clearInterval(interval);
-  }, [isOtpModalOpen, smsTimer]);
-
-  useEffect(() => {
+    let active = true;
     async function loadUser() {
-      // Check for locally saved user info first
-      const savedName = localStorage.getItem("greeno_user_name");
-      const savedEmail = localStorage.getItem("greeno_user_email");
-
-      if (savedName) {
-        setFullName(savedName);
-      }
-      if (savedEmail) {
-        setEmail(savedEmail);
-        setIsLoggedIn(true);
-      }
-
       try {
         const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user) {
-          setIsLoggedIn(true);
-          setEmail(user.email || savedEmail || "");
-          if (!savedName) {
-            setFullName(
-              user.user_metadata?.full_name ||
-              user.user_metadata?.name ||
-              ""
-            );
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!active || !user) return;
+        setIsLoggedIn(true);
+        setEmail(user.email || "");
+        setFullName(
+          (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name) ||
+          (typeof user.user_metadata?.name === "string" && user.user_metadata.name) ||
+          ""
+        );
+        setPhone(user.phone || "");
+        const accountResponse = await fetch("/api/account", { cache: "no-store" });
+        if (accountResponse.ok) {
+          const account = await accountResponse.json();
+          if (account.profile?.name) setFullName(account.profile.name);
+          if (account.profile?.phone) setPhone(account.profile.phone);
+          if (account.address) {
+            setFullName(account.address.fullName || account.profile?.name || "");
+            setPhone(account.address.phone || account.profile?.phone || "");
+            setAddress(account.address.address || "");
+            setCity(account.address.city || "");
+            setState(account.address.state || "");
+            setPincode(account.address.pincode || "");
           }
         }
-      } catch (err) {
-        // Ignore
+      } catch {
+        if (active) setIsLoggedIn(false);
       }
     }
-
-    loadUser();
+    void loadUser();
+    return () => { active = false; };
   }, []);
 
-  // Handle phone input change
   function handlePhoneChange(val: string) {
     setPhone(val);
-    if (isPhoneVerified && val.replace(/\D/g, "") !== verifiedPhone.replace(/\D/g, "")) {
-      setIsPhoneVerified(false);
-      setVerifiedPhone("");
-    }
   }
 
   // Available cities computed based on selected state
@@ -125,103 +92,6 @@ export default function CheckoutPage() {
     }
   }
 
-  // Send SMS OTP
-  async function handleSendPhoneOtp() {
-    setError("");
-    setOtpError("");
-
-    const cleanDigits = phone.replace(/\D/g, "");
-    if (cleanDigits.length < 10) {
-      setError("Please enter a valid 10-digit mobile number before requesting OTP.");
-      return;
-    }
-
-    try {
-      setOtpLoading(true);
-
-      const res = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          target: cleanDigits.slice(-10),
-          type: "phone",
-          name: fullName || "Valued Customer",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to send SMS verification code.");
-      }
-
-      if (data.realSmsSent) {
-        setRealSmsDispatched(true);
-        setToastSmsOtp(null); // Do not show on-screen passcode toast if delivered to physical phone
-      } else {
-        setRealSmsDispatched(false);
-        setToastSmsOtp(data.code || null);
-      }
-
-      setSmsTimer(60);
-      setCanResendSms(false);
-      setPhoneOtp("");
-      setIsOtpModalOpen(true);
-    } catch (err: any) {
-      console.error("SMS OTP SEND ERROR:", err);
-      setError(err.message || "Unable to send verification code.");
-    } finally {
-      setOtpLoading(false);
-    }
-  }
-
-  // Verify SMS OTP
-  async function handleVerifyPhoneOtp(e?: React.FormEvent, codeToVerify?: string) {
-    if (e) e.preventDefault();
-    setOtpError("");
-
-    const finalCode = (codeToVerify || phoneOtp).trim();
-
-    if (!finalCode || finalCode.length !== 6) {
-      setOtpError("Please enter the 6-digit SMS verification code.");
-      return;
-    }
-
-    try {
-      setOtpLoading(true);
-
-      const cleanDigits = phone.replace(/\D/g, "").slice(-10);
-
-      const res = await fetch("/api/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          target: cleanDigits,
-          code: finalCode,
-          type: "phone",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Invalid or expired SMS verification code.");
-      }
-
-      setIsPhoneVerified(true);
-      setVerifiedPhone(phone);
-      setIsOtpModalOpen(false);
-      setToastSmsOtp(null);
-      setPhoneOtp("");
-      setError("");
-    } catch (err: any) {
-      console.error("SMS OTP VERIFY ERROR:", err);
-      setOtpError(err.message || "Verification failed. Please try again.");
-    } finally {
-      setOtpLoading(false);
-    }
-  }
-
   async function placeOrder() {
     setError("");
 
@@ -243,13 +113,6 @@ export default function CheckoutPage() {
     const cleanDigits = phone.replace(/\D/g, "");
     if (cleanDigits.length < 10) {
       setError("Please enter a valid 10-digit phone number.");
-      return;
-    }
-
-    // Check phone verification
-    if (!isPhoneVerified || cleanDigits.slice(-10) !== verifiedPhone.replace(/\D/g, "").slice(-10)) {
-      setError("Please verify your phone number with the SMS OTP code before placing order.");
-      handleSendPhoneOtp();
       return;
     }
 
@@ -365,55 +228,7 @@ export default function CheckoutPage() {
         total: data.order?.total || completeOrderFallback.total,
       };
 
-      const cleanEmail = email.trim().toLowerCase();
-
-      // 1. Save single latest order
-      localStorage.setItem("greeno_last_order", JSON.stringify(placedOrder));
-
-      // 2. Save into scoped customer orders list for this email
-      try {
-        const scopedKey = `greeno_orders_${cleanEmail}`;
-        const rawScopedOrders = localStorage.getItem(scopedKey);
-        const scopedOrders = rawScopedOrders ? JSON.parse(rawScopedOrders) : [];
-        const filtered = Array.isArray(scopedOrders)
-          ? scopedOrders.filter((o: any) => o.id !== placedOrder.id)
-          : [];
-        filtered.unshift(placedOrder);
-        localStorage.setItem(scopedKey, JSON.stringify(filtered));
-      } catch (e) {
-        console.warn("Failed to persist customer order locally:", e);
-      }
-
-      // 3. Keep customer orders list updated strictly for this email
-      try {
-        const rawCustomerOrders = localStorage.getItem("greeno_customer_orders");
-        const customerOrders = rawCustomerOrders ? JSON.parse(rawCustomerOrders) : [];
-        const filtered = Array.isArray(customerOrders)
-          ? customerOrders.filter(
-              (o: any) =>
-                o.id !== placedOrder.id &&
-                o.customer?.email?.trim().toLowerCase() === cleanEmail
-            )
-          : [];
-        filtered.unshift(placedOrder);
-        localStorage.setItem("greeno_customer_orders", JSON.stringify(filtered));
-      } catch (e) {}
-
-      // 4. Save user email & name so account and orders load seamlessly
-      localStorage.setItem("greeno_user_email", email.trim());
-      if (fullName.trim()) {
-        localStorage.setItem("greeno_user_name", fullName.trim());
-      }
-      document.cookie = `greeno_session=${encodeURIComponent(email.trim())}; path=/; max-age=2592000; SameSite=Lax`;
-      window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new CustomEvent("greeno_order_updated"));
-
-      // 5. Redundantly ensure backend store has full order saved
-      fetch("/api/orders/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orders: [placedOrder] }),
-      }).catch(() => {});
 
       clearCart();
 
@@ -459,228 +274,6 @@ export default function CheckoutPage() {
 
   return (
     <main className={styles.page}>
-      {/* Realistic SMS Gateway Push Notification */}
-      {toastSmsOtp && (
-        <GatewayNotification
-          type="phone"
-          target={phone}
-          code={toastSmsOtp}
-          onAutoFill={(code) => {
-            setPhoneOtp(code);
-            handleVerifyPhoneOtp(undefined, code);
-          }}
-          onDismiss={() => setToastSmsOtp(null)}
-        />
-      )}
-
-      {/* Professional Phone OTP Verification Modal */}
-      {isOtpModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0, 0, 0, 0.88)",
-            backdropFilter: "blur(6px)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-        >
-          <div
-            style={{
-              background: "#0a0a0a",
-              border: "1px solid #333333",
-              color: "#ffffff",
-              width: "100%",
-              maxWidth: "460px",
-              padding: "40px 32px",
-              boxShadow: "0 24px 48px rgba(0,0,0,0.9)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-              <div
-                style={{
-                  padding: "4px 8px",
-                  background: "#ffffff",
-                  color: "#000000",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 900,
-                  fontSize: "10px",
-                  letterSpacing: "0.1em",
-                }}
-              >
-                SMS
-              </div>
-              <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", color: "#888888", textTransform: "uppercase" }}>
-                GREENO CARRIER VERIFICATION
-              </span>
-            </div>
-
-            <h2 style={{ fontSize: "22px", fontWeight: 800, letterSpacing: "0.06em", margin: "0 0 10px", textTransform: "uppercase" }}>
-              CONFIRM MOBILE NUMBER
-            </h2>
-            <p style={{ fontSize: "12px", color: "#aaaaaa", lineHeight: "1.5", margin: "0 0 14px" }}>
-              A 6-digit SMS verification code was dispatched to <strong>+91 {phone.replace(/\D/g, "").slice(-10)}</strong>. Enter the digits below to confirm your delivery contact.
-            </p>
-
-            {realSmsDispatched ? (
-              <div
-                style={{
-                  background: "#0c1d12",
-                  border: "1px solid #165e31",
-                  padding: "12px 14px",
-                  fontSize: "11px",
-                  color: "#86efac",
-                  lineHeight: "1.5",
-                  marginBottom: "20px",
-                }}
-              >
-                <strong style={{ display: "block", color: "#4ade80", marginBottom: "3px", letterSpacing: "0.08em" }}>
-                  REAL SMS TRANSMITTED TO YOUR PHONE
-                </strong>
-                A live SMS text message was sent across cellular networks to <strong>+91 {phone.replace(/\D/g, "").slice(-10)}</strong>. Please open your phone&apos;s Messages app to view your 6-digit code.
-              </div>
-            ) : (
-              <div
-                style={{
-                  background: "#18181b",
-                  border: "1px solid #3f3f46",
-                  padding: "12px 14px",
-                  fontSize: "11px",
-                  color: "#d4d4d8",
-                  lineHeight: "1.5",
-                  marginBottom: "20px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                  <strong style={{ color: "#f59e0b", letterSpacing: "0.06em" }}>CARRIER GATEWAY NOT CONFIGURED</strong>
-                  <Link
-                    href="/admin"
-                    target="_blank"
-                    style={{ color: "#ffffff", fontSize: "10px", textDecoration: "underline", letterSpacing: "0.06em" }}
-                  >
-                    CONFIG SMS →
-                  </Link>
-                </div>
-                <p style={{ margin: "0 0 6px", color: "#a1a1aa", fontSize: "11px" }}>
-                  To deliver real SMS texts to physical phones in India, enter your free Fast2SMS API key in the Admin Console.
-                </p>
-                {toastSmsOtp && (
-                  <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px dashed #333333", fontSize: "11px" }}>
-                    Development Passcode: <strong style={{ color: "#ffffff", letterSpacing: "0.2em" }}>{toastSmsOtp}</strong>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <form onSubmit={(e) => handleVerifyPhoneOtp(e)}>
-              <div style={{ textAlign: "center", marginBottom: "8px" }}>
-                <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: "#666666", textTransform: "uppercase" }}>
-                  ENTER 6-DIGIT PASSCODE
-                </span>
-
-                <OtpInput
-                  value={phoneOtp}
-                  onChange={(newCode) => {
-                    setPhoneOtp(newCode);
-                    if (newCode.length === 6) {
-                      handleVerifyPhoneOtp(undefined, newCode);
-                    }
-                  }}
-                  error={Boolean(otpError)}
-                  darkMode={true}
-                />
-              </div>
-
-              {otpError && (
-                <div style={{ color: "#ff4444", fontSize: "11px", marginBottom: "16px", textAlign: "center" }}>
-                  {otpError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={otpLoading || phoneOtp.length !== 6}
-                style={{
-                  width: "100%",
-                  background: "#ffffff",
-                  color: "#000000",
-                  border: "none",
-                  padding: "15px",
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  cursor: phoneOtp.length === 6 ? "pointer" : "not-allowed",
-                  opacity: phoneOtp.length === 6 ? 1 : 0.6,
-                  transition: "opacity 0.2s ease",
-                }}
-              >
-                {otpLoading ? "VERIFYING PASSCODE..." : "CONFIRM & VERIFY NUMBER"}
-              </button>
-            </form>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: "24px",
-                paddingTop: "16px",
-                borderTop: "1px solid #1f1f1f",
-              }}
-            >
-              {canResendSms ? (
-                <button
-                  type="button"
-                  onClick={handleSendPhoneOtp}
-                  disabled={otpLoading}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#ffffff",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    cursor: "pointer",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  RESEND SMS
-                </button>
-              ) : (
-                <span style={{ fontSize: "11px", color: "#777777", letterSpacing: "0.08em" }}>
-                  RESEND SMS IN {String(Math.floor(smsTimer / 60)).padStart(2, "0")}:{String(smsTimer % 60).padStart(2, "0")}
-                </span>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOtpModalOpen(false);
-                  setOtpError("");
-                  setPhoneOtp("");
-                }}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#888888",
-                  fontSize: "11px",
-                  cursor: "pointer",
-                  letterSpacing: "0.06em",
-                }}
-              >
-                CANCEL / CHANGE
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className={styles.container}>
         {/* Compact Top Header */}
         <div className={styles.headerRow}>
@@ -751,46 +344,18 @@ export default function CheckoutPage() {
                 />
               </div>
 
-              {/* Row 2: Phone with integrated OTP Action & Street Address */}
               <div className={styles.field}>
                 <label className={styles.label}>Phone Number</label>
-                <div className={styles.phoneWrapper}>
-                  <input
-                    className={styles.phoneInput}
-                    type="tel"
-                    placeholder="10-digit mobile number"
-                    value={phone}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    autoComplete="tel"
-                    required
-                  />
-                  {isPhoneVerified ? (
-                    <div className={styles.phoneVerifiedBadge}>
-                      <span className={styles.verifiedPill}>VERIFIED</span>
-                      <button
-                        type="button"
-                        className={styles.changePhoneBtn}
-                        onClick={() => {
-                          setIsPhoneVerified(false);
-                          setVerifiedPhone("");
-                        }}
-                      >
-                        Change
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className={styles.phoneActionBtn}
-                      onClick={handleSendPhoneOtp}
-                      disabled={otpLoading || phone.replace(/\D/g, "").length < 10}
-                    >
-                      {otpLoading ? "SENDING..." : "VERIFY OTP"}
-                    </button>
-                  )}
-                </div>
+                <input
+                  className={styles.input}
+                  type="tel"
+                  placeholder="10-digit mobile number"
+                  value={phone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  autoComplete="tel"
+                  required
+                />
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Street Address</label>
                 <input

@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getStoreCategories,
@@ -7,6 +8,8 @@ import {
 import { Category } from "@/lib/catalog";
 
 export async function GET() {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const categories = await getStoreCategories();
     return NextResponse.json({ success: true, count: categories.length, categories });
@@ -20,6 +23,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const body = await request.json();
     const { name, slug, image, description } = body;
@@ -58,6 +63,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const body = await request.json();
     const { id, slug, ...updates } = body;
@@ -101,6 +108,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const { searchParams } = new URL(request.url);
     const identifier = searchParams.get("id") || searchParams.get("slug");

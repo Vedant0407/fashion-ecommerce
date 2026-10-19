@@ -1,71 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyOtp } from "@/lib/otp-store";
 import { createClient } from "@/lib/supabase/server";
+import { syncUserProfile } from "@/lib/user-store";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { target, code, type = "email" } = body;
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const token = typeof body.code === "string" ? body.code.trim() : "";
+    const type = body.type === "recovery" ? "recovery" : "signup";
 
-    if (!target || !code) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6}$/.test(token)) {
       return NextResponse.json(
-        { success: false, message: "Target (email/phone) and 6-digit verification code are required." },
+        { success: false, message: "Enter the email address and all 6 digits from the latest email." },
         { status: 400 }
       );
     }
 
-    const cleanCode = code.trim();
-    let verified = false;
-    let verifiedName: string | undefined;
-
-    // 1. If email, attempt verification with Supabase's real email token first
-    if (type === "email") {
-      try {
-        const supabase = await createClient();
-        const { data: sbData, error: sbError } = await supabase.auth.verifyOtp({
-          email: target.trim(),
-          token: cleanCode,
-          type: "email",
-        });
-
-        if (!sbError && sbData?.user) {
-          verified = true;
-          verifiedName =
-            sbData.user.user_metadata?.full_name ||
-            sbData.user.user_metadata?.name;
-        }
-      } catch (sbErr) {
-        console.warn("Supabase verifyOtp check notice:", sbErr);
-      }
-    }
-
-    // 2. If not yet verified by Supabase (or if phone), verify with our OTP store
-    if (!verified) {
-      const localResult = await verifyOtp(target, cleanCode, type);
-      if (localResult.success) {
-        verified = true;
-        verifiedName = localResult.name;
-      }
-    }
-
-    if (!verified) {
-      return NextResponse.json(
-        { success: false, message: "Invalid or expired verification code. Please check your email or request a new code." },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      verified: true,
-      message: "Verification successful.",
-      name: verifiedName,
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type,
     });
-  } catch (error: any) {
+
+    if (error || !data.user) {
+      return NextResponse.json(
+        { success: false, message: "That code is invalid or expired. Request a new code and try again." },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    const user =
+      type === "signup"
+        ? await syncUserProfile(data.user)
+        : {
+            id: data.user.id,
+            email: data.user.email,
+            name:
+              data.user.user_metadata?.full_name ||
+              data.user.user_metadata?.name ||
+              data.user.email?.split("@")[0] ||
+              "",
+          };
+
+    return NextResponse.json(
+      { success: true, verified: true, user, message: "Email verified successfully." },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (error) {
     console.error("POST /api/auth/verify-otp error:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to verify code." },
-      { status: 500 }
+      { success: false, message: "Verification is temporarily unavailable." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TouchEvent as ReactTouchEvent } from "react";
 import { motion } from "framer-motion";
 import { Star, CheckCircle, Quote } from "lucide-react";
@@ -17,48 +17,52 @@ export interface TestimonialItem {
   date: string;
 }
 
-export const TESTIMONIALS: TestimonialItem[] = [
-  {
-    id: "test-1",
-    author: "Aarav M.",
-    location: "Mumbai, IN",
-    initials: "AM",
-    rating: 5,
-    product: "WASHED TEE GREEN",
-    headline: "The collar structure and drop shoulders are flawless.",
-    comment:
-      "Honestly blown away by the fabric weight. The 300gsm combed cotton feels substantial with a natural architectural drape, and the wash gives it an understated vintage look out of the box.",
-    date: "Verified 3 days ago",
-  },
-  {
-    id: "test-2",
-    author: "Marcus K.",
-    location: "London, UK",
-    initials: "MK",
-    rating: 5,
-    product: "OVERSIZED TEE BLACK",
-    headline: "Rivals luxury European streetwear houses.",
-    comment:
-      "The boxy drape sits exactly right over tailored pants or cargos. After 10+ washes, the collar remains crisp and the deep noir color hasn't faded. An absolute daily staple.",
-    date: "Verified 1 week ago",
-  },
-  {
-    id: "test-3",
-    author: "Dev R.",
-    location: "New Delhi, IN",
-    initials: "DR",
-    rating: 5,
-    product: "TAILORED POPLIN SHIRT",
-    headline: "Immaculate craftsmanship at an unbelievable level.",
-    comment:
-      "Mother of pearl buttons and clean French seams. Wore it to a gallery opening and got asked where it was from multiple times. The silhouette speaks for itself without loud logos.",
-    date: "Verified 2 weeks ago",
-  },
-];
-
 export default function StreetwearTestimonialsSection() {
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/reviews", { cache: "no-store", signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to load reviews");
+        return response.json();
+      })
+      .then((data) => {
+        const reviews: Array<{
+          id: string;
+          verified?: boolean;
+          author?: string;
+          location?: string;
+          rating?: number;
+          product_name?: string;
+          title?: string;
+          comment?: string;
+          date?: string;
+          created_at?: string;
+        }> = Array.isArray(data.reviews) ? data.reviews : [];
+        setTestimonials(reviews.filter((review) => review.verified === true).map((review) => {
+          const author = typeof review.author === "string" && review.author.trim() ? review.author.trim() : "Verified customer";
+          const initials = author.split(/\s+/).slice(0, 2).map((part: string) => part[0]).join("").toUpperCase();
+          return {
+            id: String(review.id),
+            author,
+            location: review.location || "India",
+            initials: initials || "VC",
+            rating: Math.max(1, Math.min(5, Number(review.rating) || 5)),
+            product: review.product_name || "",
+            headline: review.title || "Verified purchase",
+            comment: review.comment || "",
+            date: review.date || (review.created_at ? new Date(review.created_at).toLocaleDateString("en-IN") : ""),
+          };
+        }));
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") console.error("Unable to load customer reviews.", error);
+      });
+    return () => controller.abort();
+  }, []);
 
   const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0];
@@ -69,7 +73,7 @@ export default function StreetwearTestimonialsSection() {
     const start = touchStart.current;
     const touch = event.changedTouches[0];
     touchStart.current = null;
-    if (!start || !touch) return;
+    if (!start || !touch || testimonials.length < 2) return;
 
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
@@ -78,9 +82,11 @@ export default function StreetwearTestimonialsSection() {
     // A right swipe advances to the next testimonial; a left swipe goes back.
     const direction = deltaX > 0 ? 1 : -1;
     setActiveTestimonialIndex((current) =>
-      (current + direction + TESTIMONIALS.length) % TESTIMONIALS.length
+      (current + direction + testimonials.length) % testimonials.length
     );
   };
+
+  if (testimonials.length === 0) return null;
 
   return (
     <section className="streetwear-testimonials-section">
@@ -97,7 +103,7 @@ export default function StreetwearTestimonialsSection() {
           onTouchEnd={handleTouchEnd}
           aria-live="polite"
         >
-          {TESTIMONIALS.map((item, idx) => (
+          {testimonials.map((item, idx) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 24 }}
@@ -155,7 +161,7 @@ export default function StreetwearTestimonialsSection() {
         </div>
 
         <div className="streetwear-testimonials-pagination" role="group" aria-label="Choose a testimonial">
-          {TESTIMONIALS.map((item, idx) => (
+          {testimonials.map((item, idx) => (
             <button
               key={item.id}
               type="button"

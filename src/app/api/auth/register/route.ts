@@ -1,155 +1,97 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeEmail } from "@/lib/user-store";
-import {
-  EMAIL_OTP_COOKIE,
-  emailOtpCookieOptions,
-  verifyEmailOtpChallenge,
-} from "@/lib/email-otp-cookie";
+import { normalizeEmail, syncUserProfile } from "@/lib/user-store";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, password, code } = body;
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const email = typeof body.email === "string" ? normalizeEmail(body.email) : "";
+    const password = typeof body.password === "string" ? body.password : "";
 
-    if (!name || typeof name !== "string" || !name.trim()) {
-      return NextResponse.json(
-        { success: false, message: "Full name is required." },
-        { status: 400 }
-      );
+    if (name.length < 2 || name.length > 120) {
+      return NextResponse.json({ success: false, message: "Enter your full name." }, { status: 400 });
     }
-    if (!email || typeof email !== "string") {
-      return NextResponse.json(
-        { success: false, message: "A valid email address is required." },
-        { status: 400 }
-      );
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ success: false, message: "Enter a valid email address." }, { status: 400 });
     }
-
-    const cleanEmail = normalizeEmail(email);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      return NextResponse.json(
-        { success: false, message: "Please enter a valid email address." },
-        { status: 400 }
-      );
-    }
-    if (!password || typeof password !== "string" || password.length < 6) {
-      return NextResponse.json(
-        { success: false, message: "Password must be at least 6 characters long." },
-        { status: 400 }
-      );
-    }
-    if (typeof code !== "string" || !/^\d{6}$/.test(code.trim())) {
-      return NextResponse.json(
-        { success: false, message: "Please enter the complete 6-digit verification code." },
-        { status: 400 }
-      );
-    }
-
-    const verification = await verifyEmailOtpChallenge(
-      request.cookies.get(EMAIL_OTP_COOKIE)?.value,
-      cleanEmail,
-      code
-    );
-    if (!verification.success) {
-      const response = NextResponse.json(
-        { success: false, message: verification.message },
-        { status: 400 }
-      );
-      if (verification.updatedToken && verification.expiresAt) {
-        response.cookies.set(
-          EMAIL_OTP_COOKIE,
-          verification.updatedToken,
-          emailOtpCookieOptions(verification.expiresAt)
-        );
-      } else if (verification.clearCookie) {
-        response.cookies.set(EMAIL_OTP_COOKIE, "", emailOtpCookieOptions());
-      }
-      return response;
+    if (password.length < 8) {
+      return NextResponse.json({ success: false, message: "Use a password with at least 8 characters." }, { status: 400 });
     }
 
     const supabase = await createClient();
-    const confirmationRedirect = new URL(
-      "/auth/callback?next=%2Faccount",
-      request.url
-    ).toString();
+    const confirmationRedirect = new URL("/auth/callback?next=%2Faccount", request.url).toString();
     const { data, error } = await supabase.auth.signUp({
-      email: cleanEmail,
+      email,
       password,
       options: {
-        data: { full_name: name.trim(), name: name.trim() },
+        data: { full_name: name, name },
         emailRedirectTo: confirmationRedirect,
       },
     });
 
-    if (error) {
+    if (error || !data.user) {
+      if (error) {
+        console.error("Supabase signup rejected:", {
+          code: error.code,
+          status: error.status,
+          message: error.message.replaceAll(email, "[redacted email]"),
+        });
+      } else {
+        console.error("Supabase signup returned no user:", {
+          hasSession: Boolean(data.session),
+        });
+      }
       const alreadyExists =
-        error.code === "user_already_exists" ||
-        error.code === "email_exists" ||
-        /already registered/i.test(error.message);
+        error?.code === "user_already_exists" ||
+        error?.code === "email_exists" ||
+        /already registered/i.test(error?.message || "");
       return NextResponse.json(
         {
           success: false,
           message: alreadyExists
-            ? "An account with this email already exists. Log in or use Forgot Password."
-            : "Supabase could not create your account. Please try again.",
+            ? "An account with this email already exists. Log in or reset its password."
+            : "We could not create your account. Please try again.",
         },
-        { status: alreadyExists ? 409 : 502 }
+        { status: alreadyExists ? 409 : 503 }
       );
     }
 
-    if (!data.user) {
+    // Supabase intentionally returns an obfuscated user for an existing, confirmed
+    // email when confirmations are enabled. It has no identities, and no new
+    // confirmation email is sent. Don't tell the customer to wait for a code.
+    if (!data.session && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
       return NextResponse.json(
-        { success: false, message: "Supabase did not create the account. Please try again." },
-        { status: 502 }
+        {
+          success: false,
+          message: "This email may already be registered. Log in or reset the password; if signup is still pending, the login screen can request a fresh code.",
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    if (!data.session) {
-      const response = NextResponse.json({
-        success: true,
-        requiresEmailConfirmation: true,
-        user: {
-          id: data.user.id,
-          email: cleanEmail,
-          name: data.user.user_metadata?.full_name || name.trim(),
-        },
-        message:
-          "Your GreenO code is verified. Supabase also requires email confirmation, so check your inbox and open its confirmation link before logging in.",
-      });
-      response.cookies.set(EMAIL_OTP_COOKIE, "", emailOtpCookieOptions());
-      return response;
+    if (data.session) {
+      const profile = await syncUserProfile(data.user);
+      return NextResponse.json(
+        { success: true, requiresEmailConfirmation: false, user: profile },
+        { headers: { "Cache-Control": "no-store" } }
+      );
     }
 
-    const response = NextResponse.json(
+    return NextResponse.json(
       {
         success: true,
-        user: {
-          id: data.user.id,
-          email: cleanEmail,
-          name:
-            data.user.user_metadata?.full_name ||
-            data.user.user_metadata?.name ||
-            name.trim(),
-          email_verified: Boolean(data.user.email_confirmed_at || data.user.confirmed_at),
-          provider: data.user.app_metadata?.provider || "email",
-        },
-        message: "Account created and signed in successfully.",
+        requiresEmailConfirmation: true,
+        user: { id: data.user.id, email, name },
+        message: "We sent a 6-digit Supabase verification code to your email.",
       },
       { headers: { "Cache-Control": "no-store" } }
     );
-    response.cookies.set(EMAIL_OTP_COOKIE, "", emailOtpCookieOptions());
-    response.cookies.set("greeno_session", encodeURIComponent(cleanEmail), {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-      sameSite: "lax",
-      httpOnly: false,
-    });
-    return response;
   } catch (error) {
     console.error("POST /api/auth/register error:", error);
     return NextResponse.json(
-      { success: false, message: "Registration failed. Please try again." },
-      { status: 500 }
+      { success: false, message: "Registration is temporarily unavailable." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

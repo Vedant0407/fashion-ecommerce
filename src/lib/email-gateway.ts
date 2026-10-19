@@ -1,5 +1,4 @@
 import nodemailer from "nodemailer";
-import { getStoreSettings } from "./store-data";
 
 export type EmailProvider = "gmail" | "smtp" | "brevo" | "resend" | "none";
 
@@ -91,70 +90,15 @@ export async function sendRealEmail(
 ): Promise<EmailDispatchResult> {
   const cleanEmail = targetEmail.trim().toLowerCase();
 
-  // Load configured store settings
-  let settings: any = {};
-  try {
-    settings = await getStoreSettings();
-  } catch (e) {
-    // Ignore store read error
-  }
-
-  // Determine credentials from Store Settings or Environment Variables
-  const preferredProvider: string =
-    settings.emailProvider || process.env.EMAIL_PROVIDER || "gmail";
-
-  // SMTP Settings
-  const smtpHost =
-    settings.smtpHost ||
-    process.env.SMTP_HOST ||
-    (preferredProvider === "gmail" ? "smtp.gmail.com" : "");
-
-  const smtpPort =
-    Number(settings.smtpPort || process.env.SMTP_PORT) ||
-    (preferredProvider === "gmail" ? 465 : 587);
-
-  const smtpSecure =
-    settings.smtpSecure !== undefined
-      ? Boolean(settings.smtpSecure)
-      : smtpPort === 465;
-
-  let smtpUser = settings.smtpUser || process.env.SMTP_USER || "";
-  let smtpPass = settings.smtpPass || process.env.SMTP_PASS || "";
-
-  // If credentials are missing in process.env (e.g. if server was started before .env.local was updated), read directly from disk
-  if (!smtpPass || !smtpUser) {
-    try {
-      const fs = await import("fs");
-      const path = await import("path");
-      const envPath = path.join(process.cwd(), ".env.local");
-      if (fs.existsSync(envPath)) {
-        const lines = fs.readFileSync(envPath, "utf-8").split("\n");
-        for (const line of lines) {
-          const parts = line.split("=");
-          if (parts.length >= 2) {
-            const k = parts[0].trim();
-            const val = parts.slice(1).join("=").trim().replace(/^["']|["']$/g, "");
-            if (k === "SMTP_PASS" && !smtpPass) smtpPass = val;
-            if (k === "SMTP_USER" && !smtpUser) smtpUser = val;
-          }
-        }
-      }
-    } catch {
-      // Ignore disk read error
-    }
-  }
-
-  const smtpFrom =
-    settings.smtpFrom ||
-    process.env.SMTP_FROM ||
-    (smtpUser ? `GreenO Security <${smtpUser}>` : "GreenO Security <concierge@greeno.in>");
-
-  // Brevo API Key
-  const brevoApiKey = settings.brevoApiKey || process.env.BREVO_API_KEY || "";
-
-  // Resend API Key
-  const resendApiKey = settings.resendApiKey || process.env.RESEND_API_KEY || "";
-
+  const preferredProvider = process.env.EMAIL_PROVIDER || "none";
+  const smtpHost = process.env.SMTP_HOST || (preferredProvider === "gmail" ? "smtp.gmail.com" : "");
+  const smtpPort = Number(process.env.SMTP_PORT) || (preferredProvider === "gmail" ? 465 : 587);
+  const smtpSecure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : smtpPort === 465;
+  const smtpUser = process.env.SMTP_USER?.trim() || "";
+  const smtpPass = process.env.SMTP_PASS?.trim() || "";
+  const smtpFrom = process.env.SMTP_FROM || (smtpUser ? `GreenO Security <${smtpUser}>` : "GreenO Security <concierge@greeno.in>");
+  const brevoApiKey = process.env.BREVO_API_KEY?.trim() || "";
+  const resendApiKey = process.env.RESEND_API_KEY?.trim() || "";
   // 1. Try Brevo REST API if configured
   if (brevoApiKey && (preferredProvider === "brevo" || (!smtpUser && !resendApiKey))) {
     const brevoResult = await dispatchBrevoApi(brevoApiKey, cleanEmail, otpCode, recipientName, smtpFrom);
@@ -191,21 +135,11 @@ export async function sendRealEmail(
     if (brevoResult.sent) return brevoResult;
   }
 
-  console.log(`\n======================================================`);
-  console.log(`[REAL EMAIL GATEWAY NOTICE]`);
-  console.log(`No active Email SMTP or API Key configured.`);
-  console.log(`Recipient: ${cleanEmail}`);
-  console.log(`To receive the 6-digit code in your Gmail / email inbox:`);
-  console.log(`1. Enter your Gmail & App Password in /admin -> EMAIL GATEWAY`);
-  console.log(`   or in .env.local as SMTP_USER=... and SMTP_PASS=...`);
-  console.log(`2. Or enter a free Brevo / Resend API key.`);
-  console.log(`======================================================\n`);
-
   return {
     sent: false,
     provider: "none",
     message:
-      "Email SMTP not configured. Please enter your Gmail App Password or Brevo API Key in /admin -> EMAIL GATEWAY or .env.local to receive 6-digit codes in your inbox.",
+      "Email delivery is not configured on the server. Add a supported mail provider to the server environment.",
   };
 }
 

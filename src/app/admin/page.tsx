@@ -10,7 +10,8 @@ import { formatShortOrderId } from "@/lib/order-utils";
 export default function AdminPage() {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [passkeyInput, setPasskeyInput] = useState<string>("");
+  const [adminEmailInput, setAdminEmailInput] = useState("");
+  const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [authError, setAuthError] = useState<string>("");
 
   // Navigation
@@ -26,7 +27,6 @@ export default function AdminPage() {
     sent?: boolean;
     provider?: string;
     message: string;
-    details?: any;
   } | null>(null);
 
   // Email Testing State
@@ -38,7 +38,6 @@ export default function AdminPage() {
     provider?: string;
     message: string;
     error?: string;
-    details?: any;
     duration?: string;
   } | null>(null);
 
@@ -53,7 +52,6 @@ export default function AdminPage() {
     storeNotice: "All orders dispatched within 24 hours.",
     supportPhone: "+91 98765 43210",
     supportEmail: "concierge@greeno.in",
-    adminPasskey: "aman2026",
     currency: "INR",
   });
 
@@ -172,86 +170,25 @@ export default function AdminPage() {
   async function handleUploadStoryMedia(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.type.startsWith("video/")) {
-      if (file.size > 4.5 * 1024 * 1024) {
-        alert(
-          "This video exceeds 4.5MB (serverless upload limit). Please use a video under 4MB, or paste a hosted video URL below."
-        );
-        return;
-      }
-      setUploadingStoryMedia(true);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        if (dataUrl) {
-          setEditingStory((prev) => ({ ...prev, image: dataUrl }));
-          triggerToast("Video reel loaded successfully!");
-        }
-        setUploadingStoryMedia(false);
-      };
-      reader.onerror = () => {
-        setUploadingStoryMedia(false);
-        alert("Could not read video file from your device.");
-      };
-      reader.readAsDataURL(file);
-      return;
-    }
-
-    // For images: compress to max 1080x1920 for ultra-fast uploads and serverless compatibility
     setUploadingStoryMedia(true);
     try {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const rawDataUrl = reader.result as string;
-        const img = new window.Image();
-        img.onload = () => {
-          try {
-            const canvas = document.createElement("canvas");
-            let { width, height } = img;
-            const maxW = 1080;
-            const maxH = 1920;
-
-            if (width > maxW || height > maxH) {
-              const ratio = Math.min(maxW / width, maxH / height);
-              width = Math.round(width * ratio);
-              height = Math.round(height * ratio);
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            if (ctx) {
-              ctx.drawImage(img, 0, 0, width, height);
-              const compressedUrl = canvas.toDataURL("image/webp", 0.88);
-              setEditingStory((prev) => ({ ...prev, image: compressedUrl }));
-              triggerToast("Editorial photo optimized and loaded!");
-            } else {
-              setEditingStory((prev) => ({ ...prev, image: rawDataUrl }));
-              triggerToast("Photo loaded successfully!");
-            }
-          } catch {
-            setEditingStory((prev) => ({ ...prev, image: rawDataUrl }));
-          }
-          setUploadingStoryMedia(false);
-        };
-        img.onerror = () => {
-          setEditingStory((prev) => ({ ...prev, image: rawDataUrl }));
-          setUploadingStoryMedia(false);
-        };
-        img.src = rawDataUrl;
-      };
-      reader.onerror = () => {
-        setUploadingStoryMedia(false);
-        alert("Could not read image file from your device.");
-      };
-      reader.readAsDataURL(file);
-    } catch (err: any) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "stories");
+      const response = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.url) {
+        throw new Error(result.message || "Could not save the story media.");
+      }
+      setEditingStory((previous) => ({ ...previous, image: result.url }));
+      triggerToast("Story media saved to persistent storage.");
+    } catch (error: any) {
+      alert(error.message || "Could not save the story media.");
+    } finally {
       setUploadingStoryMedia(false);
-      alert(err.message || "Failed to load media.");
+      e.target.value = "";
     }
   }
-
   async function handleSaveStory(e: React.FormEvent) {
     e.preventDefault();
     if (!editingStory?.title || !editingStory?.image) {
@@ -339,13 +276,20 @@ export default function AdminPage() {
     }
   }
 
-  // Always require passkey on every open or refresh
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("greeno_admin_token");
-      sessionStorage.removeItem("greeno_admin_token");
-    }
-    setIsAuthenticated(false);
+    let active = true;
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((result) => {
+        if (active && result.success && result.admin) setIsAuthenticated(true);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function fetchAllData() {
@@ -365,62 +309,7 @@ export default function AdminPage() {
 
       if (prodRes.ok) {
         const prodData = await prodRes.json();
-        const serverProducts: Product[] = prodData.products || [];
-
-        // Also merge with any products saved locally in browser
-        let localProducts: Product[] = [];
-        try {
-          const raw = localStorage.getItem("greeno_store_products");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) localProducts = parsed;
-          }
-        } catch {}
-
-        const productMap = new Map<string, Product>();
-        // Add local products FIRST so newly created custom items are preserved at the top
-        for (const lp of localProducts) {
-          if (!lp) continue;
-          const id = (lp.id && lp.id.trim()) || (lp.name ? lp.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "") || `prod-${Date.now()}`;
-          lp.id = id;
-          productMap.set(id, lp);
-        }
-
-        // Then add server products that aren't already locally managed
-        let hadMissing = false;
-        const missingToSync: Product[] = [];
-        for (const sp of serverProducts) {
-          if (sp?.id) {
-            if (!productMap.has(sp.id)) {
-              productMap.set(sp.id, sp);
-            }
-          }
-        }
-
-        // Check if server is missing any local products to background sync
-        const serverIds = new Set(serverProducts.map((p) => p?.id).filter(Boolean));
-        for (const lp of localProducts) {
-          if (lp?.id && !serverIds.has(lp.id)) {
-            missingToSync.push(lp);
-            hadMissing = true;
-          }
-        }
-
-        const mergedProducts = Array.from(productMap.values());
-        setProducts(mergedProducts);
-        try {
-          localStorage.setItem("greeno_store_products", JSON.stringify(mergedProducts));
-          document.cookie = `greeno_custom_products=${encodeURIComponent(JSON.stringify(mergedProducts))}; path=/; max-age=31536000; SameSite=Lax`;
-        } catch {}
-
-        // Background sync to server if local products were missing
-        if (hadMissing && missingToSync.length > 0) {
-          fetch("/api/admin/products/sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ products: missingToSync }),
-          }).catch(() => {});
-        }
+        setProducts(Array.isArray(prodData.products) ? prodData.products : []);
       }
       if (catRes.ok) {
         const catData = await catRes.json();
@@ -428,118 +317,13 @@ export default function AdminPage() {
       }
       if (orderRes.ok) {
         const orderData = await orderRes.json();
-        const serverOrders = orderData.orders || [];
-
-        // Also read cookie-based status overrides if present
-        let cookieStatuses: Record<string, string> = {};
-        try {
-          const cookieMatch = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("greeno_order_statuses="));
-          if (cookieMatch) {
-            cookieStatuses = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
-          }
-        } catch {}
-
-        // Also merge with any orders saved locally in browser
-        let localOrders: StoreOrder[] = [];
-        try {
-          const rawAll = localStorage.getItem("greeno_all_orders");
-          const rawCust = localStorage.getItem("greeno_customer_orders");
-          const arr1 = rawAll ? JSON.parse(rawAll) : [];
-          const arr2 = rawCust ? JSON.parse(rawCust) : [];
-          localOrders = [...arr1, ...arr2];
-        } catch {}
-
-        const orderMap = new Map<string, StoreOrder>();
-        // 1. Add server orders first
-        for (const o of serverOrders) {
-          if (o?.id) {
-            const statusOverride = cookieStatuses[o.id];
-            orderMap.set(o.id, {
-              ...o,
-              status: (statusOverride || o.status) as StoreOrder["status"],
-            });
-          }
-        }
-
-        // 2. Intelligently merge local orders:
-        // Local orders with updated statuses or local changes MUST NOT be dropped!
-        for (const lo of localOrders) {
-          if (!lo?.id) continue;
-          const statusOverride = cookieStatuses[lo.id];
-          const serverOrder = orderMap.get(lo.id);
-          if (!serverOrder) {
-            orderMap.set(lo.id, {
-              ...lo,
-              status: (statusOverride || lo.status) as StoreOrder["status"],
-            });
-          } else {
-            // Keep local order's status if local has progress or cookie override
-            const chosenStatus = (statusOverride || lo.status || serverOrder.status) as StoreOrder["status"];
-            const chosenPaymentStatus = lo.payment_status || serverOrder.payment_status;
-            orderMap.set(lo.id, {
-              ...serverOrder,
-              ...lo,
-              status: chosenStatus,
-              payment_status: chosenPaymentStatus,
-              items: Array.isArray(lo.items) && lo.items.length > 0 ? lo.items : serverOrder.items,
-              customer: lo.customer?.address ? lo.customer : serverOrder.customer,
-            });
-          }
-        }
-
-        const mergedOrders = Array.from(orderMap.values()).sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-
-        setOrders(mergedOrders);
-        try {
-          localStorage.setItem("greeno_all_orders", JSON.stringify(mergedOrders));
-        } catch {}
+        setOrders(Array.isArray(orderData.orders) ? orderData.orders : []);
       }
 
-      // Fetch & Merge Returns / Exchanges
       if (retRes.ok) {
         const retData = await retRes.json();
-        const serverReturns: ReturnExchangeRequest[] = retData.returns || [];
-
-        let localReturns: ReturnExchangeRequest[] = [];
-        try {
-          const rawRet = localStorage.getItem("greeno_returns");
-          localReturns = rawRet ? JSON.parse(rawRet) : [];
-        } catch {}
-
-        const returnMap = new Map<string, ReturnExchangeRequest>();
-        for (const r of serverReturns) {
-          if (r?.id) returnMap.set(r.id, r);
-        }
-
-        let hadMissingReturns = false;
-        const missingReturnsToSync: ReturnExchangeRequest[] = [];
-        for (const lr of localReturns) {
-          if (lr?.id && !returnMap.has(lr.id)) {
-            returnMap.set(lr.id, lr);
-            missingReturnsToSync.push(lr);
-            hadMissingReturns = true;
-          }
-        }
-
-        const mergedReturns = Array.from(returnMap.values()).sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-
-        setReturnRequests(mergedReturns);
-
-        if (hadMissingReturns && missingReturnsToSync.length > 0) {
-          fetch("/api/returns/sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ returns: missingReturnsToSync }),
-          }).catch(() => {});
-        }
+        setReturnRequests(Array.isArray(retData.returns) ? retData.returns : []);
       }
-
       if (coupRes.ok) {
         const coupData = await coupRes.json();
         if (coupData.coupons) setCoupons(coupData.coupons);
@@ -574,46 +358,51 @@ export default function AdminPage() {
     }
   }, [isAuthenticated]);
 
-  // Handle Passkey Login
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
-    const cleanPass = passkeyInput.trim();
-
-    if (cleanPass === "aman2026" || cleanPass === settings.adminPasskey) {
-      setIsAuthenticated(true);
-      setAuthError("");
+    setAuthError("");
+    if (!adminEmailInput.trim() || !adminPasswordInput) {
+      setAuthError("Enter your administrator email and password.");
       return;
     }
 
-    // Secondary check against server settings in case passkey was updated in store data
     try {
-      const res = await fetch("/api/admin/settings");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.settings?.adminPasskey && cleanPass === data.settings.adminPasskey) {
-          setSettings(data.settings);
-          setIsAuthenticated(true);
-          setAuthError("");
-          return;
-        }
+      const loginResponse = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: adminEmailInput.trim(), password: adminPasswordInput }),
+      });
+      const loginResult = await loginResponse.json();
+      if (!loginResponse.ok || !loginResult.success) {
+        setAuthError(loginResult.message || "Login failed.");
+        return;
       }
-    } catch {
-      // ignore
-    }
 
-    setAuthError("Incorrect passkey. Access denied.");
+      const accessResponse = await fetch("/api/admin/session", { cache: "no-store" });
+      const accessResult = await accessResponse.json();
+      if (!accessResponse.ok || !accessResult.success || !accessResult.admin) {
+        await fetch("/api/auth/logout", { method: "POST" });
+        setAuthError("This account does not have administrator access.");
+        return;
+      }
+
+      localStorage.setItem("greeno_user_email", loginResult.user.email);
+      localStorage.setItem("greeno_user_name", loginResult.user.name || "");
+      setIsAuthenticated(true);
+      setAdminPasswordInput("");
+    } catch {
+      setAuthError("Admin sign-in is temporarily unavailable.");
+    }
   }
 
-  function handleLock() {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("greeno_admin_token");
-      sessionStorage.removeItem("greeno_admin_token");
-    }
+  async function handleLock() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    localStorage.removeItem("greeno_user_email");
+    localStorage.removeItem("greeno_user_name");
     setIsAuthenticated(false);
-    setPasskeyInput("");
+    setAdminPasswordInput("");
     setAuthError("");
   }
-
   // ----------------- Products CRUD -----------------
   async function handleSaveProduct(e: React.FormEvent) {
     e.preventDefault();
@@ -700,23 +489,6 @@ export default function AdminPage() {
           }
         } catch {}
 
-        // Persist immediately to localStorage with new product AT THE FRONT
-        try {
-          const raw = localStorage.getItem("greeno_store_products");
-          let list: Product[] = raw ? JSON.parse(raw) : [];
-          if (!Array.isArray(list)) list = [];
-          const filtered = list.filter((p) => p && p.id && p.id !== savedProduct.id);
-          const updatedList = [savedProduct, ...filtered];
-          localStorage.setItem("greeno_store_products", JSON.stringify(updatedList));
-
-          // Set cookie bridge for serverless compatibility
-          document.cookie = `greeno_custom_products=${encodeURIComponent(
-            JSON.stringify(updatedList)
-          )}; path=/; max-age=31536000; SameSite=Lax`;
-        } catch (storageErr) {
-          console.warn("Storage sync error:", storageErr);
-        }
-
         // Update local React state immediately (Row 1 at top)
         setProducts((prev) => [
           savedProduct,
@@ -754,6 +526,7 @@ export default function AdminPage() {
       for (let i = 0; i < files.length; i++) {
         formData.append("files", files[i]);
       }
+      formData.append("type", "products");
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",
@@ -826,6 +599,7 @@ export default function AdminPage() {
     try {
       const formData = new FormData();
       formData.append("files", files[0]);
+      formData.append("type", "categories");
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",
@@ -861,18 +635,6 @@ export default function AdminPage() {
       });
 
       if (res.ok) {
-        try {
-          const raw = localStorage.getItem("greeno_store_products");
-          if (raw) {
-            const list = JSON.parse(raw);
-            if (Array.isArray(list)) {
-              const filtered = list.filter((p: any) => p.id !== id);
-              localStorage.setItem("greeno_store_products", JSON.stringify(filtered));
-              document.cookie = `greeno_custom_products=${encodeURIComponent(JSON.stringify(filtered))}; path=/; max-age=31536000; SameSite=Lax`;
-            }
-          }
-        } catch {}
-
         setProducts((prev) => prev.filter((p) => p.id !== id));
         window.dispatchEvent(new Event("greeno_products_updated"));
         window.dispatchEvent(new Event("storage"));
@@ -901,20 +663,6 @@ export default function AdminPage() {
         setProducts((prev) =>
           prev.map((p) => (p.id === productId ? { ...p, stock: clampedStock } : p))
         );
-
-        try {
-          const raw = localStorage.getItem("greeno_store_products");
-          if (raw) {
-            const list = JSON.parse(raw);
-            if (Array.isArray(list)) {
-              const updated = list.map((p: any) =>
-                p.id === productId ? { ...p, stock: clampedStock } : p
-              );
-              localStorage.setItem("greeno_store_products", JSON.stringify(updated));
-              document.cookie = `greeno_custom_products=${encodeURIComponent(JSON.stringify(updated))}; path=/; max-age=31536000; SameSite=Lax`;
-            }
-          }
-        } catch {}
 
         window.dispatchEvent(new Event("greeno_products_updated"));
         window.dispatchEvent(new Event("storage"));
@@ -998,68 +746,8 @@ export default function AdminPage() {
           prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
         );
 
-        // Update in localStorage so client and customer account tabs retain it forever
-        try {
-          const updateLocalList = (key: string) => {
-            const raw = localStorage.getItem(key);
-            if (raw) {
-              const list = JSON.parse(raw);
-              if (Array.isArray(list)) {
-                const updated = list.map((o: any) =>
-                  o.id === orderId ? { ...o, status: newStatus } : o
-                );
-                localStorage.setItem(key, JSON.stringify(updated));
-              }
-            }
-          };
-          updateLocalList("greeno_all_orders");
-          updateLocalList("greeno_customer_orders");
-
-          for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith("greeno_orders_")) {
-              updateLocalList(k);
-            }
-          }
-
-          if (existingOrder?.customer?.email) {
-            const cleanCustEmail = existingOrder.customer.email.trim().toLowerCase();
-            updateLocalList(`greeno_orders_${cleanCustEmail}`);
-          }
-
-          const rawLast = localStorage.getItem("greeno_last_order");
-          if (rawLast) {
-            const last = JSON.parse(rawLast);
-            if (last?.id === orderId) {
-              last.status = newStatus;
-              localStorage.setItem("greeno_last_order", JSON.stringify(last));
-            }
-          }
-
-          // Also update cookie directly in document.cookie for instant client-side and server bridge
-          const cookieMatch = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("greeno_order_statuses="));
-          let statusMap: Record<string, string> = {};
-          if (cookieMatch) {
-            try {
-              statusMap = JSON.parse(decodeURIComponent(cookieMatch.split("=")[1]));
-            } catch {}
-          }
-          statusMap[orderId] = newStatus;
-          document.cookie = `greeno_order_statuses=${encodeURIComponent(
-            JSON.stringify(statusMap)
-          )}; path=/; max-age=31536000; SameSite=Lax`;
-
-          window.dispatchEvent(new Event("storage"));
-          window.dispatchEvent(
-            new CustomEvent("greeno_order_updated", {
-              detail: { orderId, status: newStatus },
-            })
-          );
-        } catch {}
-
-        triggerToast(`Order status updated to ${newStatus.toUpperCase()}`);
+        window.dispatchEvent(new CustomEvent("greeno_order_updated", { detail: { orderId, status: newStatus } }));
+        triggerToast("Order status updated to " + newStatus.toUpperCase());
       } else {
         const data = await res.json();
         alert(data.message || "Failed to update order status.");
@@ -1117,28 +805,6 @@ export default function AdminPage() {
           );
         }
 
-        // Update in localStorage
-        try {
-          const raw = localStorage.getItem("greeno_returns");
-          if (raw) {
-            const list = JSON.parse(raw);
-            if (Array.isArray(list)) {
-              const updated = list.map((r: any) =>
-                r.id === returnId
-                  ? { ...r, status: newStatus, admin_notes: adminNotes ?? r.admin_notes }
-                  : r
-              );
-              localStorage.setItem("greeno_returns", JSON.stringify(updated));
-            }
-          }
-          window.dispatchEvent(new Event("storage"));
-          window.dispatchEvent(
-            new CustomEvent("greeno_order_updated", {
-              detail: { returnId, status: newStatus },
-            })
-          );
-        } catch {}
-
         triggerToast(`Request ${returnId} updated to ${newStatus.toUpperCase()}`);
       } else {
         const data = await res.json();
@@ -1159,15 +825,6 @@ export default function AdminPage() {
 
       if (res.ok) {
         setReturnRequests((prev) => prev.filter((r) => r.id !== id));
-        try {
-          const raw = localStorage.getItem("greeno_returns");
-          if (raw) {
-            const list = JSON.parse(raw);
-            const filtered = list.filter((r: any) => r.id !== id);
-            localStorage.setItem("greeno_returns", JSON.stringify(filtered));
-          }
-          window.dispatchEvent(new Event("storage"));
-        } catch {}
         triggerToast(`Request '${id}' removed.`);
       }
     } catch (err) {
@@ -1280,14 +937,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/test-sms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: clean,
-          apiKey: settings.smsApiKey,
-          provider: settings.smsProvider || "fast2sms",
-          twilioSid: settings.twilioSid,
-          twilioToken: settings.twilioToken,
-          twilioFrom: settings.twilioFrom,
-        }),
+        body: JSON.stringify({ phone: clean }),
       });
 
       const data = await res.json();
@@ -1296,7 +946,6 @@ export default function AdminPage() {
         sent: data.sent,
         provider: data.provider,
         message: data.message,
-        details: data.gatewayResponse,
       });
 
       if (data.success) {
@@ -1328,18 +977,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/test-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: clean,
-          provider: settings.emailProvider || "gmail",
-          smtpHost: settings.smtpHost,
-          smtpPort: settings.smtpPort,
-          smtpSecure: settings.smtpSecure,
-          smtpUser: settings.smtpUser,
-          smtpPass: settings.smtpPass,
-          smtpFrom: settings.smtpFrom,
-          brevoApiKey: settings.brevoApiKey,
-          resendApiKey: settings.resendApiKey,
-        }),
+        body: JSON.stringify({ email: clean }),
       });
 
       const data = await res.json();
@@ -1349,7 +987,6 @@ export default function AdminPage() {
         provider: data.provider,
         message: data.message,
         error: data.error,
-        details: data.details,
         duration: data.duration,
       });
 
@@ -1504,14 +1141,27 @@ export default function AdminPage() {
 
           <form onSubmit={handleUnlock}>
             <div className={styles.authInputGroup}>
-              <label className={styles.authLabel}>Store Owner Passkey</label>
+              <label className={styles.authLabel}>Administrator email</label>
+              <input
+                type="email"
+                className={styles.authInput}
+                placeholder="name@example.com"
+                value={adminEmailInput}
+                onChange={(e) => setAdminEmailInput(e.target.value)}
+                autoComplete="username"
+                required
+              />
+            </div>
+            <div className={styles.authInputGroup}>
+              <label className={styles.authLabel}>Password</label>
               <input
                 type="password"
                 className={styles.authInput}
-                placeholder="Enter master passkey..."
-                value={passkeyInput}
-                onChange={(e) => setPasskeyInput(e.target.value)}
-                autoFocus
+                placeholder="Enter your password"
+                value={adminPasswordInput}
+                onChange={(e) => setAdminPasswordInput(e.target.value)}
+                autoComplete="current-password"
+                required
               />
             </div>
 
@@ -1674,7 +1324,7 @@ export default function AdminPage() {
             onClick={() => setActiveTab("sms")}
           >
             SMS GATEWAY (REAL SMS)
-            {settings.smsApiKey ? (
+            {settings.smsConfigured ? (
               <span
                 style={{
                   background: "#22c55e",
@@ -1707,7 +1357,7 @@ export default function AdminPage() {
             onClick={() => setActiveTab("email")}
           >
             EMAIL GATEWAY (OTP DISPATCH)
-            {settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? (
+            {settings.emailConfigured ? (
               <span
                 style={{
                   background: "#22c55e",
@@ -2993,7 +2643,7 @@ export default function AdminPage() {
                   <div>
                     <div className={styles.sectionTitle}>STOREFRONT &amp; ANNOUNCEMENT SETTINGS</div>
                     <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>
-                      Customize the top announcement ticker banner text, support contact, and master passkey.
+                      Customize the top announcement ticker and support contact.
                     </div>
                   </div>
                 </div>
@@ -3053,24 +2703,6 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  <div className={styles.fullSpan}>
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>Master Admin Passkey</label>
-                      <input
-                        type="text"
-                        className={styles.fieldInput}
-                        value={settings.adminPasskey}
-                        onChange={(e) =>
-                          setSettings({ ...settings, adminPasskey: e.target.value })
-                        }
-                        placeholder="e.g. aman2026"
-                        required
-                      />
-                      <span style={{ fontSize: "10px", color: "#666666" }}>
-                        Used to authenticate and unlock this admin dashboard.
-                      </span>
-                    </div>
-                  </div>
 
                   <div className={styles.fullSpan} style={{ marginTop: "16px" }}>
                     <button type="submit" className={styles.primaryButton}>
@@ -3083,650 +2715,62 @@ export default function AdminPage() {
 
             {/* -------------------- SMS GATEWAY TAB -------------------- */}
             {activeTab === "sms" && (
-              <div style={{ maxWidth: "800px" }}>
+              <div style={{ maxWidth: "720px" }}>
                 <div className={styles.sectionHeader}>
                   <div>
-                    <div className={styles.sectionTitle}>REAL-TIME SMS GATEWAY (CARRIER INTEGRATION)</div>
-                    <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>
-                      Configure cellular carrier SMS credentials to transmit live 6-digit OTP verification codes directly to mobile phones across India (Airtel, Jio, Vi, BSNL).
+                    <div className={styles.sectionTitle}>SMS DELIVERY</div>
+                    <div style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>
+                      Provider credentials stay on the server and are never stored in the storefront database.
                     </div>
                   </div>
                 </div>
-
-                {/* Status Indicator */}
-                <div
-                  style={{
-                    background: settings.smsApiKey ? "#0a2912" : "#2a1c06",
-                    border: settings.smsApiKey ? "1px solid #166534" : "1px solid #78350f",
-                    padding: "16px 20px",
-                    marginBottom: "28px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "12px",
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 800,
-                        letterSpacing: "0.12em",
-                        color: settings.smsApiKey ? "#4ade80" : "#f59e0b",
-                        textTransform: "uppercase",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      {settings.smsApiKey
-                        ? `● GATEWAY ACTIVE: ${(settings.smsProvider || "fast2sms").toUpperCase()}`
-                        : "● GATEWAY NOT CONFIGURED (PASSCODES DISPLAYED ON SCREEN)"}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#cccccc", lineHeight: "1.4" }}>
-                      {settings.smsApiKey
-                        ? "Real SMS OTPs will be dispatched to customers' mobile phones upon checkout."
-                        : "Add your free Fast2SMS API key below to send real SMS text messages over cellular networks."}
-                    </div>
-                  </div>
-
-                  <span
-                    style={{
-                      background: settings.smsApiKey ? "#22c55e" : "#f59e0b",
-                      color: "#000000",
-                      padding: "4px 10px",
-                      fontSize: "10px",
-                      fontWeight: 800,
-                      letterSpacing: "0.1em",
-                    }}
-                  >
-                    {settings.smsApiKey ? "CARRIER LIVE" : "ACTION REQUIRED"}
-                  </span>
+                <div style={{ padding: "18px", background: "#fff", border: "1px solid #e7e5df", marginBottom: "24px" }}>
+                  <strong>{settings.smsConfigured ? "SMS provider is configured" : "SMS provider needs server configuration"}</strong>
+                  <p style={{ fontSize: "12px", lineHeight: 1.6, color: "#666" }}>
+                    Add FAST2SMS_API_KEY, TWO_FACTOR_API_KEY, or the TWILIO_* credentials in the server environment. Never paste secrets into this page. Email verification codes are managed by Supabase Auth.
+                  </p>
                 </div>
-
-                {/* Configuration Form */}
-                <form onSubmit={handleSaveSettings} className={styles.formGrid}>
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>SMS Gateway Provider</label>
-                    <select
-                      className={styles.fieldSelect}
-                      value={settings.smsProvider || "fast2sms"}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          smsProvider: e.target.value as any,
-                        })
-                      }
-                    >
-                      <option value="fast2sms">Fast2SMS (Recommended for India — Free &amp; Instant)</option>
-                      <option value="twilio">Twilio (Global International Carrier)</option>
-                      <option value="2factor">2Factor.in (India Carrier Gateway)</option>
-                    </select>
+                <form onSubmit={handleTestSms} style={{ background: "#fff", border: "1px solid #e7e5df", padding: "24px 20px" }}>
+                  <div className={styles.fieldGroup} style={{ marginBottom: "16px" }}>
+                    <label className={styles.fieldLabel}>Test phone number (+91)</label>
+                    <input type="tel" className={styles.fieldInput} placeholder="10-digit mobile number" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} />
                   </div>
-
-                  {/* Fast2SMS or 2Factor API Key Field */}
-                  {(settings.smsProvider === "fast2sms" || !settings.smsProvider || settings.smsProvider === "2factor") && (
-                    <div className={styles.fullSpan}>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>
-                          {settings.smsProvider === "2factor" ? "2Factor.in API Key" : "Fast2SMS Authorization API Key *"}
-                        </label>
-                        <input
-                          type="text"
-                          className={styles.fieldInput}
-                          value={settings.smsApiKey || ""}
-                          onChange={(e) => setSettings({ ...settings, smsApiKey: e.target.value })}
-                          placeholder="Paste your API key here e.g. a8b9c0d1e2f3g4h5..."
-                        />
-                        <span style={{ fontSize: "10px", color: "#888888" }}>
-                          Used to transmit OTP SMS directly to customer phones via carrier towers.
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Twilio Credentials Fields */}
-                  {settings.smsProvider === "twilio" && (
-                    <>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>Twilio Account SID</label>
-                        <input
-                          type="text"
-                          className={styles.fieldInput}
-                          value={settings.twilioSid || ""}
-                          onChange={(e) => setSettings({ ...settings, twilioSid: e.target.value })}
-                          placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                        />
-                      </div>
-
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>Twilio Auth Token</label>
-                        <input
-                          type="password"
-                          className={styles.fieldInput}
-                          value={settings.twilioToken || ""}
-                          onChange={(e) => setSettings({ ...settings, twilioToken: e.target.value })}
-                          placeholder="Twilio secret token"
-                        />
-                      </div>
-
-                      <div className={styles.fullSpan}>
-                        <div className={styles.fieldGroup}>
-                          <label className={styles.fieldLabel}>Twilio Sender Phone Number</label>
-                          <input
-                            type="text"
-                            className={styles.fieldInput}
-                            value={settings.twilioFrom || ""}
-                            onChange={(e) => setSettings({ ...settings, twilioFrom: e.target.value })}
-                            placeholder="+1234567890"
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Fast2SMS Step-by-Step Guide Box */}
-                  {(settings.smsProvider === "fast2sms" || !settings.smsProvider) && (
-                    <div className={styles.fullSpan}>
-                      <div
-                        style={{
-                          background: "#FAF9F5",
-                          border: "1px solid #E7E5DF",
-                          padding: "16px 20px",
-                          fontSize: "12px",
-                          lineHeight: "1.6",
-                          color: "#4B5563",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        <div style={{ fontWeight: 700, color: "#121212", letterSpacing: "0.08em", marginBottom: "8px", fontSize: "11px" }}>
-                          👉 HOW TO GET YOUR FREE FAST2SMS API KEY (TAKES 30 SECONDS):
-                        </div>
-                        <ol style={{ margin: "0 0 10px", paddingLeft: "18px" }}>
-                          <li style={{ marginBottom: "4px" }}>
-                            Go to{" "}
-                            <a
-                              href="https://www.fast2sms.com"
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ color: "#121212", fontWeight: 700, textDecoration: "underline" }}
-                            >
-                              fast2sms.com &#8599;
-                            </a>{" "}
-                            and sign up using your mobile number (free wallet balance automatically added).
-                          </li>
-                          <li style={{ marginBottom: "4px" }}>
-                            In the left-hand sidebar menu, click on <strong>Dev API</strong>.
-                          </li>
-                          <li style={{ marginBottom: "4px" }}>
-                            Copy your <strong>Authorization Key</strong>.
-                          </li>
-                          <li>
-                            Paste it into the field above and click <strong>SAVE SMS CONFIGURATION</strong>.
-                          </li>
-                        </ol>
-                        <div style={{ fontSize: "11px", color: "#888888" }}>
-                          <em>Note: Fast2SMS has a pre-approved OTP route that delivers SMS across Indian networks instantly without requiring business DLT approval.</em>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className={styles.fullSpan} style={{ marginTop: "12px" }}>
-                    <button type="submit" className={styles.primaryButton}>
-                      SAVE SMS CONFIGURATION
-                    </button>
-                  </div>
+                  <button type="submit" disabled={testSmsLoading || testPhone.replace(/\D/g, "").length < 10} className={styles.primaryButton}>
+                    {testSmsLoading ? "SENDING…" : "SEND TEST SMS"}
+                  </button>
+                  {testSmsResult && <p role="status" style={{ fontSize: "12px", color: testSmsResult.sent ? "#166534" : "#991b1b" }}>{testSmsResult.message}</p>}
                 </form>
-
-                {/* -------------------- LIVE TEST SMS DISPATCHER -------------------- */}
-                <div
-                  style={{
-                    marginTop: "48px",
-                    paddingTop: "32px",
-                    borderTop: "1px solid #E7E5DF",
-                  }}
-                >
-                  <div className={styles.sectionHeader}>
-                    <div>
-                      <div className={styles.sectionTitle}>LIVE CARRIER TEST DISPATCHER</div>
-                      <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>
-                        Send an immediate test SMS to your physical phone to verify cellular tower delivery.
-                      </div>
-                    </div>
-                  </div>
-
-                  <form
-                    onSubmit={handleTestSms}
-                    style={{
-                      background: "#FFFFFF",
-                      border: "1px solid #E7E5DF",
-                      padding: "24px 20px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    <div className={styles.fieldGroup} style={{ marginBottom: "16px" }}>
-                      <label className={styles.fieldLabel}>Recipient Mobile Number (+91 India)</label>
-                      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                        <span
-                          style={{
-                            background: "#F4F3EF",
-                            border: "1px solid #E5E3DC",
-                            padding: "12px 14px",
-                            fontSize: "13px",
-                            color: "#121212",
-                            fontWeight: 700,
-                            borderRadius: "2px",
-                          }}
-                        >
-                          +91
-                        </span>
-                        <input
-                          type="tel"
-                          className={styles.fieldInput}
-                          placeholder="e.g. 9876543210"
-                          value={testPhone}
-                          onChange={(e) => setTestPhone(e.target.value)}
-                          style={{ flex: 1 }}
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={testSmsLoading || testPhone.replace(/\D/g, "").length < 10}
-                      className={styles.primaryButton}
-                      style={{
-                        background: testPhone.replace(/\D/g, "").length >= 10 ? "#ffffff" : "#333333",
-                        color: testPhone.replace(/\D/g, "").length >= 10 ? "#000000" : "#888888",
-                        cursor: testPhone.replace(/\D/g, "").length >= 10 ? "pointer" : "not-allowed",
-                      }}
-                    >
-                      {testSmsLoading ? "TRANSMITTING TO CELL TOWER..." : "SEND REAL TEST SMS NOW"}
-                    </button>
-
-                    {testSmsResult && (
-                      <div
-                        style={{
-                          marginTop: "20px",
-                          padding: "16px",
-                          background: testSmsResult.success ? "#052e16" : "#2e0808",
-                          border: testSmsResult.success ? "1px solid #15803d" : "1px solid #991b1b",
-                          color: testSmsResult.success ? "#86efac" : "#fca5a5",
-                          fontSize: "12px",
-                          lineHeight: "1.5",
-                        }}
-                      >
-                        <div style={{ fontWeight: 800, letterSpacing: "0.08em", marginBottom: "6px" }}>
-                          {testSmsResult.success
-                            ? "✓ TEST SMS TRANSMITTED SUCCESSFULLY"
-                            : "⚠️ SMS TRANSMISSION FAILED"}
-                        </div>
-                        <div>{testSmsResult.message}</div>
-                        {testSmsResult.details && (
-                          <pre
-                            style={{
-                              marginTop: "10px",
-                              padding: "10px",
-                              background: "rgba(0,0,0,0.5)",
-                              fontSize: "10px",
-                              overflowX: "auto",
-                              color: "#cccccc",
-                            }}
-                          >
-                            {JSON.stringify(testSmsResult.details, null, 2)}
-                          </pre>
-                        )}
-                      </div>
-                    )}
-                  </form>
-                </div>
               </div>
             )}
-
             {/* -------------------- EMAIL GATEWAY TAB -------------------- */}
             {activeTab === "email" && (
-              <div style={{ maxWidth: "800px" }}>
+              <div style={{ maxWidth: "720px" }}>
                 <div className={styles.sectionHeader}>
                   <div>
-                    <div className={styles.sectionTitle}>REAL-TIME EMAIL GATEWAY (PASSCODE DISPATCH)</div>
-                    <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>
-                      Configure email SMTP or API service to transmit real 6-digit verification passcodes directly to customer inboxes (Gmail, Yahoo, Outlook, Apple Mail).
+                    <div className={styles.sectionTitle}>EMAIL DELIVERY</div>
+                    <div style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>
+                      Account verification, password recovery, and sign-in codes are sent through Supabase Auth.
                     </div>
                   </div>
                 </div>
-
-                {/* Status Indicator */}
-                <div
-                  style={{
-                    background: settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "#0a2912" : "#2a1c06",
-                    border: settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "1px solid #166534" : "1px solid #78350f",
-                    padding: "16px 20px",
-                    marginBottom: "28px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "12px",
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 800,
-                        letterSpacing: "0.12em",
-                        color: settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "#4ade80" : "#f59e0b",
-                        textTransform: "uppercase",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      {settings.smtpUser || settings.brevoApiKey || settings.resendApiKey
-                        ? `● GATEWAY ACTIVE: ${(settings.emailProvider || "GMAIL").toUpperCase()}`
-                        : "● GATEWAY AWAITING SETUP (PASSCODES INSTANTLY AVAILABLE ON SCREEN)"}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#cccccc", lineHeight: "1.4" }}>
-                      {settings.smtpUser || settings.brevoApiKey || settings.resendApiKey
-                        ? "Real branded emails with 6-digit security passcodes are dispatched to users during login and verification."
-                        : "Enter your Gmail App Password or Brevo key below to transmit real emails directly to personal inboxes."}
-                    </div>
-                  </div>
-
-                  <span
-                    style={{
-                      background: settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "#22c55e" : "#f59e0b",
-                      color: "#000000",
-                      padding: "4px 10px",
-                      fontSize: "10px",
-                      fontWeight: 800,
-                      letterSpacing: "0.1em",
-                    }}
-                  >
-                    {settings.smtpUser || settings.brevoApiKey || settings.resendApiKey ? "LIVE INBOX DISPATCH" : "ACTION REQUIRED"}
-                  </span>
+                <div style={{ padding: "18px", background: "#fff", border: "1px solid #e7e5df", marginBottom: "24px" }}>
+                  <strong>{settings.emailConfigured ? "Transactional email provider is configured" : "Optional transactional email test provider is not configured"}</strong>
+                  <p style={{ fontSize: "12px", lineHeight: 1.6, color: "#666" }}>
+                    Set SMTP_USER and SMTP_PASS, BREVO_API_KEY, or RESEND_API_KEY as server environment variables. Configure customer verification email templates and delivery in Supabase Auth. No email secret is saved in this database.
+                  </p>
                 </div>
-
-                {/* Configuration Form */}
-                <form onSubmit={handleSaveSettings} className={styles.formGrid}>
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Email Provider / Dispatch Protocol</label>
-                    <select
-                      className={styles.fieldSelect}
-                      value={settings.emailProvider || "gmail"}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          emailProvider: e.target.value as any,
-                          smtpHost: e.target.value === "gmail" ? "smtp.gmail.com" : settings.smtpHost,
-                          smtpPort: e.target.value === "gmail" ? 465 : settings.smtpPort || 587,
-                          smtpSecure: e.target.value === "gmail" ? true : settings.smtpSecure,
-                        })
-                      }
-                    >
-                      <option value="gmail">Gmail SMTP (Recommended — Fast, Free via Google App Password)</option>
-                      <option value="brevo">Brevo / Sendinblue (Free 300 emails/day, no DNS setup needed)</option>
-                      <option value="resend">Resend API (Developer Email Delivery)</option>
-                      <option value="smtp">Custom SMTP Server (Any host, port, credentials)</option>
-                    </select>
+                <form onSubmit={handleTestEmail} style={{ background: "#fff", border: "1px solid #e7e5df", padding: "24px 20px" }}>
+                  <div className={styles.fieldGroup} style={{ marginBottom: "16px" }}>
+                    <label className={styles.fieldLabel}>Test email address</label>
+                    <input type="email" className={styles.fieldInput} placeholder="name@example.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} required />
                   </div>
-
-                  {/* Gmail or Custom SMTP settings */}
-                  {(settings.emailProvider === "gmail" || settings.emailProvider === "smtp" || !settings.emailProvider) && (
-                    <>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>SMTP Host *</label>
-                        <input
-                          type="text"
-                          className={styles.fieldInput}
-                          value={settings.smtpHost || (settings.emailProvider === "gmail" ? "smtp.gmail.com" : "")}
-                          onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
-                          placeholder="smtp.gmail.com"
-                          required
-                        />
-                      </div>
-
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>SMTP Port *</label>
-                        <input
-                          type="number"
-                          className={styles.fieldInput}
-                          value={settings.smtpPort || (settings.emailProvider === "gmail" ? 465 : 587)}
-                          onChange={(e) => setSettings({ ...settings, smtpPort: Number(e.target.value) })}
-                          placeholder="465 or 587"
-                          required
-                        />
-                      </div>
-
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>SMTP Username / Gmail Address *</label>
-                        <input
-                          type="email"
-                          className={styles.fieldInput}
-                          value={settings.smtpUser || ""}
-                          onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
-                          placeholder="yourname@gmail.com"
-                          required
-                        />
-                        <span style={{ fontSize: "10px", color: "#888888" }}>
-                          The email address used to send out security passcodes.
-                        </span>
-                      </div>
-
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>
-                          {settings.emailProvider === "gmail" ? "Google 16-Character App Password *" : "SMTP Password *"}
-                        </label>
-                        <input
-                          type="password"
-                          className={styles.fieldInput}
-                          value={settings.smtpPass || ""}
-                          onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value })}
-                          placeholder={settings.emailProvider === "gmail" ? "xxxx xxxx xxxx xxxx" : "Your SMTP password"}
-                          required
-                        />
-                        <span style={{ fontSize: "10px", color: "#888888" }}>
-                          {settings.emailProvider === "gmail"
-                            ? "Created under your Google Account Security settings."
-                            : "Your mail server secret."}
-                        </span>
-                      </div>
-
-                      <div className={styles.fullSpan}>
-                        <div className={styles.fieldGroup}>
-                          <label className={styles.fieldLabel}>From Display Header</label>
-                          <input
-                            type="text"
-                            className={styles.fieldInput}
-                            value={settings.smtpFrom || ""}
-                            onChange={(e) => setSettings({ ...settings, smtpFrom: e.target.value })}
-                            placeholder="GreenO Security <concierge@greeno.in>"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Gmail Step-by-Step Guide Box */}
-                      {settings.emailProvider === "gmail" && (
-                        <div className={styles.fullSpan}>
-                          <div
-                            style={{
-                              background: "#FAF9F5",
-                              border: "1px solid #E7E5DF",
-                              padding: "16px 20px",
-                              fontSize: "12px",
-                              lineHeight: "1.6",
-                              color: "#4B5563",
-                              borderRadius: "4px",
-                            }}
-                          >
-                            <div style={{ fontWeight: 700, color: "#121212", letterSpacing: "0.08em", marginBottom: "8px", fontSize: "11px" }}>
-                              👉 HOW TO GET A FREE GMAIL APP PASSWORD (TAKES 30 SECONDS):
-                            </div>
-                            <ol style={{ margin: "0 0 10px", paddingLeft: "18px" }}>
-                              <li style={{ marginBottom: "4px" }}>
-                                Open your Google Account at{" "}
-                                <a
-                                  href="https://myaccount.google.com/security"
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  style={{ color: "#121212", fontWeight: 700, textDecoration: "underline" }}
-                                >
-                                  myaccount.google.com/security &#8599;
-                                </a>
-                              </li>
-                              <li style={{ marginBottom: "4px" }}>
-                                Ensure <strong>2-Step Verification</strong> is enabled on your Google account.
-                              </li>
-                              <li style={{ marginBottom: "4px" }}>
-                                In the search bar at the top of your Google Account, search for <strong>App Passwords</strong> (or visit <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" style={{ color: "#121212", textDecoration: "underline" }}>myaccount.google.com/apppasswords</a>).
-                              </li>
-                              <li style={{ marginBottom: "4px" }}>
-                                Enter App Name: <strong>GreenO</strong>, then click <strong>Create</strong>.
-                              </li>
-                              <li>
-                                Copy the 16-character password (e.g. <code>abcd efgh ijkl mnop</code>), paste it into the field above, and click <strong>SAVE EMAIL CONFIGURATION</strong>.
-                              </li>
-                            </ol>
-                            <div style={{ fontSize: "11px", color: "#888888" }}>
-                              <em>Note: Real emails will immediately start landing in your customers' primary Gmail inboxes without landing in spam!</em>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* Brevo Settings */}
-                  {settings.emailProvider === "brevo" && (
-                    <div className={styles.fullSpan}>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>Brevo (Sendinblue) API Key *</label>
-                        <input
-                          type="text"
-                          className={styles.fieldInput}
-                          value={settings.brevoApiKey || ""}
-                          onChange={(e) => setSettings({ ...settings, brevoApiKey: e.target.value })}
-                          placeholder="xkeysib-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                          required
-                        />
-                        <span style={{ fontSize: "10px", color: "#888888" }}>
-                          Get a free key from <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noreferrer" style={{ color: "#121212", textDecoration: "underline" }}>brevo.com</a> (300 free emails/day).
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Resend Settings */}
-                  {settings.emailProvider === "resend" && (
-                    <div className={styles.fullSpan}>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.fieldLabel}>Resend API Key *</label>
-                        <input
-                          type="text"
-                          className={styles.fieldInput}
-                          value={settings.resendApiKey || ""}
-                          onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
-                          placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
-                          required
-                        />
-                        <span style={{ fontSize: "10px", color: "#888888" }}>
-                          Get an API key from <a href="https://resend.com/api-keys" target="_blank" rel="noreferrer" style={{ color: "#121212", textDecoration: "underline" }}>resend.com</a>.
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className={styles.fullSpan} style={{ marginTop: "12px" }}>
-                    <button type="submit" className={styles.primaryButton}>
-                      SAVE EMAIL CONFIGURATION
-                    </button>
-                  </div>
+                  <button type="submit" disabled={testEmailLoading || !testEmail.includes("@")} className={styles.primaryButton}>
+                    {testEmailLoading ? "SENDING…" : "SEND TEST EMAIL"}
+                  </button>
+                  {testEmailResult && <p role="status" style={{ fontSize: "12px", color: testEmailResult.sent ? "#166534" : "#991b1b" }}>{testEmailResult.message}</p>}
                 </form>
-
-                {/* -------------------- LIVE TEST EMAIL DISPATCHER -------------------- */}
-                <div
-                  style={{
-                    marginTop: "48px",
-                    paddingTop: "32px",
-                    borderTop: "1px solid #E7E5DF",
-                  }}
-                >
-                  <div className={styles.sectionHeader}>
-                    <div>
-                      <div className={styles.sectionTitle}>LIVE EMAIL TEST DISPATCHER</div>
-                      <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>
-                        Send a live test verification passcode to your personal email to verify inbox delivery.
-                      </div>
-                    </div>
-                  </div>
-
-                  <form
-                    onSubmit={handleTestEmail}
-                    style={{
-                      background: "#FFFFFF",
-                      border: "1px solid #E7E5DF",
-                      padding: "24px 20px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    <div className={styles.fieldGroup} style={{ marginBottom: "16px" }}>
-                      <label className={styles.fieldLabel}>Recipient Email Address</label>
-                      <input
-                        type="email"
-                        className={styles.fieldInput}
-                        placeholder="e.g. yourname@gmail.com"
-                        value={testEmail}
-                        onChange={(e) => setTestEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={testEmailLoading || !testEmail.includes("@")}
-                      className={styles.primaryButton}
-                      style={{
-                        background: testEmail.includes("@") ? "#121212" : "#E5E3DC",
-                        color: testEmail.includes("@") ? "#FFFFFF" : "#888888",
-                        cursor: testEmail.includes("@") ? "pointer" : "not-allowed",
-                      }}
-                    >
-                      {testEmailLoading ? "DISPATCHING REAL EMAIL..." : "SEND REAL TEST EMAIL NOW"}
-                    </button>
-
-                    {testEmailResult && (
-                      <div
-                        style={{
-                          marginTop: "20px",
-                          padding: "16px",
-                          background: testEmailResult.sent ? "#0a2912" : "#2a1212",
-                          border: testEmailResult.sent ? "1px solid #166534" : "1px solid #7f1d1d",
-                          color: testEmailResult.sent ? "#4ade80" : "#fca5a5",
-                          fontSize: "12px",
-                          lineHeight: "1.5",
-                        }}
-                      >
-                        <div style={{ fontWeight: 800, marginBottom: "4px" }}>
-                          {testEmailResult.sent
-                            ? `✓ TEST EMAIL DELIVERED VIA ${(testEmailResult.provider || "EMAIL").toUpperCase()}`
-                            : "⚠️ EMAIL DISPATCH NOTICE"}
-                        </div>
-                        <div>{testEmailResult.message}</div>
-                        {testEmailResult.duration && (
-                          <div style={{ fontSize: "10px", color: "#888888", marginTop: "4px" }}>
-                            Delivery speed: {testEmailResult.duration}
-                          </div>
-                        )}
-                        {testEmailResult.error && (
-                          <div style={{ fontSize: "11px", color: "#f87171", marginTop: "6px" }}>
-                            <strong>Diagnostic:</strong> {testEmailResult.error}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </form>
-                </div>
               </div>
             )}
-
             {/* ==================== CLIENT REVIEWS TAB ==================== */}
             {activeTab === "reviews" && (
               <div>

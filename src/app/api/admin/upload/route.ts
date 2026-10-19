@@ -1,90 +1,95 @@
+import { randomUUID } from "crypto";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
+
+export const runtime = "nodejs";
+
+const bucketName = "store-assets";
+const maxFileBytes = 50 * 1024 * 1024;
+const allowedTypes: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/avif": "avif",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+};
+
+function mediaFolder(value: FormDataEntryValue | null): string {
+  if (value === "categories" || value === "stories") return value;
+  return "products";
+}
 
 export async function POST(request: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceKey) {
+      return NextResponse.json({ success: false, message: "Persistent media storage is not configured on the server." }, { status: 503 });
+    }
+
     const formData = await request.formData();
-    
-    // Support either multiple files under "files" or single/multiple under "file"
-    const files = [
-      ...formData.getAll("files"),
-      ...formData.getAll("file"),
-    ].filter((item): item is File => item instanceof File && item.size > 0);
-
-    if (files.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "No files uploaded." },
-        { status: 400 }
-      );
+    const files = [...formData.getAll("files"), ...formData.getAll("file")]
+      .filter((value): value is File => value instanceof File && value.size > 0);
+    if (files.length < 1 || files.length > 10) {
+      return NextResponse.json({ success: false, message: "Upload between 1 and 10 files at a time." }, { status: 400 });
     }
-
-    const uploadedUrls: string[] = [];
-    let isFileSystemAvailable = true;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-    } catch {
-      // Vercel / Serverless read-only filesystem (/var/task)
-      isFileSystemAvailable = false;
-    }
-
     for (const file of files) {
-      // Validate that file is an image or video
-      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
-        continue;
+      if (!allowedTypes[file.type] || file.size > maxFileBytes) {
+        return NextResponse.json({ success: false, message: "Use JPG, PNG, WEBP, GIF, AVIF, MP4, or WEBM files up to 50 MB each." }, { status: 400 });
       }
-
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-
-      if (isFileSystemAvailable) {
-        try {
-          const timestamp = Date.now();
-          const randomSuffix = Math.random().toString(36).substring(2, 8);
-          const originalExt = path.extname(file.name) || (file.type.startsWith("video/") ? ".mp4" : ".jpg");
-          const cleanBase = path
-            .basename(file.name, originalExt)
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, "-")
-            .slice(0, 30);
-          
-          const fileName = `${cleanBase}-${timestamp}-${randomSuffix}${originalExt}`;
-          const filePath = path.join(uploadDir, fileName);
-
-          await fs.writeFile(filePath, buffer);
-          uploadedUrls.push(`/uploads/${fileName}`);
-          continue;
-        } catch {
-          // If disk write fails, fall back to base64 below
-        }
-      }
-
-      // Base64 Data URL fallback for serverless / Vercel
-      const mimeType = file.type || (file.name.endsWith(".mp4") ? "video/mp4" : "image/jpeg");
-      const base64Str = `data:${mimeType};base64,${buffer.toString("base64")}`;
-      uploadedUrls.push(base64Str);
     }
 
-    if (uploadedUrls.length === 0) {
-      return NextResponse.json(
-        { success: false, message: "Please upload valid media files (JPG, PNG, WEBP, MP4, WEBM)." },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `Successfully processed ${uploadedUrls.length} file${uploadedUrls.length > 1 ? "s" : ""}.`,
-      urls: uploadedUrls,
-      url: uploadedUrls[0],
+    const supabase = createSupabaseClient(supabaseUrl, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
     });
-  } catch (error: any) {
-    console.error("POST /api/admin/upload error:", error);
-    return NextResponse.json(
-      { success: false, message: error.message || "Failed to upload image files." },
-      { status: 500 }
-    );
+    const { data: bucket, error: bucketError } = await supabase.storage.getBucket(bucketName);
+    if (!bucket && bucketError) {
+      const { error: createError } = await supabase.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: maxFileBytes,
+        allowedMimeTypes: Object.keys(allowedTypes),
+      });
+      if (createError && !/already exists/i.test(createError.message)) {
+        console.error("Could not initialize persistent media storage.");
+        return NextResponse.json({ success: false, message: "Could not initialize persistent media storage." }, { status: 503 });
+      }
+    } else if (bucket && !bucket.public) {
+      const { error: updateError } = await supabase.storage.updateBucket(bucketName, {
+        public: true,
+        fileSizeLimit: maxFileBytes,
+        allowedMimeTypes: Object.keys(allowedTypes),
+      });
+      if (updateError) {
+        console.error("Could not configure persistent media storage.");
+        return NextResponse.json({ success: false, message: "Could not configure persistent media storage." }, { status: 503 });
+      }
+    }
+
+    const folder = mediaFolder(formData.get("type"));
+    const urls: string[] = [];
+    for (const file of files) {
+      const objectPath = folder + "/" + randomUUID() + "." + allowedTypes[file.type];
+      const { error } = await supabase.storage.from(bucketName).upload(objectPath, await file.arrayBuffer(), {
+        contentType: file.type,
+        upsert: false,
+        cacheControl: "31536000",
+      });
+      if (error) {
+        console.error("Persistent media upload failed.");
+        return NextResponse.json({ success: false, message: "One or more files could not be saved." }, { status: 503 });
+      }
+      urls.push(supabase.storage.from(bucketName).getPublicUrl(objectPath).data.publicUrl);
+    }
+
+    return NextResponse.json({ success: true, count: urls.length, urls, url: urls[0] }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    console.error("POST /api/admin/upload failed.");
+    return NextResponse.json({ success: false, message: "Could not save the uploaded media." }, { status: 503 });
   }
 }

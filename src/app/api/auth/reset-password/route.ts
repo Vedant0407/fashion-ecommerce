@@ -1,73 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyOtp } from "@/lib/otp-store";
-import { normalizeEmail, resetUserPassword } from "@/lib/user-store";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, code, newPassword } = body;
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const code = typeof body.code === "string" ? body.code.trim() : "";
+    const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
 
-    if (!email || typeof email !== "string") {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6}$/.test(code)) {
+      return NextResponse.json({ success: false, message: "Enter a valid email and the 6-digit reset code." }, { status: 400 });
+    }
+    if (newPassword.length < 8) {
+      return NextResponse.json({ success: false, message: "Use a password with at least 8 characters." }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const verified = await supabase.auth.verifyOtp({ email, token: code, type: "recovery" });
+    if (verified.error || !verified.data.user) {
       return NextResponse.json(
-        { success: false, message: "A valid email address is required." },
+        { success: false, message: "That reset code is invalid or expired. Request a new one." },
         { status: 400 }
       );
     }
 
-    if (!code || typeof code !== "string" || code.trim().length !== 6) {
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error || !data.user) {
       return NextResponse.json(
-        { success: false, message: "Please enter the complete 6-digit verification code." },
+        { success: false, message: "We could not update your password. Request a fresh reset code and try again." },
         { status: 400 }
       );
     }
 
-    if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
-      return NextResponse.json(
-        { success: false, message: "New password must be at least 6 characters." },
-        { status: 400 }
-      );
-    }
-
-    const cleanEmail = normalizeEmail(email);
-    const cleanCode = code.trim();
-
-    // Verify OTP code
-    const otpResult = await verifyOtp(cleanEmail, cleanCode, "email");
-    if (!otpResult.success) {
-      return NextResponse.json(
-        { success: false, message: otpResult.message || "Invalid or expired verification code." },
-        { status: 400 }
-      );
-    }
-
-    // Update password in permanent database store
-    const resetResult = await resetUserPassword(cleanEmail, newPassword);
-    if (!resetResult.success) {
-      return NextResponse.json(
-        { success: false, message: resetResult.message || "Failed to update password." },
-        { status: 500 }
-      );
-    }
-
-    const response = NextResponse.json({
-      success: true,
-      user: resetResult.user,
-      message: "Password updated successfully! Welcome back to GreenO.",
-    });
-
-    response.cookies.set("greeno_session", encodeURIComponent(cleanEmail), {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      sameSite: "lax",
-      httpOnly: false,
-    });
-
-    return response;
-  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: true,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || "",
+        },
+        message: "Password updated successfully.",
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (error) {
     console.error("POST /api/auth/reset-password error:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to reset password." },
-      { status: 500 }
+      { success: false, message: "Password reset is temporarily unavailable." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

@@ -16,21 +16,6 @@ export async function GET(request: NextRequest) {
 
     let products = await getStoreProducts();
 
-    // Cookie bridge: read client-saved custom products so serverless lambda cold starts never lose new products
-    const cookieCustom = request.cookies.get("greeno_custom_products")?.value;
-    if (cookieCustom) {
-      try {
-        const parsedCustom = JSON.parse(decodeURIComponent(cookieCustom));
-        if (Array.isArray(parsedCustom) && parsedCustom.length > 0) {
-          const cookieIds = new Set(parsedCustom.map((p: any) => p?.id).filter(Boolean));
-          products = [
-            ...parsedCustom,
-            ...products.filter((p) => !cookieIds.has(p.id)),
-          ];
-        }
-      } catch {}
-    }
-
     // Strictly enforce curated shirts & t-shirts
     products = products.filter(isShirtOrTshirt);
 

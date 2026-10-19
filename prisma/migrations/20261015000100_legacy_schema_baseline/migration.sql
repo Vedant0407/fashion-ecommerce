@@ -1,0 +1,1 @@
+-- Baseline marker for the legacy Supabase schema. This is marked as applied before the full-store reset migration.

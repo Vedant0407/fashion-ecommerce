@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getStoreCoupons,
@@ -7,6 +8,8 @@ import {
 } from "@/lib/store-data";
 
 export async function GET() {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const coupons = await getStoreCoupons();
     return NextResponse.json({ success: true, count: coupons.length, coupons });
@@ -20,6 +23,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const body = await request.json();
     const { code, type = "percentage", value, minOrder = 0, description = "", active = true } = body;
@@ -53,6 +58,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const body = await request.json();
     const { code, ...updates } = body;
@@ -95,6 +102,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const adminAccess = await requireAdmin();
+  if (adminAccess) return adminAccess;
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
